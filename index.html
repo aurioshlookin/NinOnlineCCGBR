@@ -20,6 +20,47 @@
         }
         @keyframes pulse-red { 0% { box-shadow: 0 0 40px rgba(245, 101, 101, 0.8); } 50% { box-shadow: 0 0 60px rgba(245, 101, 101, 1); } 100% { box-shadow: 0 0 40px rgba(245, 101, 101, 0.8); } }
 
+        /* Efeitos de Revelação Escalonados por Raridade */
+        @keyframes reveal-D {
+            0% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.02) translateY(-2px); filter: brightness(1.1); box-shadow: 0 0 10px #a0aec0; }
+            100% { transform: scale(1); box-shadow: 0 0 5px #a0aec0; }
+        }
+        @keyframes reveal-C {
+            0% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.05) translateY(-4px); filter: brightness(1.15); box-shadow: 0 0 15px #48bb78; }
+            100% { transform: scale(1.02); box-shadow: 0 0 10px #48bb78; }
+        }
+        @keyframes reveal-B {
+            0% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.08) translateY(-6px); filter: brightness(1.2); box-shadow: 0 0 25px #4299e1; }
+            100% { transform: scale(1.05); box-shadow: 0 0 15px #4299e1; }
+        }
+        @keyframes reveal-A {
+            0% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.12) translateY(-10px); filter: brightness(1.3); box-shadow: 0 0 40px #9f7aea; }
+            100% { transform: scale(1.08); box-shadow: 0 0 25px #9f7aea; }
+        }
+        @keyframes reveal-S {
+            0% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.15) translateY(-15px); filter: brightness(1.5); box-shadow: 0 0 60px #ecc94b; }
+            100% { transform: scale(1.1); box-shadow: 0 0 35px #ecc94b; }
+        }
+        @keyframes reveal-SS {
+            0% { transform: scale(1) rotateZ(0deg); filter: brightness(1); }
+            25% { transform: scale(1.1) translateY(-10px) rotateZ(-3deg); }
+            50% { transform: scale(1.2) translateY(-20px) rotateZ(3deg); filter: brightness(1.8); box-shadow: 0 0 80px #f56565; }
+            75% { transform: scale(1.15) translateY(-10px) rotateZ(-1deg); }
+            100% { transform: scale(1.12) rotateZ(0deg); box-shadow: 0 0 50px rgba(245, 101, 101, 1); }
+        }
+
+        .reveal-D { animation: reveal-D 0.6s ease-out forwards !important; z-index: 10; border-color: #a0aec0 !important; }
+        .reveal-C { animation: reveal-C 0.7s ease-out forwards !important; z-index: 20; border-color: #48bb78 !important; }
+        .reveal-B { animation: reveal-B 0.8s ease-out forwards !important; z-index: 30; border-color: #4299e1 !important; }
+        .reveal-A { animation: reveal-A 0.9s ease-out forwards !important; z-index: 40; border-color: #9f7aea !important; }
+        .reveal-S { animation: reveal-S 1s ease-out forwards !important; z-index: 50; border-color: #ecc94b !important; }
+        .reveal-SS { animation: reveal-SS 1.2s ease-in-out forwards !important; z-index: 60; border-color: #f56565 !important; }
+
         /* Cartas e Flip */
         .card-container { perspective: 1000px; }
         .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; }
@@ -275,10 +316,10 @@
             <div class="flex justify-between items-end border-b border-gray-700 pb-4">
                 <div>
                     <h2 class="text-2xl font-bold text-green-400">Centro de Trocas 🤝</h2>
-                    <p class="text-sm text-gray-400">Crie sua oferta no Mural Global. Só é permitido ter <strong class="text-white">1 oferta de troca</strong> concluída por dia.</p>
+                    <p class="text-sm text-gray-400">Só é permitido realizar <strong class="text-white">1 troca concluída por dia</strong> (Criando ou Aceitando).</p>
                 </div>
                 <div class="text-right">
-                    <span class="text-gray-400 block">Criadas Hoje: <span id="trade-limit-created" class="font-bold text-green-400">0</span>/1</span>
+                    <span class="text-gray-400 block">Trocas hoje: <span id="trade-limit-count" class="font-bold text-green-400">0</span>/1</span>
                     <span class="text-[10px] text-gray-500">Reseta 00:00</span>
                 </div>
             </div>
@@ -327,10 +368,7 @@
 
                 <!-- Coluna Direita: Mural Global -->
                 <div class="w-full lg:w-2/3 bg-gray-800 p-6 rounded-xl border border-gray-700">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold text-yellow-400">Mural Global de Trocas</h3>
-                        <span class="text-xs text-gray-400 border border-gray-600 px-2 py-1 rounded bg-gray-900">Aceitas: <span id="trade-limit-accepted" class="text-green-400 font-bold">0</span>/3 diárias</span>
-                    </div>
+                    <h3 class="text-xl font-bold text-yellow-400 mb-4">Mural Global de Trocas</h3>
                     <div id="global-trades-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="p-8 text-center text-gray-400 w-full col-span-full">Carregando mural...</div>
                     </div>
@@ -520,8 +558,7 @@
 
         // --- ESTADO GLOBAL ---
         let currentUser = null;
-        // Atualizado com campos para as regras de limite
-        let userData = { pullsAvailable: 0, inventory: {}, role: 'player', lastCompletedTradeDate: "", acceptedTradesToday: 0, lastAcceptedTradeDate: "", lastPullTimestamp: null };
+        let userData = { pullsAvailable: 0, inventory: {}, role: 'player', tradesToday: 0, lastTradeDate: "", lastPullTimestamp: null };
         let unsubUser = null;
         let unsubCards = null;
         let unsubTrades = null;
@@ -640,9 +677,8 @@
                         lastPullTimestamp: null,
                         inventory: {},
                         role: userRole,
-                        lastCompletedTradeDate: "",
-                        acceptedTradesToday: 0,
-                        lastAcceptedTradeDate: ""
+                        tradesToday: 0,
+                        lastTradeDate: new Date().toDateString()
                     });
                 } else {
                     await signInWithEmailAndPassword(auth, fakeEmail, pass);
@@ -687,7 +723,6 @@
                     if (docSnap.exists()) {
                         userData = docSnap.data();
 
-                        // Compatibilidade para contas antigas
                         if (userData.pullsAvailable < 3 && !userData.lastPullTimestamp) await updateDoc(doc(db, "users", user.uid), { lastPullTimestamp: Date.now() });
                         if (user.email === 'auriosh@nincard.com' && userData.role !== 'admin') await updateDoc(doc(db, "users", user.uid), { role: 'admin' });
 
@@ -734,26 +769,22 @@
             if(!currentUser) return;
             const today = new Date().toDateString();
             
-            // Limit UI 1 (Criação de Troca - Apenas 1 concluída por dia)
-            const hasCompletedTradeToday = userData.lastCompletedTradeDate === today;
+            // Limit UI Único (1 Troca concluída por dia)
+            const tradesToday = userData.lastTradeDate === today ? (userData.tradesToday || 0) : 0;
             const hasActiveTrade = allOpenTrades.some(t => t.fromUserId === currentUser.uid);
             
-            document.getElementById('trade-limit-created').innerText = hasCompletedTradeToday ? "1" : "0";
+            document.getElementById('trade-limit-count').innerText = tradesToday;
             
             const blocker = document.getElementById('trade-form-blocker');
-            if (hasCompletedTradeToday) {
+            if (tradesToday >= 1) {
                 blocker.classList.remove('hidden');
-                document.getElementById('trade-form-blocker-msg').innerText = "Você já concluiu uma oferta de troca hoje. Volte amanhã à 00:00!";
+                document.getElementById('trade-form-blocker-msg').innerText = "Você já concluiu uma troca hoje. Volte amanhã à 00:00!";
             } else if (hasActiveTrade) {
                 blocker.classList.remove('hidden');
                 document.getElementById('trade-form-blocker-msg').innerText = "Você já tem uma oferta ativa no mural. Cancele-a antes de criar outra.";
             } else {
                 blocker.classList.add('hidden');
             }
-
-            // Limit UI 2 (Aceitar trocas dos outros)
-            const acceptedToday = userData.lastAcceptedTradeDate === today ? (userData.acceptedTradesToday || 0) : 0;
-            document.getElementById('trade-limit-accepted').innerText = acceptedToday;
         };
 
         // --- SISTEMA DE TROCAS (TRADE) ---
@@ -828,7 +859,6 @@
             infoEl.innerText = `Você dá 1x [${offerCard.tier}] ⇄ O outro jogador escolherá ${currentReqQty}x [${reqTier}] que você não tem para te enviar.`;
         };
 
-        // CRIAR A OFERTA NO BANCO
         document.getElementById('trade-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btn-create-trade');
@@ -839,6 +869,10 @@
             if((userData.inventory[offerId] || 0) <= currentOfferQty) {
                 return window.showMessage("Você não possui cartas suficientes para criar a oferta e manter 1 cópia.");
             }
+
+            const today = new Date().toDateString();
+            const tradesToday = userData.lastTradeDate === today ? (userData.tradesToday || 0) : 0;
+            if (tradesToday >= 1) return window.showMessage("Você já concluiu sua troca diária.");
 
             btn.disabled = true;
             btn.innerText = "Publicando...";
@@ -878,7 +912,6 @@
             }
         });
 
-        // RENDERIZAR O MURAL
         window.renderTradeBoard = () => {
             const myTradesList = document.getElementById('my-trades-list');
             const globalGrid = document.getElementById('global-trades-grid');
@@ -973,12 +1006,11 @@
             });
         };
 
-        // --- SISTEMA DE SELEÇÃO DE CARTAS PARA ACEITAR TROCA ---
         window.openAcceptTradeModal = async (tradeId, fromUserId, offerId, reqTier, reqQty) => {
             try {
                 const today = new Date().toDateString();
-                const acceptedToday = userData.lastAcceptedTradeDate === today ? (userData.acceptedTradesToday || 0) : 0;
-                if (acceptedToday >= 3) return window.showMessage("Você já atingiu seu limite diário de aceitar 3 trocas hoje.");
+                const tradesToday = userData.lastTradeDate === today ? (userData.tradesToday || 0) : 0;
+                if (tradesToday >= 1) return window.showMessage("Você já atingiu seu limite diário de trocas hoje (1/dia).");
 
                 const userASnap = await getDoc(doc(db, "users", fromUserId));
                 if(!userASnap.exists()) throw "O criador da oferta não foi encontrado.";
@@ -1082,10 +1114,12 @@
                     const offQty = tradeSnap.data().offerQuantity || 1;
 
                     const today = new Date().toDateString();
-                    let acceptedB = userBSnap.data().lastAcceptedTradeDate === today ? (userBSnap.data().acceptedTradesToday || 0) : 0;
+                    let tradesA = userASnap.data().lastTradeDate === today ? (userASnap.data().tradesToday || 0) : 0;
+                    let tradesB = userBSnap.data().lastTradeDate === today ? (userBSnap.data().tradesToday || 0) : 0;
                     
-                    if (userASnap.data().lastCompletedTradeDate === today) throw "O criador da oferta atingiu o limite de criação diária.";
-                    if (acceptedB >= 3) throw "Você atingiu seu limite diário de aceitar trocas.";
+                    // Valida de novo por segurança
+                    if (tradesA >= 1) throw "O criador da oferta já atingiu o limite de trocas de hoje.";
+                    if (tradesB >= 1) throw "Você atingiu seu limite diário de trocas.";
 
                     finalCardsToSend.forEach(id => {
                         if((invB[id] || 0) < 1) throw "Inventário insuficiente! Alguém já usou essa carta.";
@@ -1095,8 +1129,8 @@
 
                     invB[state.offerId] = (invB[state.offerId] || 0) + offQty;
 
-                    transaction.update(userARef, { inventory: invA, lastCompletedTradeDate: today });
-                    transaction.update(userBRef, { inventory: invB, acceptedTradesToday: acceptedB + 1, lastAcceptedTradeDate: today });
+                    transaction.update(userARef, { inventory: invA, tradesToday: 1, lastTradeDate: today });
+                    transaction.update(userBRef, { inventory: invB, tradesToday: 1, lastTradeDate: today });
                     transaction.update(tradeRef, { status: 'completed', acceptedBy: currentUser.uid });
                 });
 
@@ -1110,10 +1144,23 @@
             }
         };
 
-        // --- LÓGICA DO GACHA ---
+        // --- LÓGICA DO GACHA SEGURO (GERA APENAS AO CLICAR) ---
         let currentPackCards = [];
         let selectedCardsIndices = [];
         let isOpeningPack = false;
+
+        function getRandomCard() {
+            if(cardDatabase.length === 0) return null; 
+            const roll = Math.floor(Math.random() * 1000) + 1;
+            let targetTier = 'D';
+            if (roll <= 500) targetTier = 'D'; else if (roll <= 800) targetTier = 'C'; else if (roll <= 930) targetTier = 'B';
+            else if (roll <= 980) targetTier = 'A'; else if (roll <= 998) targetTier = 'S'; else targetTier = 'SS';
+            
+            let possibleCards = cardDatabase.filter(c => c.tier === targetTier);
+            if(possibleCards.length === 0) possibleCards = cardDatabase; 
+            
+            return possibleCards[Math.floor(Math.random() * possibleCards.length)];
+        }
 
         window.openPack = async () => {
             if (!currentUser || userData.pullsAvailable <= 0 || isOpeningPack || cardDatabase.length === 0) return;
@@ -1124,18 +1171,8 @@
             if (userData.pullsAvailable === 3) updateData.lastPullTimestamp = Date.now();
             await updateDoc(userRef, updateData);
 
-            currentPackCards = [];
-            for(let i=0; i<5; i++) {
-                const roll = Math.floor(Math.random() * 1000) + 1;
-                let targetTier = 'D';
-                if (roll <= 500) targetTier = 'D'; else if (roll <= 800) targetTier = 'C'; else if (roll <= 930) targetTier = 'B';
-                else if (roll <= 980) targetTier = 'A'; else if (roll <= 998) targetTier = 'S'; else targetTier = 'SS';
-                
-                let possibleCards = cardDatabase.filter(c => c.tier === targetTier);
-                if(possibleCards.length === 0) possibleCards = cardDatabase; 
-                currentPackCards.push(possibleCards[Math.floor(Math.random() * possibleCards.length)]);
-            }
-
+            // Preenche o array só com placeholders para impedir hacks visuais
+            currentPackCards = new Array(5).fill(null);
             selectedCardsIndices = [];
 
             const pack = document.getElementById('booster-pack');
@@ -1148,7 +1185,8 @@
                 revealedContainer.innerHTML = '';
                 revealedContainer.classList.remove('hidden');
 
-                currentPackCards.forEach((card, index) => {
+                // Renderiza cartas vazias (viradas para trás)
+                for(let index=0; index<5; index++) {
                     revealedContainer.innerHTML += `
                         <div class="card-container w-24 h-36 sm:w-32 sm:h-48 md:w-40 md:h-60 cursor-pointer transform transition hover:scale-105" id="gacha-card-${index}" onclick="window.revealSingleCard(${index})">
                             <div class="card-inner shadow-2xl rounded-xl" id="gacha-card-inner-${index}">
@@ -1156,14 +1194,16 @@
                                 <div class="card-front p-1 sm:p-2 flex flex-col" id="gacha-card-front-${index}"></div>
                             </div>
                         </div>`;
-                });
+                }
             }, 1200);
         };
 
         window.revealSingleCard = async (index) => {
             if (selectedCardsIndices.length >= 2 || document.getElementById(`gacha-card-inner-${index}`).classList.contains('flipped')) return;
 
-            const cardData = currentPackCards[index];
+            // GERA A CARTA APENAS AGORA!
+            const cardData = getRandomCard();
+            currentPackCards[index] = cardData;
             selectedCardsIndices.push(index);
 
             const newInventory = { ...userData.inventory };
@@ -1172,25 +1212,40 @@
 
             window.renderCardHTML(`gacha-card-front-${index}`, cardData, false, false, newInventory);
             document.getElementById(`gacha-card-inner-${index}`).classList.add('flipped');
+            
             const cardContainer = document.getElementById(`gacha-card-${index}`);
-            cardContainer.classList.add('ring-4', 'ring-green-400', 'shadow-[0_0_20px_rgba(74,222,128,0.6)]', 'scale-105');
             cardContainer.classList.remove('hover:scale-105');
+            
+            // EFEITOS DE BRILHO E DESTAQUE POR RARIDADE
+            const ringColors = {
+                'D': 'ring-gray-400',
+                'C': 'ring-green-400',
+                'B': 'ring-blue-400',
+                'A': 'ring-purple-400',
+                'S': 'ring-yellow-400',
+                'SS': 'ring-red-500'
+            };
+            
+            cardContainer.classList.add(`reveal-${cardData.tier}`, 'ring-4', ringColors[cardData.tier]);
             
             if (selectedCardsIndices.length === 2) {
                 setTimeout(() => {
-                    currentPackCards.forEach((cardData, idx) => {
+                    for(let idx=0; idx<5; idx++) {
                         if (!selectedCardsIndices.includes(idx)) {
+                            // Gera e revela automaticamente as que sobraram (Sem ir pro inventário)
+                            const fakeCard = getRandomCard();
+                            currentPackCards[idx] = fakeCard;
                             const innerCard = document.getElementById(`gacha-card-inner-${idx}`);
-                            window.renderCardHTML(`gacha-card-front-${idx}`, cardData, false, false, userData.inventory);
+                            window.renderCardHTML(`gacha-card-front-${idx}`, fakeCard, false, false, userData.inventory);
                             innerCard.classList.add('flipped');
                             document.getElementById(`gacha-card-${idx}`).classList.add('opacity-50', 'grayscale');
-                            document.getElementById(`gacha-card-${idx}`).classList.remove('cursor-pointer', 'hover:scale-105');
+                            document.getElementById(`gacha-card-${idx}`).classList.remove('cursor-pointer', 'hover:scale-105', 'z-50', 'z-10');
                         }
-                    });
+                    }
                     isOpeningPack = false;
                     if (userData.pullsAvailable > 0) document.getElementById('btn-next').classList.remove('hidden');
                     else document.getElementById('cooldown-msg').classList.remove('hidden');
-                }, 800);
+                }, 1000); // 1 segundo pra admirar a carta que tirou antes das ruins aparecerem
             }
         };
 
@@ -1247,7 +1302,6 @@
             const grid = document.getElementById(gridId);
             if(!grid) return;
             
-            // Só aplicar os filtros avançados se for o "Meu Álbum"
             const isMyAlbum = gridId === 'album-grid';
             const mode = isMyAlbum ? window.currentAlbumView : 'grid';
             const sort = isMyAlbum ? window.currentAlbumSort : 'tier-desc';
@@ -1300,13 +1354,23 @@
                     const hasCard = quantity > 0;
                     const fullImageUrl = GITHUB_RAW_URL + card.img;
                     
-                    tableHTML += `<tr class="${hasCard ? 'hover:bg-gray-700' : 'opacity-50 grayscale bg-gray-800'} transition duration-150">
-                        <td class="p-2"><img src="${fullImageUrl}" class="w-8 h-10 object-cover rounded border border-gray-500"></td>
-                        <td class="p-3 font-bold text-white">${hasCard ? card.name : '???'}</td>
-                        <td class="p-3 text-yellow-400 font-bold">${card.tier}</td>
-                        <td class="p-3 text-gray-400 truncate max-w-[200px]">${hasCard ? card.desc : 'Não encontrada'}</td>
-                        <td class="p-3 text-center font-bold ${quantity > 1 ? 'text-blue-400' : 'text-gray-300'}">x${quantity}</td>
-                    </tr>`;
+                    if (hasCard) {
+                        tableHTML += `<tr class="hover:bg-gray-700 text-white transition duration-150">
+                            <td class="p-2"><img src="${fullImageUrl}" class="w-8 h-10 object-cover rounded border border-gray-500"></td>
+                            <td class="p-3 font-bold">${card.name}</td>
+                            <td class="p-3 font-bold text-yellow-400">${card.tier}</td>
+                            <td class="p-3 truncate max-w-[200px]">${card.desc}</td>
+                            <td class="p-3 text-center font-bold ${quantity > 1 ? 'text-blue-400' : ''}">x${quantity}</td>
+                        </tr>`;
+                    } else {
+                        tableHTML += `<tr class="opacity-50 bg-gray-800 text-gray-500 transition duration-150">
+                            <td class="p-2"><div class="w-8 h-10 bg-gray-700 rounded border border-gray-600 flex items-center justify-center font-bold">?</div></td>
+                            <td class="p-3 font-bold">???</td>
+                            <td class="p-3 font-bold">${card.tier}</td>
+                            <td class="p-3">???</td>
+                            <td class="p-3 text-center font-bold">-</td>
+                        </tr>`;
+                    }
                 });
                 tableHTML += `</tbody></table>`;
                 grid.innerHTML = tableHTML;
