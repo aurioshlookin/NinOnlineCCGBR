@@ -54,15 +54,11 @@
             <h1 class="text-xl font-bold hidden sm:block">Nin CardMeme Collection BR</h1>
         </div>
         
-        <!-- Área de Auth na Navbar -->
         <div id="nav-auth-area" class="flex items-center gap-4">
-            <!-- Estado: Deslogado -->
             <div id="logged-out-view" class="flex gap-2">
                 <button onclick="showModal('login')" class="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium">Entrar</button>
                 <button onclick="showModal('register')" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition">Cadastrar</button>
             </div>
-            
-            <!-- Estado: Logado -->
             <div id="logged-in-view" class="hidden items-center gap-4">
                 <div class="text-sm bg-gray-700 px-3 py-1 rounded-full border border-gray-600">
                     Pulls: <span id="pulls-count" class="font-bold text-blue-400">-</span>/3
@@ -83,6 +79,8 @@
         <button onclick="switchTab('gacha')" id="tab-gacha" class="px-6 py-3 font-semibold tab-active hover:bg-gray-700 transition">Roleta (Gacha)</button>
         <button onclick="switchTab('album')" id="tab-album" class="px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition">Meu Álbum</button>
         <button onclick="switchTab('explore')" id="tab-explore" class="px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition text-yellow-400 border-b-2 border-transparent">Comunidade 🔍</button>
+        <!-- Aba Admin (Oculta por padrão) -->
+        <button onclick="switchTab('admin')" id="tab-admin" class="hidden px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition text-red-400 border-b-2 border-transparent">⚙️ Criar Cartas</button>
     </nav>
 
     <!-- Modal de Login/Registro -->
@@ -123,6 +121,11 @@
                 <button onclick="showModal('register')" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-lg">Criar Conta Agora</button>
             </div>
 
+            <div id="gacha-empty-db" class="hidden text-center bg-red-900/50 border border-red-500 p-8 rounded-xl w-full">
+                <h3 class="text-2xl font-bold text-red-400 mb-2">Nenhuma Carta no Jogo!</h3>
+                <p class="text-gray-300">Os admins ainda não criaram nenhuma carta no sistema. Volte mais tarde.</p>
+            </div>
+
             <div id="gacha-content" class="hidden w-full flex-col items-center gap-8">
                 <div class="text-center space-y-2">
                     <h2 class="text-3xl font-bold">Abra seu Pacote!</h2>
@@ -139,7 +142,6 @@
                             <span class="block text-sm text-blue-200 font-bold tracking-widest uppercase">Booster Pack</span>
                         </div>
                     </div>
-
                     <div id="revealed-cards" class="flex flex-wrap justify-center gap-2 sm:gap-4 md:gap-8 hidden w-full"></div>
                 </div>
 
@@ -160,13 +162,13 @@
             <div id="album-content" class="hidden flex-col gap-6 w-full">
                 <div class="flex justify-between items-end">
                     <h2 class="text-2xl font-bold">Meu Álbum</h2>
-                    <span class="text-gray-400">Coleção: <span id="collection-count">0</span>/8</span>
+                    <span class="text-gray-400">Coleção: <span id="collection-count">0</span>/<span id="total-cards-count">0</span></span>
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4" id="album-grid"></div>
             </div>
         </section>
 
-        <!-- ABA: COMUNIDADE (EXPLORAR) -->
+        <!-- ABA: COMUNIDADE -->
         <section id="section-explore" class="w-full max-w-6xl hidden flex-col gap-6">
             <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 flex flex-col md:flex-row gap-4 items-center justify-between">
                 <div>
@@ -174,22 +176,17 @@
                     <p class="text-gray-400 text-sm">Pesquise ninjas e veja quem tem as melhores coleções.</p>
                 </div>
                 <div class="flex w-full md:w-auto gap-2">
-                    <!-- Evento oninput para filtrar a cada letra digitada -->
                     <input type="text" id="search-input" oninput="filterPlayers()" placeholder="Nick do Ninja..." class="w-full md:w-64 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-yellow-400">
-                    <!-- Botão de Refresh caso queiram ver se alguém tirou algo novo agora -->
                     <button onclick="loadAllPlayers(true)" class="bg-gray-700 hover:bg-gray-600 text-white font-bold px-4 py-2 rounded-lg transition" title="Atualizar Lista">🔄</button>
                 </div>
             </div>
-            
             <p id="explore-error" class="text-red-400 text-center hidden font-bold"></p>
-
-            <!-- Tabela de Jogadores -->
             <div id="explore-table-container" class="w-full overflow-x-auto bg-gray-800 rounded-xl border border-gray-700">
                 <table class="w-full text-left border-collapse whitespace-nowrap">
                     <thead>
                         <tr class="bg-gray-900 text-gray-400 text-sm border-b border-gray-700">
                             <th class="p-4 font-semibold">Ninja</th>
-                            <th class="p-4 font-semibold text-center">Cartas Únicas</th>
+                            <th class="p-4 font-semibold text-center">Únicas</th>
                             <th class="p-4 font-semibold text-center text-gray-400">D</th>
                             <th class="p-4 font-semibold text-center text-green-400">C</th>
                             <th class="p-4 font-semibold text-center text-blue-400">B</th>
@@ -199,14 +196,10 @@
                             <th class="p-4 font-semibold text-center">Ação</th>
                         </tr>
                     </thead>
-                    <tbody id="players-table-body" class="divide-y divide-gray-700">
-                        <!-- Linhas injetadas via JS -->
-                    </tbody>
+                    <tbody id="players-table-body" class="divide-y divide-gray-700"></tbody>
                 </table>
                 <div id="loading-players" class="p-8 text-center text-gray-400 hidden">Carregando lista de ninjas...</div>
             </div>
-
-            <!-- Resultados (Álbum Específico de um Jogador) -->
             <div id="explore-results" class="hidden flex-col gap-6 w-full">
                 <div class="flex items-center justify-between border-b border-gray-700 pb-4">
                     <div class="flex items-center gap-3">
@@ -223,15 +216,66 @@
             </div>
         </section>
 
+        <!-- ABA: ADMIN (CRIAR CARTAS) -->
+        <section id="section-admin" class="w-full max-w-2xl hidden flex-col gap-6">
+            <div class="bg-gray-800 p-8 rounded-xl border border-red-900 shadow-2xl">
+                <h2 class="text-2xl font-bold text-red-400 mb-2 border-b border-gray-700 pb-2">Painel do Administrador</h2>
+                <p class="text-gray-400 text-sm mb-6">Crie novas cartas. Certifique-se de que a imagem já foi enviada para a pasta <code>assets/cards/</code> no GitHub.</p>
+                
+                <form id="admin-form" class="space-y-4" onsubmit="createNewCard(event)">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Nome da Carta</label>
+                        <input type="text" id="admin-name" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white" required placeholder="Ex: Masiel Bolado">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Raridade (Tier)</label>
+                        <select id="admin-tier" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                            <option value="D">D - Comum (50%)</option>
+                            <option value="C">C - Incomum (30%)</option>
+                            <option value="B">B - Raro (13%)</option>
+                            <option value="A">A - Épico (5%)</option>
+                            <option value="S">S - Lendário (1.8%)</option>
+                            <option value="SS">SS - Mítico (0.2%)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Descrição</label>
+                        <input type="text" id="admin-desc" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white" required placeholder="Ex: Um momento histórico do servidor.">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Nome do Arquivo da Imagem (com extensão)</label>
+                        <input type="text" id="admin-img" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white" required placeholder="Ex: masiel.png ou igao.gif">
+                        <p class="text-xs text-yellow-500 mt-1">O arquivo deve estar no repositório GitHub (assets/cards/)</p>
+                    </div>
+                    
+                    <button type="submit" id="admin-submit" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-lg transition mt-4 shadow-lg shadow-red-900/50">
+                        CRIAR CARTA E ADICIONAR AO JOGO
+                    </button>
+                    <p id="admin-msg" class="text-center font-bold text-sm hidden mt-2"></p>
+                </form>
+            </div>
+            
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                <h3 class="text-xl font-bold mb-4">Cartas no Sistema (<span id="admin-card-count">0</span>)</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-gray-400 border-b border-gray-700">
+                            <tr><th>Nome</th><th>Tier</th><th>Arquivo</th></tr>
+                        </thead>
+                        <tbody id="admin-card-list" class="divide-y divide-gray-700"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <!-- FIREBASE E LÓGICA DO APP -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, onSnapshot, collection, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Configuração OFICIAL fornecida por você
         const firebaseConfig = {
             apiKey: "AIzaSyAWcdJV6INuUeo6-STW5J_VYZ7aUzO51KI",
             authDomain: "nincardcollectionbr.firebaseapp.com",
@@ -248,20 +292,46 @@
 
         // --- ESTADO GLOBAL ---
         let currentUser = null;
-        let userData = { pullsAvailable: 0, inventory: {} };
-        let unsubSnapshot = null;
+        let userData = { pullsAvailable: 0, inventory: {}, role: 'player' };
+        let unsubUser = null;
+        let unsubCards = null;
         
-        // Catálogo Base (Nomes dos arquivos que devem estar na pasta assets/cards/)
-        const cardDatabase = [
-            { id: 'c1', name: 'Bot do Discord', tier: 'D', desc: 'Sempre offline quando você precisa.', img: 'assets/cards/bot.png' },
-            { id: 'c2', name: 'Morte para Lobo', tier: 'D', desc: 'Acontece com os melhores.', img: 'assets/cards/lobo.png' },
-            { id: 'c3', name: 'Lag no PvP', tier: 'C', desc: 'Desculpa esfarrapada nº 1.', img: 'assets/cards/lag.png' },
-            { id: 'c4', name: 'Scammer de Vila', tier: 'C', desc: 'Vende item de quest caro.', img: 'assets/cards/scammer.png' },
-            { id: 'c5', name: 'Igão The Frog', tier: 'B', desc: 'Uma lenda dos pântanos.', img: 'assets/cards/igao.gif' },
-            { id: 'c6', name: 'Bola de Fogo', tier: 'A', desc: 'Derruba 2 de uma vez. Clássico.', img: 'assets/cards/boladefogo.png' },
-            { id: 'c7', name: 'Folha (Renegado)', tier: 'S', desc: 'Leva bastão nas costas. (Masiel)', img: 'assets/cards/masiel.png' },
-            { id: 'c8', name: 'Admin Corrupto', tier: 'SS', desc: 'Cria itens para os amigos. (Mito)', img: 'assets/cards/admin.png' }
-        ];
+        // Catálogo Base (AGORA VEM DO FIREBASE!)
+        let cardDatabase = [];
+        // Base URL do GitHub para buscar as imagens do seu repositório
+        const GITHUB_RAW_URL = "https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/cards/";
+
+        // --- INICIALIZAR CATÁLOGO (TEMPO REAL) ---
+        unsubCards = onSnapshot(collection(db, "cards"), (snapshot) => {
+            cardDatabase = [];
+            snapshot.forEach(doc => {
+                cardDatabase.push({ id: doc.id, ...doc.data() });
+            });
+            
+            document.getElementById('total-cards-count').innerText = cardDatabase.length;
+            document.getElementById('admin-card-count').innerText = cardDatabase.length;
+            
+            // Popula tabela admin
+            const adminList = document.getElementById('admin-card-list');
+            adminList.innerHTML = '';
+            cardDatabase.forEach(c => {
+                adminList.innerHTML += `<tr><td class="py-2">${c.name}</td><td>${c.tier}</td><td class="text-gray-500">${c.img}</td></tr>`;
+            });
+
+            // Se não tem cartas, trava o gacha
+            if (cardDatabase.length === 0) {
+                document.getElementById('gacha-content').classList.add('hidden');
+                document.getElementById('gacha-content').classList.remove('flex');
+                if(currentUser) document.getElementById('gacha-empty-db').classList.remove('hidden');
+            } else if (currentUser) {
+                document.getElementById('gacha-content').classList.remove('hidden');
+                document.getElementById('gacha-content').classList.add('flex');
+                document.getElementById('gacha-empty-db').classList.add('hidden');
+            }
+
+            // Atualiza álbum atual se estiver logado
+            if (currentUser) renderAlbumHTML('album-grid', userData.inventory);
+        });
 
         // --- AUTH & MODAL ---
         let authMode = 'login'; 
@@ -299,12 +369,15 @@
                     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
                     await updateProfile(userCredential.user, { displayName: nick });
                     
-                    // Criar documento inicial no Firestore
+                    // Promoção automática de admin ao registrar
+                    const userRole = email.toLowerCase() === 'igorprodrigues@outlook.com.br' ? 'admin' : 'player';
+
                     await setDoc(doc(db, "users", userCredential.user.uid), {
                         displayName: nick,
-                        displayNameLower: nick.toLowerCase(), // Para a busca funcionar bem
+                        displayNameLower: nick.toLowerCase(),
                         pullsAvailable: 3,
-                        inventory: {}
+                        inventory: {},
+                        role: userRole
                     });
                 } else {
                     await signInWithEmailAndPassword(auth, email, pass);
@@ -322,7 +395,6 @@
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
             if (user) {
-                // UI Logado
                 document.getElementById('logged-out-view').classList.add('hidden');
                 document.getElementById('logged-in-view').classList.remove('hidden');
                 document.getElementById('logged-in-view').classList.add('flex');
@@ -330,58 +402,185 @@
                 document.getElementById('user-avatar').src = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${user.displayName || user.uid}`;
                 
                 document.getElementById('gacha-locked').classList.add('hidden');
-                document.getElementById('gacha-content').classList.remove('hidden');
-                document.getElementById('gacha-content').classList.add('flex');
                 document.getElementById('album-locked').classList.add('hidden');
                 document.getElementById('album-content').classList.remove('hidden');
                 document.getElementById('album-content').classList.add('flex');
 
-                // Escutar Firestore em Tempo Real
-                if(unsubSnapshot) unsubSnapshot();
-                unsubSnapshot = onSnapshot(doc(db, "users", user.uid), (docSnap) => {
+                if (cardDatabase.length > 0) {
+                    document.getElementById('gacha-content').classList.remove('hidden');
+                    document.getElementById('gacha-content').classList.add('flex');
+                    document.getElementById('gacha-empty-db').classList.add('hidden');
+                } else {
+                    document.getElementById('gacha-empty-db').classList.remove('hidden');
+                }
+
+                if(unsubUser) unsubUser();
+                unsubUser = onSnapshot(doc(db, "users", user.uid), async (docSnap) => {
                     if (docSnap.exists()) {
                         userData = docSnap.data();
+
+                        // SE JÁ CADASTROU E LOGOU AGORA, PROMOVE A ADMIN AUTOMATICAMENTE:
+                        if (user.email === 'igorprodrigues@outlook.com.br' && userData.role !== 'admin') {
+                            await updateDoc(doc(db, "users", user.uid), { role: 'admin' });
+                            userData.role = 'admin'; // Força atualização local na hora
+                        }
+
                         updateGachaUI();
                         renderAlbumHTML('album-grid', userData.inventory);
+
+                        // MOSTRAR ABA ADMIN SE FOR ADMIN
+                        if (userData.role === 'admin') {
+                            document.getElementById('tab-admin').classList.remove('hidden');
+                        } else {
+                            document.getElementById('tab-admin').classList.add('hidden');
+                        }
                     }
                 });
             } else {
-                // UI Deslogado
                 document.getElementById('logged-out-view').classList.remove('hidden');
                 document.getElementById('logged-in-view').classList.add('hidden');
                 document.getElementById('logged-in-view').classList.remove('flex');
+                document.getElementById('tab-admin').classList.add('hidden');
                 
                 document.getElementById('gacha-locked').classList.remove('hidden');
                 document.getElementById('gacha-content').classList.add('hidden');
                 document.getElementById('gacha-content').classList.remove('flex');
+                document.getElementById('gacha-empty-db').classList.add('hidden');
+                
                 document.getElementById('album-locked').classList.remove('hidden');
                 document.getElementById('album-content').classList.add('hidden');
                 document.getElementById('album-content').classList.remove('flex');
-                if(unsubSnapshot) unsubSnapshot();
+                if(unsubUser) unsubUser();
             }
         });
 
         // --- TABS ---
         window.switchTab = (tabName) => {
-            ['gacha', 'album', 'explore'].forEach(t => {
+            ['gacha', 'album', 'explore', 'admin'].forEach(t => {
                 const sec = document.getElementById(`section-${t}`);
                 const btn = document.getElementById(`tab-${t}`);
+                if(!btn) return;
+
                 if (t === tabName) {
                     sec.classList.remove('hidden'); sec.classList.add('flex');
-                    btn.className = 'px-6 py-3 font-semibold tab-active hover:bg-gray-700 transition' + (t==='explore' ? ' text-yellow-400 border-yellow-400' : '');
-                    if (tabName === 'explore') loadAllPlayers(); // Carrega a tabela ao entrar na aba
+                    let activeClass = 'px-6 py-3 font-semibold tab-active hover:bg-gray-700 transition';
+                    if(t === 'explore') activeClass += ' text-yellow-400 border-yellow-400';
+                    if(t === 'admin') activeClass += ' text-red-400 border-red-400';
+                    btn.className = activeClass;
+                    if (tabName === 'explore') loadAllPlayers(); 
                 } else {
                     sec.classList.add('hidden'); sec.classList.remove('flex');
-                    btn.className = 'px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition' + (t==='explore' ? ' text-yellow-600' : '');
+                    let inactiveClass = 'px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition';
+                    if(t === 'explore') inactiveClass += ' text-yellow-600 border-transparent';
+                    if(t === 'admin') inactiveClass += ' text-red-600 border-transparent';
+                    btn.className = inactiveClass;
                 }
             });
         };
 
-        // --- COMUNIDADE E RANKING (CACHE E BUSCA) ---
-        let allPlayersCache = [];
+        // --- ADMIN: CRIAR CARTA ---
+        window.createNewCard = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('admin-submit');
+            const msg = document.getElementById('admin-msg');
+            btn.disabled = true;
+            btn.innerText = "Criando...";
 
+            try {
+                const newCard = {
+                    name: document.getElementById('admin-name').value,
+                    tier: document.getElementById('admin-tier').value,
+                    desc: document.getElementById('admin-desc').value,
+                    img: document.getElementById('admin-img').value.trim(),
+                    createdAt: serverTimestamp()
+                };
+
+                await addDoc(collection(db, "cards"), newCard);
+                
+                msg.innerText = "Carta criada com sucesso! Já está no jogo.";
+                msg.className = "text-center font-bold text-sm mt-2 text-green-400";
+                msg.classList.remove('hidden');
+                document.getElementById('admin-form').reset();
+            } catch (err) {
+                console.error(err);
+                msg.innerText = "Erro ao criar: " + err.message;
+                msg.className = "text-center font-bold text-sm mt-2 text-red-400";
+                msg.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "CRIAR CARTA E ADICIONAR AO JOGO";
+                setTimeout(() => msg.classList.add('hidden'), 5000);
+            }
+        };
+
+        window.loadGitHubImages = async () => {
+            const loading = document.getElementById('github-images-loading');
+            const grid = document.getElementById('github-images-grid');
+            const emptyMsg = document.getElementById('github-images-empty');
+
+            loading.classList.remove('hidden');
+            grid.innerHTML = '';
+            emptyMsg.classList.add('hidden');
+            selectedAdminImage = "";
+
+            try {
+                // Fetch the contents of the assets/cards folder via GitHub API
+                const response = await fetch('https://api.github.com/repos/aurioshlookin/NinCardMemeCollectionBR/contents/assets/cards');
+                if (!response.ok) throw new Error("Erro ao buscar no GitHub API");
+                const files = await response.json();
+
+                // Pegar imagens que já estão no banco do Firebase
+                const usedImages = cardDatabase.map(c => c.img);
+
+                // Filtrar apenas arquivos de imagem que NÃO estão no banco
+                const availableImages = files.filter(f =>
+                    f.type === 'file' &&
+                    f.name.match(/\.(png|jpg|jpeg|gif)$/i) &&
+                    !usedImages.includes(f.name)
+                );
+
+                loading.classList.add('hidden');
+
+                if (availableImages.length === 0) {
+                    emptyMsg.classList.remove('hidden');
+                    return;
+                }
+
+                availableImages.forEach(file => {
+                    const imgDiv = document.createElement('div');
+                    imgDiv.className = "cursor-pointer rounded border-2 border-transparent hover:border-blue-400 transition overflow-hidden h-24 bg-gray-800 relative group";
+                    imgDiv.onclick = () => selectAdminImage(file.name, imgDiv);
+                    imgDiv.innerHTML = `
+                        <img src="${file.download_url}" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
+                        <div class="absolute bottom-0 left-0 right-0 bg-black/80 text-[10px] text-center truncate px-1 py-0.5 text-white font-semibold">${file.name}</div>
+                    `;
+                    grid.appendChild(imgDiv);
+                });
+
+            } catch (err) {
+                console.error("GitHub Fetch Error:", err);
+                loading.innerText = "Erro ao carregar imagens. O repositório está acessível?";
+                loading.classList.replace('text-yellow-400', 'text-red-400');
+            }
+        };
+
+        window.selectAdminImage = (fileName, element) => {
+            selectedAdminImage = fileName;
+            
+            const grid = document.getElementById('github-images-grid');
+            Array.from(grid.children).forEach(child => {
+                child.classList.remove('border-green-500', 'ring-2', 'ring-green-400');
+                child.classList.add('border-transparent');
+            });
+            
+            element.classList.remove('border-transparent');
+            element.classList.add('border-green-500', 'ring-2', 'ring-green-400');
+        };
+
+        // --- COMUNIDADE E RANKING ---
+        let allPlayersCache = [];
         window.loadAllPlayers = async (forceRefresh = false) => {
-            if (allPlayersCache.length > 0 && !forceRefresh) return; // Evita gastos desnecessários no Firebase
+            if (allPlayersCache.length > 0 && !forceRefresh) return; 
 
             const errorEl = document.getElementById('explore-error');
             const loadingEl = document.getElementById('loading-players');
@@ -392,7 +591,6 @@
             loadingEl.classList.remove('hidden');
 
             try {
-                // Puxa TODOS os usuários
                 const querySnapshot = await getDocs(collection(db, "users"));
                 allPlayersCache = [];
                 
@@ -400,13 +598,7 @@
                     allPlayersCache.push({ uid: doc.id, ...doc.data() });
                 });
                 
-                // Ordenar do Maior Colecionador (Mais cartas totais) para o menor
-                allPlayersCache.sort((a, b) => {
-                    const totalA = getPlayerStats(a.inventory).Total;
-                    const totalB = getPlayerStats(b.inventory).Total;
-                    return totalB - totalA;
-                });
-
+                allPlayersCache.sort((a, b) => getPlayerStats(b.inventory).Total - getPlayerStats(a.inventory).Total);
                 renderPlayersTable(allPlayersCache);
             } catch (err) {
                 console.error(err);
@@ -417,12 +609,11 @@
             }
         };
 
-        // Função auxiliar para contar as cartas por Rank
         function getPlayerStats(inventory) {
             let stats = { Total: 0, D: 0, C: 0, B: 0, A: 0, S: 0, SS: 0 };
             cardDatabase.forEach(card => {
                 if (inventory && inventory[card.id] > 0) {
-                    stats.Total++; // Conta quantas cartas ÚNICAS a pessoa tem
+                    stats.Total++; 
                     if(stats[card.tier] !== undefined) stats[card.tier]++;
                 }
             });
@@ -432,94 +623,76 @@
         window.renderPlayersTable = (players) => {
             const tbody = document.getElementById('players-table-body');
             tbody.innerHTML = '';
-
-            if (players.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-gray-500">Nenhum ninja encontrado.</td></tr>`;
-                return;
-            }
+            if (players.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-gray-500">Nenhum ninja encontrado.</td></tr>`; return; }
 
             players.forEach(player => {
                 const stats = getPlayerStats(player.inventory);
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-700 transition duration-150 ease-in-out";
-                tr.innerHTML = `
-                    <td class="p-4 flex items-center gap-3 min-w-[150px]">
-                        <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.displayName || player.uid}" class="w-8 h-8 rounded-full border border-gray-600 bg-gray-800">
-                        <span class="font-bold text-white">${player.displayName || 'Ninja Oculto'}</span>
-                    </td>
-                    <td class="p-4 text-center font-bold text-lg">${stats.Total}</td>
-                    <td class="p-4 text-center text-gray-400 font-semibold">${stats.D}</td>
-                    <td class="p-4 text-center text-green-400 font-semibold">${stats.C}</td>
-                    <td class="p-4 text-center text-blue-400 font-semibold">${stats.B}</td>
-                    <td class="p-4 text-center text-purple-400 font-semibold">${stats.A}</td>
-                    <td class="p-4 text-center text-yellow-400 font-semibold">${stats.S}</td>
-                    <td class="p-4 text-center text-red-400 font-bold">${stats.SS}</td>
-                    <td class="p-4 text-center">
-                        <button onclick="viewPlayerAlbum('${player.uid}')" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg text-xs font-bold transition shadow">Ver Álbum</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-700 transition duration-150 ease-in-out">
+                        <td class="p-4 flex items-center gap-3 min-w-[150px]">
+                            <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.displayName || player.uid}" class="w-8 h-8 rounded-full border border-gray-600 bg-gray-800">
+                            <span class="font-bold text-white">${player.displayName || 'Ninja Oculto'}</span>
+                        </td>
+                        <td class="p-4 text-center font-bold text-lg">${stats.Total}</td>
+                        <td class="p-4 text-center text-gray-400 font-semibold">${stats.D}</td>
+                        <td class="p-4 text-center text-green-400 font-semibold">${stats.C}</td>
+                        <td class="p-4 text-center text-blue-400 font-semibold">${stats.B}</td>
+                        <td class="p-4 text-center text-purple-400 font-semibold">${stats.A}</td>
+                        <td class="p-4 text-center text-yellow-400 font-semibold">${stats.S}</td>
+                        <td class="p-4 text-center text-red-400 font-bold">${stats.SS}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="viewPlayerAlbum('${player.uid}')" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg text-xs font-bold transition shadow">Ver Álbum</button>
+                        </td>
+                    </tr>`;
             });
         };
 
-        // Filtra os usuários localmente a cada letra digitada
         window.filterPlayers = () => {
             const searchVal = document.getElementById('search-input').value.trim().toLowerCase();
-            
-            if (!searchVal) {
-                renderPlayersTable(allPlayersCache); // Se a busca tiver vazia, mostra todos
-                return;
-            }
-            
-            const filtered = allPlayersCache.filter(p => 
-                p.displayNameLower && p.displayNameLower.includes(searchVal)
-            );
-            renderPlayersTable(filtered);
+            if (!searchVal) return renderPlayersTable(allPlayersCache);
+            renderPlayersTable(allPlayersCache.filter(p => p.displayNameLower && p.displayNameLower.includes(searchVal)));
         };
 
-        // Entrar no Álbum de alguém pela Tabela
         window.viewPlayerAlbum = (uid) => {
             const player = allPlayersCache.find(p => p.uid === uid);
             if (!player) return;
-
             document.getElementById('explore-table-container').classList.add('hidden');
-            
             document.getElementById('explore-name').innerText = player.displayName;
             document.getElementById('explore-avatar').src = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.displayName || player.uid}`;
-            
             renderAlbumHTML('explore-grid', player.inventory);
-            
-            const resultsEl = document.getElementById('explore-results');
-            resultsEl.classList.remove('hidden');
-            resultsEl.classList.add('flex');
+            document.getElementById('explore-results').classList.remove('hidden');
+            document.getElementById('explore-results').classList.add('flex');
         };
 
-        // Voltar do Álbum para a Tabela
         window.closePlayerAlbum = () => {
             document.getElementById('explore-results').classList.add('hidden');
             document.getElementById('explore-results').classList.remove('flex');
             document.getElementById('explore-table-container').classList.remove('hidden');
         };
 
-        // --- LÓGICA DO GACHA (AGORA SALVA NO FIREBASE) ---
+        // --- LÓGICA DO GACHA ---
         let currentPackCards = [];
         let selectedCardsIndices = [];
         let isOpeningPack = false;
 
         function getRandomCard() {
+            if(cardDatabase.length === 0) return null; // Prevenção se não houver cartas
             const roll = Math.floor(Math.random() * 1000) + 1;
             let targetTier = 'D';
             if (roll <= 500) targetTier = 'D'; else if (roll <= 800) targetTier = 'C'; else if (roll <= 930) targetTier = 'B';
             else if (roll <= 980) targetTier = 'A'; else if (roll <= 998) targetTier = 'S'; else targetTier = 'SS';
-            const possibleCards = cardDatabase.filter(c => c.tier === targetTier);
+            
+            // Se tentar dropar um Tier que não existe nenhuma carta criada ainda, pega qualquer uma aleatória
+            let possibleCards = cardDatabase.filter(c => c.tier === targetTier);
+            if(possibleCards.length === 0) possibleCards = cardDatabase; 
+            
             return possibleCards[Math.floor(Math.random() * possibleCards.length)];
         }
 
         window.openPack = async () => {
-            if (!currentUser || userData.pullsAvailable <= 0 || isOpeningPack) return;
+            if (!currentUser || userData.pullsAvailable <= 0 || isOpeningPack || cardDatabase.length === 0) return;
             isOpeningPack = true;
             
-            // Subtrair pull no Firebase IMEDIATAMENTE
             const userRef = doc(db, "users", currentUser.uid);
             await updateDoc(userRef, { pullsAvailable: userData.pullsAvailable - 1 });
 
@@ -554,14 +727,10 @@
             const cardData = currentPackCards[index];
             selectedCardsIndices.push(index);
 
-            // Preparar atualização do inventário para enviar ao Firebase
             const newInventory = { ...userData.inventory };
             newInventory[cardData.id] = (newInventory[cardData.id] || 0) + 1;
-            
-            // Enviar para o Firebase
             await updateDoc(doc(db, "users", currentUser.uid), { inventory: newInventory });
 
-            // Visual
             renderCardHTML(`gacha-card-front-${index}`, cardData, false, false, newInventory);
             document.getElementById(`gacha-card-inner-${index}`).classList.add('flipped');
             const cardContainer = document.getElementById(`gacha-card-${index}`);
@@ -600,7 +769,7 @@
             if (userData.pullsAvailable <= 0 && !isOpeningPack) {
                 document.getElementById('booster-pack').classList.add('hidden');
                 document.getElementById('cooldown-msg').classList.remove('hidden');
-            } else if (!isOpeningPack) {
+            } else if (!isOpeningPack && cardDatabase.length > 0) {
                 document.getElementById('booster-pack').classList.remove('hidden');
                 document.getElementById('cooldown-msg').classList.add('hidden');
             }
@@ -613,6 +782,9 @@
             if (isAlbum) container.className = `w-full h-full p-2 sm:p-3 flex flex-col justify-between rounded-xl border-4 border-solid bg-[#ebdcb2] text-gray-900 rank-${cardData.tier}`;
             else container.className = `card-front p-1 sm:p-2 flex flex-col justify-between rank-${cardData.tier}`;
 
+            // Junta a URL do Raw do GitHub com o nome do arquivo da imagem da carta
+            const fullImageUrl = GITHUB_RAW_URL + cardData.img;
+
             container.innerHTML = `
                 <div class="flex justify-between items-start mb-1 sm:mb-2 absolute top-1 left-1 right-1 z-10">
                     <span class="font-bold text-[10px] sm:text-xs bg-gray-900 text-white px-1 sm:px-2 py-0.5 sm:py-1 rounded shadow-md opacity-90 border border-gray-600">Rank ${cardData.tier}</span>
@@ -620,8 +792,7 @@
                 </div>
                 
                 <div class="flex-grow flex items-center justify-center bg-gray-300 rounded overflow-hidden relative border-2 border-gray-800">
-                   <!-- AQUI A IMAGEM VERDADEIRA É RENDERIZADA -->
-                   <img src="${cardData.img}" alt="${cardData.name}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://via.placeholder.com/150/cbd5e0/4a5568?text=Sem+Imagem';">
+                   <img src="${fullImageUrl}" alt="${cardData.name}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://via.placeholder.com/150/cbd5e0/4a5568?text=Imagem+N%C3%A3o+Encontrada';">
                 </div>
                 
                 <div class="mt-1 sm:mt-2 text-center bg-white/50 p-1 rounded backdrop-blur-sm border border-gray-400">
