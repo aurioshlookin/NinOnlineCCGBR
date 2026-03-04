@@ -79,7 +79,9 @@
         <button onclick="switchTab('gacha')" id="tab-gacha" class="px-6 py-3 font-semibold tab-active hover:bg-gray-700 transition">Roleta (Gacha)</button>
         <button onclick="switchTab('album')" id="tab-album" class="px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition">Meu Álbum</button>
         <button onclick="switchTab('explore')" id="tab-explore" class="px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition text-yellow-600 border-b-2 border-transparent">Comunidade 🔍</button>
-        <!-- Aba Admin (Oculta por padrão) -->
+        <!-- Aba de Trocas -->
+        <button onclick="switchTab('trade')" id="tab-trade" class="px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition text-green-500 border-b-2 border-transparent hidden">Trocas 🤝</button>
+        <!-- Aba Admin -->
         <button onclick="switchTab('admin')" id="tab-admin" class="hidden px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition text-red-600 border-b-2 border-transparent">⚙️ Criar Cartas</button>
     </nav>
 
@@ -103,6 +105,17 @@
                     Entrar
                 </button>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal de Mensagens e Confirmações Customizado -->
+    <div id="msg-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] hidden backdrop-blur-sm p-4">
+        <div class="bg-gray-800 p-6 rounded-xl shadow-2xl max-w-sm w-full border border-gray-700 text-center">
+            <h3 id="msg-modal-text" class="text-lg font-bold text-white mb-6">Mensagem</h3>
+            <div class="flex justify-center gap-4">
+                <button id="msg-modal-cancel" class="hidden bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg transition font-bold">Cancelar</button>
+                <button id="msg-modal-ok" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2 rounded-lg font-bold transition shadow-lg">OK</button>
+            </div>
         </div>
     </div>
 
@@ -212,6 +225,63 @@
             </div>
         </section>
 
+        <!-- ABA: TROCAS -->
+        <section id="section-trade" class="w-full max-w-6xl hidden flex-col gap-6">
+            <div class="flex justify-between items-end border-b border-gray-700 pb-4">
+                <h2 class="text-2xl font-bold text-green-400">Centro de Trocas 🤝</h2>
+                <span class="text-gray-400">Trocas hoje: <span id="trade-limit-count" class="font-bold text-green-400">0</span>/3</span>
+            </div>
+
+            <div class="flex flex-col lg:flex-row gap-6">
+                <!-- Coluna Esquerda: Minhas Ofertas -->
+                <div class="w-full lg:w-1/3 flex flex-col gap-6">
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <h3 class="text-xl font-bold mb-4">Criar Nova Oferta</h3>
+                        <p class="text-xs text-gray-400 mb-4">Você só pode oferecer cartas que tenha 2 ou mais repetidas no inventário.</p>
+                        <form onsubmit="submitTrade(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">O que eu ofereço:</label>
+                                <div class="flex items-center gap-3">
+                                    <select id="trade-offer" onchange="updateRequestOptions()" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white" required>
+                                        <option value="">Selecione uma carta repetida...</option>
+                                    </select>
+                                    <img id="trade-offer-preview" class="hidden w-10 h-14 object-cover rounded border border-gray-500 bg-gray-800" src="" alt="preview">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">O que eu quero (Mesmo Rank ou Menor):</label>
+                                <div class="flex items-center gap-3">
+                                    <select id="trade-request" onchange="updateRequestPreview()" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white" required disabled>
+                                        <option value="">Primeiro selecione o que vai oferecer...</option>
+                                    </select>
+                                    <img id="trade-request-preview" class="hidden w-10 h-14 object-cover rounded border border-gray-500 bg-gray-800" src="" alt="preview">
+                                </div>
+                            </div>
+                            <div id="trade-ratio-info" class="text-yellow-400 font-bold text-sm text-center py-2"></div>
+                            <button type="submit" id="btn-create-trade" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-lg transition mt-4 shadow-lg">
+                                Publicar Oferta no Mural
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <h3 class="text-lg font-bold mb-4 text-blue-400">Minhas Ofertas Ativas</h3>
+                        <div id="my-trades-list" class="space-y-3">
+                            <p class="text-sm text-gray-500">Nenhuma oferta ativa no momento.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coluna Direita: Mural Global -->
+                <div class="w-full lg:w-2/3 bg-gray-800 p-6 rounded-xl border border-gray-700">
+                    <h3 class="text-xl font-bold mb-4 text-yellow-400">Mural Global de Trocas</h3>
+                    <div id="global-trades-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-8 text-center text-gray-400 w-full col-span-full">Carregando mural...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- ABA: ADMIN (CRIAR CARTAS) -->
         <section id="section-admin" class="w-full max-w-4xl hidden flex-col gap-6">
             <div class="bg-gray-800 p-8 rounded-xl border border-red-900 shadow-2xl">
@@ -252,6 +322,9 @@
                         <button type="submit" id="admin-submit" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-lg transition mt-4 shadow-lg shadow-red-900/50">
                             CRIAR CARTA E ADICIONAR AO JOGO
                         </button>
+                        <button type="button" id="admin-cancel-btn" onclick="cancelEdit()" class="hidden w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 rounded-lg transition mt-2">
+                            CANCELAR EDIÇÃO
+                        </button>
                         <p id="admin-msg" class="text-center font-bold text-sm hidden mt-2"></p>
                     </form>
 
@@ -272,7 +345,7 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="text-gray-400 border-b border-gray-700">
-                            <tr><th>Nome</th><th>Tier</th><th>Arquivo</th></tr>
+                            <tr><th>Nome</th><th>Tier</th><th>Arquivo</th><th>Ação</th></tr>
                         </thead>
                         <tbody id="admin-card-list" class="divide-y divide-gray-700"></tbody>
                     </table>
@@ -286,7 +359,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, onSnapshot, collection, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, onSnapshot, collection, query, where, getDocs, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAWcdJV6INuUeo6-STW5J_VYZ7aUzO51KI",
@@ -304,16 +377,40 @@
 
         // --- ESTADO GLOBAL ---
         let currentUser = null;
-        let userData = { pullsAvailable: 0, inventory: {}, role: 'player' };
+        let userData = { pullsAvailable: 0, inventory: {}, role: 'player', tradesToday: 0, lastTradeDate: "" };
         let unsubUser = null;
         let unsubCards = null;
+        let unsubTrades = null;
+        let allOpenTrades = [];
         
-        // Catálogo Base (AGORA VEM DO FIREBASE!)
+        // Catálogo Base (VEM DO FIREBASE!)
         let cardDatabase = [];
-        // Base URL do GitHub para buscar as imagens do seu repositório
         const GITHUB_RAW_URL = "https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/cards/";
-        
-        let selectedAdminImage = ""; // Armazena a imagem selecionada na aba Admin
+        let selectedAdminImage = ""; 
+        let editingCardId = null;
+
+        const TIER_VALUES = { 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5, 'SS': 6 };
+        let currentOfferQty = 1;
+        let currentReqQty = 1;
+
+        // --- FUNÇÃO DE MENSAGENS UI (Substitui Alert e Confirm) ---
+        window.showMessage = (msg, isConfirm = false, onConfirm = null) => {
+            document.getElementById('msg-modal-text').innerText = msg;
+            const modal = document.getElementById('msg-modal');
+            const btnCancel = document.getElementById('msg-modal-cancel');
+            const btnOk = document.getElementById('msg-modal-ok');
+            
+            modal.classList.remove('hidden');
+            
+            if (isConfirm) {
+                btnCancel.classList.remove('hidden');
+                btnOk.onclick = () => { modal.classList.add('hidden'); if(onConfirm) onConfirm(); };
+                btnCancel.onclick = () => { modal.classList.add('hidden'); };
+            } else {
+                btnCancel.classList.add('hidden');
+                btnOk.onclick = () => { modal.classList.add('hidden'); };
+            }
+        };
 
         // --- INICIALIZAR CATÁLOGO (TEMPO REAL) ---
         unsubCards = onSnapshot(collection(db, "cards"), (snapshot) => {
@@ -325,14 +422,18 @@
             document.getElementById('total-cards-count').innerText = cardDatabase.length;
             document.getElementById('admin-card-count').innerText = cardDatabase.length;
             
-            // Popula tabela admin
             const adminList = document.getElementById('admin-card-list');
             adminList.innerHTML = '';
             cardDatabase.forEach(c => {
-                adminList.innerHTML += `<tr><td class="py-2">${c.name}</td><td>${c.tier}</td><td class="text-gray-500">${c.img}</td></tr>`;
+                adminList.innerHTML += `
+                    <tr>
+                        <td class="py-2">${c.name}</td>
+                        <td>${c.tier}</td>
+                        <td class="text-gray-500 text-xs">${c.img}</td>
+                        <td><button onclick="editCard('${c.id}')" class="text-blue-400 hover:text-blue-300 text-xs font-bold bg-gray-800 px-2 py-1 rounded border border-gray-600">Editar</button></td>
+                    </tr>`;
             });
 
-            // Se não tem cartas, trava o gacha
             if (cardDatabase.length === 0) {
                 document.getElementById('gacha-content').classList.add('hidden');
                 document.getElementById('gacha-content').classList.remove('flex');
@@ -343,10 +444,10 @@
                 document.getElementById('gacha-empty-db').classList.add('hidden');
             }
 
-            // Atualiza álbum atual se estiver logado
-            if (currentUser) renderAlbumHTML('album-grid', userData.inventory);
-
-            // Atualiza a galeria do admin se for admin
+            if (currentUser) {
+                renderAlbumHTML('album-grid', userData.inventory);
+                updateTradeOptions();
+            }
             if (userData.role === 'admin' && window.loadGitHubImages) {
                 window.loadGitHubImages();
             }
@@ -378,7 +479,6 @@
             const pass = document.getElementById('auth-password').value;
             const errorEl = document.getElementById('auth-error');
             
-            // Tratamento invisível para o Firebase (Cria um e-mail falso usando o nick limpo)
             const safeUsername = username.toLowerCase().replace(/[^a-z0-9]/g, '');
             if(safeUsername.length < 3) {
                 errorEl.innerText = "Seu usuário deve ter pelo menos 3 letras, sem espaços ou caracteres especiais.";
@@ -392,7 +492,6 @@
                     const userCredential = await createUserWithEmailAndPassword(auth, fakeEmail, pass);
                     await updateProfile(userCredential.user, { displayName: username });
                     
-                    // Promoção automática de admin ao registrar (auriosh)
                     const userRole = safeUsername === 'auriosh' ? 'admin' : 'player';
 
                     await setDoc(doc(db, "users", userCredential.user.uid), {
@@ -400,14 +499,15 @@
                         displayNameLower: username.toLowerCase(),
                         pullsAvailable: 3,
                         inventory: {},
-                        role: userRole
+                        role: userRole,
+                        tradesToday: 0,
+                        lastTradeDate: new Date().toDateString()
                     });
                 } else {
                     await signInWithEmailAndPassword(auth, fakeEmail, pass);
                 }
                 closeModal();
             } catch (error) {
-                // Mensagens amigáveis para falhas comuns
                 let errorMsg = error.message.replace('Firebase: ', '');
                 if (error.code === 'auth/email-already-in-use') errorMsg = "Este usuário já está em uso!";
                 if (error.code === 'auth/invalid-credential') errorMsg = "Usuário ou senha incorretos!";
@@ -433,13 +533,12 @@
                 document.getElementById('album-locked').classList.add('hidden');
                 document.getElementById('album-content').classList.remove('hidden');
                 document.getElementById('album-content').classList.add('flex');
+                document.getElementById('tab-trade').classList.remove('hidden');
 
                 if (cardDatabase.length > 0) {
                     document.getElementById('gacha-content').classList.remove('hidden');
                     document.getElementById('gacha-content').classList.add('flex');
                     document.getElementById('gacha-empty-db').classList.add('hidden');
-                } else {
-                    document.getElementById('gacha-empty-db').classList.remove('hidden');
                 }
 
                 if(unsubUser) unsubUser();
@@ -447,16 +546,20 @@
                     if (docSnap.exists()) {
                         userData = docSnap.data();
 
-                        // SE JÁ CADASTROU E LOGOU AGORA, PROMOVE A ADMIN AUTOMATICAMENTE:
                         if (user.email === 'auriosh@nincard.com' && userData.role !== 'admin') {
                             await updateDoc(doc(db, "users", user.uid), { role: 'admin' });
-                            userData.role = 'admin'; // Força atualização local na hora
+                            userData.role = 'admin';
                         }
 
                         updateGachaUI();
                         renderAlbumHTML('album-grid', userData.inventory);
+                        updateTradeOptions(); // Atualiza listas dropdown de troca
+                        
+                        // Atualiza UI de limite de trocas
+                        const today = new Date().toDateString();
+                        const tradesCount = userData.lastTradeDate === today ? (userData.tradesToday || 0) : 0;
+                        document.getElementById('trade-limit-count').innerText = tradesCount;
 
-                        // MOSTRAR ABA ADMIN SE FOR ADMIN (Sem apagar o hidden, manipulando classList de forma segura)
                         if (userData.role === 'admin') {
                             document.getElementById('tab-admin').classList.remove('hidden');
                         } else {
@@ -464,11 +567,21 @@
                         }
                     }
                 });
+
+                // Escutar Trocas Abertas Globais
+                if(unsubTrades) unsubTrades();
+                unsubTrades = onSnapshot(query(collection(db, "trades"), where("status", "==", "open")), (snapshot) => {
+                    allOpenTrades = [];
+                    snapshot.forEach(doc => allOpenTrades.push({ id: doc.id, ...doc.data() }));
+                    renderTradeBoard();
+                });
+
             } else {
                 document.getElementById('logged-out-view').classList.remove('hidden');
                 document.getElementById('logged-in-view').classList.add('hidden');
                 document.getElementById('logged-in-view').classList.remove('flex');
                 document.getElementById('tab-admin').classList.add('hidden');
+                document.getElementById('tab-trade').classList.add('hidden');
                 
                 document.getElementById('gacha-locked').classList.remove('hidden');
                 document.getElementById('gacha-content').classList.add('hidden');
@@ -478,13 +591,15 @@
                 document.getElementById('album-locked').classList.remove('hidden');
                 document.getElementById('album-content').classList.add('hidden');
                 document.getElementById('album-content').classList.remove('flex');
+                
                 if(unsubUser) unsubUser();
+                if(unsubTrades) unsubTrades();
             }
         });
 
         // --- TABS ---
         window.switchTab = (tabName) => {
-            ['gacha', 'album', 'explore', 'admin'].forEach(t => {
+            ['gacha', 'album', 'explore', 'trade', 'admin'].forEach(t => {
                 const sec = document.getElementById(`section-${t}`);
                 const btn = document.getElementById(`tab-${t}`);
                 if(!btn) return;
@@ -493,37 +608,347 @@
                     sec.classList.remove('hidden'); 
                     sec.classList.add('flex');
                     
-                    // Ajuste seguro de classes (Para não quebrar a classe 'hidden' da aba Admin)
-                    btn.classList.remove('tab-inactive', 'text-yellow-600', 'text-red-600', 'border-transparent');
+                    btn.classList.remove('tab-inactive', 'text-yellow-600', 'text-green-500', 'text-red-600', 'border-transparent');
                     btn.classList.add('tab-active');
                     if(t === 'explore') btn.classList.add('text-yellow-400', 'border-yellow-400');
+                    if(t === 'trade') btn.classList.add('text-green-400', 'border-green-400');
                     if(t === 'admin') btn.classList.add('text-red-400', 'border-red-400');
 
                     if (tabName === 'explore') loadAllPlayers(); 
                     if (tabName === 'admin') {
                         if (window.loadGitHubImages) window.loadGitHubImages(); 
-                        if (window.updateAdminPreview) window.updateAdminPreview(); // Atualiza a carta preview ao abrir
+                        if (window.updateAdminPreview) window.updateAdminPreview(); 
                     }
                 } else {
                     sec.classList.add('hidden'); 
                     sec.classList.remove('flex');
                     
-                    btn.classList.remove('tab-active', 'text-yellow-400', 'border-yellow-400', 'text-red-400', 'border-red-400');
+                    btn.classList.remove('tab-active', 'text-yellow-400', 'border-yellow-400', 'text-green-400', 'border-green-400', 'text-red-400', 'border-red-400');
                     btn.classList.add('tab-inactive', 'border-transparent');
                     if(t === 'explore') btn.classList.add('text-yellow-600');
+                    if(t === 'trade') btn.classList.add('text-green-500');
                     if(t === 'admin') btn.classList.add('text-red-600');
                 }
             });
         };
 
+        // --- SISTEMA DE TROCAS (TRADE) ---
+        function updateTradeOptions() {
+            const offerSelect = document.getElementById('trade-offer');
+            if(!offerSelect) return;
+
+            // Preservar seleção atual se existir
+            const currentOffer = offerSelect.value;
+
+            offerSelect.innerHTML = '<option value="">Selecione uma carta repetida...</option>';
+
+            cardDatabase.forEach(card => {
+                if ((userData.inventory[card.id] || 0) > 1) {
+                    offerSelect.innerHTML += `<option value="${card.id}">${card.name} (Rank ${card.tier}) - Tenho ${userData.inventory[card.id]}</option>`;
+                }
+            });
+
+            offerSelect.value = currentOffer;
+            updateRequestOptions(); // Atualiza a segunda caixa baseado no que foi oferecido
+        }
+
+        window.updateRequestOptions = () => {
+            const offerId = document.getElementById('trade-offer').value;
+            const reqSelect = document.getElementById('trade-request');
+            const offerPreview = document.getElementById('trade-offer-preview');
+            
+            if (offerId) {
+                const offerCard = cardDatabase.find(c => c.id === offerId);
+                
+                // Mostrar a imagem da carta oferecida
+                offerPreview.src = GITHUB_RAW_URL + offerCard.img;
+                offerPreview.classList.remove('hidden');
+                
+                const currentReq = reqSelect.value;
+                reqSelect.innerHTML = '<option value="">Selecione a carta desejada...</option>';
+                reqSelect.disabled = false;
+                
+                const offerVal = TIER_VALUES[offerCard.tier];
+
+                // Popula a segunda lista APENAS com cartas de Rank Igual ou Inferior
+                cardDatabase.forEach(card => {
+                    if (card.id !== offerId && TIER_VALUES[card.tier] <= offerVal) {
+                        reqSelect.innerHTML += `<option value="${card.id}">${card.name} (Rank ${card.tier})</option>`;
+                    }
+                });
+                reqSelect.value = currentReq;
+            } else {
+                offerPreview.classList.add('hidden');
+                reqSelect.innerHTML = '<option value="">Primeiro selecione o que vai oferecer...</option>';
+                reqSelect.disabled = true;
+            }
+            
+            updateRequestPreview(); // Atualiza a imagem da carta pedida
+        };
+
+        window.updateRequestPreview = () => {
+            const reqId = document.getElementById('trade-request').value;
+            const reqPreview = document.getElementById('trade-request-preview');
+            
+            if (reqId) {
+                const reqCard = cardDatabase.find(c => c.id === reqId);
+                reqPreview.src = GITHUB_RAW_URL + reqCard.img;
+                reqPreview.classList.remove('hidden');
+            } else {
+                reqPreview.classList.add('hidden');
+            }
+            
+            updateTradeRatio();
+        };
+
+        window.updateTradeRatio = () => {
+            const offerId = document.getElementById('trade-offer').value;
+            const reqId = document.getElementById('trade-request').value;
+            const infoEl = document.getElementById('trade-ratio-info');
+
+            if(!offerId || !reqId || offerId === reqId) {
+                infoEl.innerText = "";
+                currentOfferQty = 1; currentReqQty = 1;
+                return;
+            }
+
+            const offerCard = cardDatabase.find(c => c.id === offerId);
+            const reqCard = cardDatabase.find(c => c.id === reqId);
+
+            const offerVal = TIER_VALUES[offerCard.tier];
+            const reqVal = TIER_VALUES[reqCard.tier];
+
+            // Como agora só mostramos Ranks menores ou iguais, a lógica fica direta:
+            if(offerVal === reqVal) {
+                currentOfferQty = 1; currentReqQty = 1;
+            } else {
+                currentOfferQty = 1;
+                currentReqQty = (offerVal - reqVal) + 1;
+            }
+
+            infoEl.innerText = `Taxa de Troca Justa:\nVocê dá ${currentOfferQty}x [${offerCard.tier}] ⇄ Você recebe ${currentReqQty}x [${reqCard.tier}]`;
+        };
+
+        window.submitTrade = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-create-trade');
+            const offerId = document.getElementById('trade-offer').value;
+            const reqId = document.getElementById('trade-request').value;
+
+            if(!offerId || !reqId) return showMessage("Selecione as duas cartas!");
+            if(offerId === reqId) return showMessage("Não pode pedir a mesma carta que está oferecendo.");
+            
+            if((userData.inventory[offerId] || 0) <= currentOfferQty) {
+                return showMessage(`Você precisa de ${currentOfferQty + 1} cópias desta carta para oferecer ${currentOfferQty} e ainda manter 1 na sua coleção.`);
+            }
+
+            const today = new Date().toDateString();
+            const tradesToday = userData.lastTradeDate === today ? (userData.tradesToday || 0) : 0;
+            if (tradesToday >= 3) return showMessage("Você já atingiu o limite de 3 trocas concluídas ou postadas hoje!");
+
+            btn.disabled = true;
+            btn.innerText = "Publicando...";
+
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const userRef = doc(db, "users", currentUser.uid);
+                    const userSnap = await transaction.get(userRef);
+                    let inv = userSnap.data().inventory || {};
+
+                    if((inv[offerId] || 0) <= currentOfferQty) throw "Cartas insuficientes no inventário.";
+
+                    // RETIRA AS CARTAS DO INVENTÁRIO (ESCROW)
+                    inv[offerId] -= currentOfferQty;
+                    transaction.update(userRef, { inventory: inv });
+
+                    const newTradeRef = doc(collection(db, "trades"));
+                    transaction.set(newTradeRef, {
+                        fromUserId: currentUser.uid,
+                        fromUserName: currentUser.displayName,
+                        offerCardId: offerId,
+                        offerQuantity: currentOfferQty,
+                        requestCardId: reqId,
+                        requestQuantity: currentReqQty,
+                        status: 'open',
+                        timestamp: serverTimestamp()
+                    });
+                });
+
+                showMessage("Oferta publicada no Mural! Suas cartas foram separadas para a troca.");
+                document.getElementById('trade-offer').value = "";
+                document.getElementById('trade-request').value = "";
+                updateRequestOptions();
+            } catch (err) {
+                showMessage("Erro ao publicar: " + err);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Publicar Oferta no Mural";
+            }
+        };
+
+        window.cancelTrade = (tradeId) => {
+            showMessage("Deseja cancelar esta oferta e recuperar suas cartas?", true, async () => {
+                try {
+                    await runTransaction(db, async (transaction) => {
+                        const tradeRef = doc(db, "trades", tradeId);
+                        const tradeSnap = await transaction.get(tradeRef);
+                        if (!tradeSnap.exists() || tradeSnap.data().status !== 'open') throw "Esta oferta não está mais disponível para cancelamento.";
+                        
+                        const tradeData = tradeSnap.data();
+                        if (tradeData.fromUserId !== currentUser.uid) throw "Você não é o dono desta oferta.";
+
+                        const userRef = doc(db, "users", currentUser.uid);
+                        const userSnap = await transaction.get(userRef);
+                        let inv = userSnap.data().inventory || {};
+
+                        // DEVOLVE AS CARTAS AO INVENTÁRIO
+                        inv[tradeData.offerCardId] = (inv[tradeData.offerCardId] || 0) + (tradeData.offerQuantity || 1);
+
+                        transaction.update(userRef, { inventory: inv });
+                        transaction.update(tradeRef, { status: 'cancelled' });
+                    });
+                    showMessage("Oferta cancelada e cartas devolvidas ao seu álbum!");
+                } catch (e) {
+                    showMessage("Erro ao cancelar: " + e);
+                }
+            });
+        };
+
+        window.acceptTrade = (tradeId, tradeFromUserId, offerId, reqId) => {
+            showMessage("Tem certeza que deseja aceitar esta troca? Sua carta será enviada imediatamente.", true, async () => {
+                try {
+                    await runTransaction(db, async (transaction) => {
+                        const tradeRef = doc(db, "trades", tradeId);
+                        const userARef = doc(db, "users", tradeFromUserId); // Quem criou a oferta
+                        const userBRef = doc(db, "users", currentUser.uid); // Eu, aceitando
+
+                        const tradeSnap = await transaction.get(tradeRef);
+                        if (!tradeSnap.exists() || tradeSnap.data().status !== 'open') throw "Esta troca não está mais disponível.";
+
+                        const userASnap = await transaction.get(userARef);
+                        const userBSnap = await transaction.get(userBRef);
+
+                        let invA = userASnap.data().inventory || {};
+                        let invB = userBSnap.data().inventory || {};
+
+                        const offQty = tradeSnap.data().offerQuantity || 1;
+                        const reqQty = tradeSnap.data().requestQuantity || 1;
+
+                        // NOTA: As cartas do usuário A já foram debitadas do inventário dele quando ele criou a oferta!
+                        if((invB[reqId] || 0) < reqQty) throw "Você não possui a quantidade necessária da carta pedida.";
+
+                        const today = new Date().toDateString();
+                        let tradesA = userASnap.data().lastTradeDate === today ? (userASnap.data().tradesToday || 0) : 0;
+                        let tradesB = userBSnap.data().lastTradeDate === today ? (userBSnap.data().tradesToday || 0) : 0;
+
+                        if (tradesA >= 3) throw "O criador da oferta já atingiu o limite diário de trocas e não pode receber.";
+                        if (tradesB >= 3) throw "Você já atingiu seu limite de 3 trocas hoje.";
+
+                        // Executar Troca (B ganha a oferta. A ganha o que pediu. O que B dá é removido).
+                        invA[reqId] = (invA[reqId] || 0) + reqQty;
+
+                        invB[reqId] -= reqQty;
+                        invB[offerId] = (invB[offerId] || 0) + offQty;
+
+                        transaction.update(userARef, { inventory: invA, tradesToday: tradesA + 1, lastTradeDate: today });
+                        transaction.update(userBRef, { inventory: invB, tradesToday: tradesB + 1, lastTradeDate: today });
+                        transaction.update(tradeRef, { status: 'completed', acceptedBy: currentUser.uid });
+                    });
+                    showMessage("Troca realizada com sucesso! Verifique seu álbum.");
+                } catch (e) {
+                    showMessage("Falha na troca: " + e);
+                }
+            });
+        };
+
+        function renderTradeBoard() {
+            const myTradesList = document.getElementById('my-trades-list');
+            const globalGrid = document.getElementById('global-trades-grid');
+            
+            myTradesList.innerHTML = '';
+            globalGrid.innerHTML = '';
+
+            let myTradesCount = 0;
+            let globalTradesCount = 0;
+
+            allOpenTrades.sort((a,b) => b.timestamp - a.timestamp).forEach(trade => {
+                const offerCard = cardDatabase.find(c => c.id === trade.offerCardId);
+                const reqCard = cardDatabase.find(c => c.id === trade.requestCardId);
+                if(!offerCard || !reqCard) return;
+
+                const isMyTrade = trade.fromUserId === currentUser.uid;
+
+                if (isMyTrade) {
+                    // Minha oferta na barra lateral
+                    myTradesCount++;
+                    myTradesList.innerHTML += `
+                        <div class="bg-gray-900 p-3 rounded border border-gray-600 flex justify-between items-center text-sm">
+                            <div class="flex items-center gap-2">
+                                <span class="text-red-400 font-bold">- ${trade.offerQuantity || 1}x ${offerCard.name}</span>
+                                <span class="text-gray-500">por</span>
+                                <span class="text-green-400 font-bold">+ ${trade.requestQuantity || 1}x ${reqCard.name}</span>
+                            </div>
+                            <button onclick="cancelTrade('${trade.id}')" class="text-gray-400 hover:text-red-500 transition" title="Cancelar Oferta">✖</button>
+                        </div>
+                    `;
+                } 
+                
+                // Sempre renderiza no Mural Global
+                globalTradesCount++;
+                const iHaveReqCard = (userData.inventory[reqCard.id] || 0) >= (trade.requestQuantity || 1);
+                
+                let actionBtnHTML = '';
+                if (isMyTrade) {
+                    actionBtnHTML = `<button onclick="cancelTrade('${trade.id}')" class="w-full py-2 font-bold text-sm transition bg-red-600 hover:bg-red-500 text-white">Cancelar Minha Oferta</button>`;
+                } else {
+                    actionBtnHTML = `<button onclick="acceptTrade('${trade.id}', '${trade.fromUserId}', '${offerCard.id}', '${reqCard.id}')" 
+                        ${!iHaveReqCard ? 'disabled' : ''} 
+                        class="w-full py-2 font-bold text-sm transition ${iHaveReqCard ? 'bg-green-600 hover:bg-green-500 text-white' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}"
+                    >
+                        ${iHaveReqCard ? 'Aceitar Troca' : 'Você não possui a carta pedida'}
+                    </button>`;
+                }
+
+                globalGrid.innerHTML += `
+                    <div class="bg-gray-900 rounded-xl border ${isMyTrade ? 'border-blue-500' : 'border-gray-600'} overflow-hidden flex flex-col">
+                        <div class="bg-gray-800 px-3 py-2 border-b border-gray-700 flex items-center gap-2">
+                            <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed=${trade.fromUserName}" class="w-6 h-6 rounded-full bg-gray-700 border border-gray-500">
+                            <span class="font-bold text-sm ${isMyTrade ? 'text-blue-400' : 'text-gray-200'}">${trade.fromUserName} ${isMyTrade ? '(Você)' : ''} <span class="font-normal text-gray-400">oferece:</span></span>
+                        </div>
+                        <div class="p-3 flex justify-between items-center gap-2 flex-grow">
+                            <div class="w-16 h-20 bg-gray-800 rounded border border-gray-600 flex flex-col justify-center items-center relative overflow-hidden" title="${offerCard.name}">
+                                <span class="absolute top-0 left-0 bg-gray-900 text-white text-[8px] px-1 font-bold">R.${offerCard.tier}</span>
+                                <span class="absolute bottom-0 right-0 bg-red-600 text-white text-[10px] px-1 font-bold rounded-tl">${trade.offerQuantity || 1}x</span>
+                                <img src="${GITHUB_RAW_URL + offerCard.img}" class="w-full h-full object-cover">
+                            </div>
+                            <span class="text-gray-500 text-[10px] font-bold text-center leading-tight">TROCA<br>POR</span>
+                            <div class="w-16 h-20 bg-gray-800 rounded border border-gray-600 border-dashed flex flex-col justify-center items-center relative overflow-hidden" title="${reqCard.name}">
+                                 <span class="absolute top-0 left-0 bg-gray-900 text-white text-[8px] px-1 font-bold">R.${reqCard.tier}</span>
+                                 <span class="absolute bottom-0 right-0 bg-green-600 text-white text-[10px] px-1 font-bold rounded-tl">${trade.requestQuantity || 1}x</span>
+                                 <img src="${GITHUB_RAW_URL + reqCard.img}" class="w-full h-full object-cover opacity-50 grayscale">
+                            </div>
+                        </div>
+                        ${actionBtnHTML}
+                    </div>
+                `;
+            });
+
+            if(myTradesCount === 0) myTradesList.innerHTML = '<p class="text-sm text-gray-500">Nenhuma oferta ativa no momento.</p>';
+            if(globalTradesCount === 0) globalGrid.innerHTML = '<div class="p-8 text-center text-gray-400 w-full col-span-full">Nenhuma oferta no Mural.</div>';
+        }
+
         // --- ADMIN: LER IMAGENS DO GITHUB ---
+        let isFetchingImages = false; 
+        
         window.loadGitHubImages = async () => {
+            if(isFetchingImages) return; 
+            isFetchingImages = true;
+
             const loading = document.getElementById('github-images-loading');
             const grid = document.getElementById('github-images-grid');
             const emptyMsg = document.getElementById('github-images-empty');
 
             loading.classList.remove('hidden');
-            grid.innerHTML = '';
             emptyMsg.classList.add('hidden');
             selectedAdminImage = "";
 
@@ -532,16 +957,14 @@
                 if (!response.ok) throw new Error("Erro ao buscar no GitHub API");
                 const files = await response.json();
 
-                // Pega as imagens que já viraram cartas
-                const usedImages = cardDatabase.map(c => c.img);
-
-                // Filtra as que estão sobrando e que são imagens
+                const usedImages = cardDatabase.filter(c => c.id !== editingCardId).map(c => c.img);
                 const availableImages = files.filter(f =>
                     f.type === 'file' &&
                     f.name.match(/\.(png|jpg|jpeg|gif)$/i) &&
                     !usedImages.includes(f.name)
                 );
 
+                grid.innerHTML = ''; 
                 loading.classList.add('hidden');
 
                 if (availableImages.length === 0) {
@@ -549,11 +972,16 @@
                     return;
                 }
 
-                // Cria o mosaico para escolher
                 availableImages.forEach(file => {
                     const imgDiv = document.createElement('div');
                     imgDiv.className = "cursor-pointer rounded border-2 border-transparent hover:border-blue-400 transition overflow-hidden h-24 bg-gray-800 relative group";
                     imgDiv.onclick = () => selectAdminImage(file.name, imgDiv);
+                    
+                    if (selectedAdminImage === file.name) {
+                        imgDiv.classList.remove('border-transparent');
+                        imgDiv.classList.add('border-green-500', 'ring-2', 'ring-green-400');
+                    }
+
                     imgDiv.innerHTML = `
                         <img src="${file.download_url}" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
                         <div class="absolute bottom-0 left-0 right-0 bg-black/80 text-[10px] text-center truncate px-1 py-0.5 text-white font-semibold">${file.name}</div>
@@ -565,6 +993,8 @@
                 console.error("GitHub Fetch Error:", err);
                 loading.innerText = "Erro ao carregar imagens. Tem certeza que a pasta 'assets/cards' existe no repositório?";
                 loading.classList.replace('text-yellow-400', 'text-red-400');
+            } finally {
+                isFetchingImages = false; 
             }
         };
 
@@ -580,7 +1010,38 @@
             element.classList.remove('border-transparent');
             element.classList.add('border-green-500', 'ring-2', 'ring-green-400');
 
-            updateAdminPreview(); // Atualiza a pré-visualização ao clicar na imagem
+            updateAdminPreview(); 
+        };
+
+        // --- ADMIN: EDITAR CARTA (PREENCHER FORMULÁRIO) ---
+        window.editCard = (id) => {
+            const card = cardDatabase.find(c => c.id === id);
+            if (!card) return;
+            
+            editingCardId = id;
+            document.getElementById('admin-name').value = card.name;
+            document.getElementById('admin-tier').value = card.tier;
+            document.getElementById('admin-desc').value = card.desc;
+            
+            selectedAdminImage = card.img; 
+            
+            document.getElementById('admin-submit').innerText = "SALVAR ALTERAÇÕES";
+            document.getElementById('admin-cancel-btn').classList.remove('hidden');
+            
+            updateAdminPreview();
+            window.loadGitHubImages(); 
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.cancelEdit = () => {
+            editingCardId = null;
+            document.getElementById('admin-form').reset();
+            selectedAdminImage = "";
+            document.getElementById('admin-submit').innerText = "CRIAR CARTA E ADICIONAR AO JOGO";
+            document.getElementById('admin-cancel-btn').classList.add('hidden');
+            updateAdminPreview();
+            window.loadGitHubImages();
         };
 
         // --- ADMIN: PRÉ-VISUALIZAÇÃO DA CARTA ---
@@ -592,8 +1053,6 @@
                 desc: document.getElementById('admin-desc').value || 'Descrição da carta irá aparecer aqui...',
                 img: selectedAdminImage || ''
             };
-            
-            // Usamos isAlbum = true para renderizar a carta plana (sem o 3D flip wrapper do Gacha)
             renderCardHTML('admin-preview-container', tempCard, false, true, {});
         };
 
@@ -615,23 +1074,31 @@
             btn.innerText = "Criando...";
 
             try {
-                const newCard = {
+                const cardData = {
                     name: document.getElementById('admin-name').value,
                     tier: document.getElementById('admin-tier').value,
                     desc: document.getElementById('admin-desc').value,
                     img: selectedAdminImage,
-                    createdAt: serverTimestamp()
                 };
 
-                await addDoc(collection(db, "cards"), newCard);
+                if (editingCardId) {
+                    await updateDoc(doc(db, "cards", editingCardId), cardData);
+                    msg.innerText = "Carta atualizada com sucesso!";
+                    editingCardId = null;
+                    document.getElementById('admin-submit').innerText = "CRIAR CARTA E ADICIONAR AO JOGO";
+                    document.getElementById('admin-cancel-btn').classList.add('hidden');
+                } else {
+                    cardData.createdAt = serverTimestamp();
+                    await addDoc(collection(db, "cards"), cardData);
+                    msg.innerText = "Carta criada com sucesso! Já está no jogo.";
+                }
                 
-                msg.innerText = "Carta criada com sucesso! Já está no jogo.";
                 msg.className = "text-center font-bold text-sm mt-2 text-green-400";
                 msg.classList.remove('hidden');
                 document.getElementById('admin-form').reset();
-                selectedAdminImage = ""; // Limpa seleção
-                window.updateAdminPreview(); // Reseta o preview visualmente
-                window.loadGitHubImages(); // Atualiza a galeria removendo a imagem que já foi usada
+                selectedAdminImage = ""; 
+                window.updateAdminPreview(); 
+                window.loadGitHubImages(); 
             } catch (err) {
                 console.error(err);
                 msg.innerText = "Erro ao criar: " + err.message;
@@ -743,13 +1210,12 @@
         let isOpeningPack = false;
 
         function getRandomCard() {
-            if(cardDatabase.length === 0) return null; // Prevenção se não houver cartas
+            if(cardDatabase.length === 0) return null; 
             const roll = Math.floor(Math.random() * 1000) + 1;
             let targetTier = 'D';
             if (roll <= 500) targetTier = 'D'; else if (roll <= 800) targetTier = 'C'; else if (roll <= 930) targetTier = 'B';
             else if (roll <= 980) targetTier = 'A'; else if (roll <= 998) targetTier = 'S'; else targetTier = 'SS';
             
-            // Se tentar dropar um Tier que não existe nenhuma carta criada ainda, pega qualquer uma aleatória
             let possibleCards = cardDatabase.filter(c => c.tier === targetTier);
             if(possibleCards.length === 0) possibleCards = cardDatabase; 
             
@@ -849,7 +1315,6 @@
             if (isAlbum) container.className = `w-full h-full p-2 sm:p-3 flex flex-col justify-between rounded-xl border-4 border-solid bg-[#ebdcb2] text-gray-900 rank-${cardData.tier}`;
             else container.className = `card-front p-1 sm:p-2 flex flex-col justify-between rank-${cardData.tier}`;
 
-            // Junta a URL do Raw do GitHub com o nome do arquivo da imagem da carta
             const fullImageUrl = GITHUB_RAW_URL + cardData.img;
 
             container.innerHTML = `
@@ -871,6 +1336,7 @@
 
         function renderAlbumHTML(gridId, sourceInventory) {
             const grid = document.getElementById(gridId);
+            if(!grid) return;
             grid.innerHTML = '';
             let uniqueCards = 0;
 
