@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nin CardMeme Collection BR</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Biblioteca de Confetes para o Gacha -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <style>
         body { background-color: #1a202c; color: #e2e8f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
@@ -72,15 +74,26 @@
         .tab-active { border-bottom: 2px solid #63b3ed; color: #63b3ed; }
         .tab-inactive { color: #a0aec0; }
 
-        /* Pacotinho (Booster Pack) */
+        /* Pacotinho (Booster Pack) e Efeitos Especiais de Brilho/Tremor */
         .pack { width: 220px; height: 320px; position: relative; cursor: pointer; transition: transform 0.2s; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5)); }
         .pack:hover { transform: scale(1.05) rotate(2deg); }
         .pack-top, .pack-bottom { position: absolute; width: 100%; background: linear-gradient(135deg, #2b6cb0, #2c5282); border: 4px solid #1a365d; }
         .pack-top { height: 20%; top: 0; border-radius: 12px 12px 0 0; border-bottom: 3px dashed #90cdf4; z-index: 30; transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
         .pack-bottom { height: 80%; bottom: 0; border-radius: 0 0 12px 12px; border-top: none; z-index: 30; display: flex; align-items: center; justify-content: center; transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
         .pack-cards-bg { position: absolute; top: 20px; left: 10px; right: 10px; bottom: 20px; background: #cbd5e0; border-radius: 8px; z-index: 20; }
+        
         @keyframes pack-shake { 0%, 100% { transform: translateX(0) rotate(0deg); } 25% { transform: translateX(-5px) rotate(-2deg); } 50% { transform: translateX(5px) rotate(2deg); } 75% { transform: translateX(-5px) rotate(-2deg); } }
-        .pack.shaking { animation: pack-shake 0.4s ease-in-out; }
+        @keyframes pack-shake-violent { 0%, 100% { transform: translateX(0) rotate(0deg); } 25% { transform: translateX(-12px) translateY(5px) rotate(-5deg); filter: brightness(1.3); } 50% { transform: translateX(12px) translateY(-5px) rotate(5deg); filter: brightness(1.5); } 75% { transform: translateX(-12px) translateY(5px) rotate(-5deg); filter: brightness(1.3); } }
+        @keyframes pack-pulse-SS { 0%, 100% { filter: drop-shadow(0 0 30px #f56565); } 50% { filter: drop-shadow(0 0 80px #f56565) brightness(1.2); } }
+        @keyframes pack-pulse-S { 0%, 100% { filter: drop-shadow(0 0 20px #ecc94b); } 50% { filter: drop-shadow(0 0 50px #ecc94b) brightness(1.1); } }
+        @keyframes pack-pulse-A { 0%, 100% { filter: drop-shadow(0 0 15px #9f7aea); } 50% { filter: drop-shadow(0 0 35px #9f7aea); } }
+
+        .pack.shaking { animation: pack-shake 0.3s infinite; }
+        .pack.shaking-violent { animation: pack-shake-violent 0.15s infinite; }
+        .pack.glowing-SS { animation: pack-shake-violent 0.1s infinite, pack-pulse-SS 0.5s infinite; }
+        .pack.glowing-S { animation: pack-shake-violent 0.15s infinite, pack-pulse-S 0.6s infinite; }
+        .pack.glowing-A { animation: pack-shake 0.2s infinite, pack-pulse-A 0.8s infinite; }
+
         .pack.tearing .pack-top { transform: translateY(-100px) rotate(-10deg); opacity: 0; }
         .pack.tearing .pack-bottom { transform: translateY(50px); opacity: 0; }
         .pack.tearing .pack-cards-bg { opacity: 0; transition: opacity 0.3s delay 0.3s; }
@@ -166,7 +179,7 @@
         </div>
     </div>
 
-    <!-- Modal de Aceitar Troca (Seleção de Cartas) -->
+    <!-- Modal de Aceitar Troca -->
     <div id="trade-accept-modal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[90] hidden backdrop-blur-sm p-4">
         <div class="bg-gray-800 p-6 rounded-xl shadow-2xl max-w-lg w-full border border-gray-700 flex flex-col max-h-[90vh]">
             <h2 class="text-xl font-bold text-green-400 mb-2">Escolha as cartas para enviar</h2>
@@ -547,6 +560,71 @@
             window.currentAlbumSort = document.getElementById('album-sort').value;
             if(window.refreshAlbum) window.refreshAlbum();
         };
+
+        // --- SISTEMA DE AUDIO (WEB AUDIO API) ---
+        // Cria sons dinâmicos sem precisar de links externos que podem quebrar
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
+        window.playGachaSound = (tier) => {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+            
+            if(tier === 'SS') {
+                // Acorde épico ascendente com 2 osciladores
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.5);
+                gainNode.gain.setValueAtTime(0, now);
+                gainNode.gain.linearRampToValueAtTime(0.3, now + 0.1);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 1.5);
+                osc.start(now); osc.stop(now + 1.5);
+
+                const osc2 = audioCtx.createOscillator();
+                osc2.type = 'square';
+                osc2.frequency.setValueAtTime(450, now);
+                osc2.frequency.exponentialRampToValueAtTime(1200, now + 0.5);
+                osc2.connect(gainNode);
+                osc2.start(now); osc2.stop(now + 1.5);
+            } else if(tier === 'S') {
+                // Brilho agudo
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.3);
+                gainNode.gain.setValueAtTime(0, now);
+                gainNode.gain.linearRampToValueAtTime(0.3, now + 0.1);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 1);
+                osc.start(now); osc.stop(now + 1);
+            } else if(tier === 'A' || tier === 'B') {
+                // Toque feliz
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(400, now);
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                osc.start(now); osc.stop(now + 0.5);
+            } else {
+                // Toque comum
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(200, now);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            }
+        };
+
+        window.fireConfetti = (tier) => {
+            if(typeof confetti !== 'function') return;
+            if(tier === 'SS') {
+                confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 }, colors: ['#f56565', '#000000', '#ffffff'], zIndex: 1000 });
+            } else if(tier === 'S') {
+                confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 }, colors: ['#ecc94b', '#ffffff'], zIndex: 1000 });
+            }
+        };
     </script>
 
     <!-- FIREBASE E LÓGICA DO APP (MÓDULO) -->
@@ -905,7 +983,7 @@
 
                     if((inv[offerId] || 0) <= currentOfferQty) throw "Cartas insuficientes no inventário.";
 
-                    inv[offerId] -= currentOfferQty; // Trava a carta (Escrow)
+                    inv[offerId] -= currentOfferQty; 
                     transaction.update(userRef, { inventory: inv });
 
                     const newTradeRef = doc(collection(db, "trades"));
@@ -1137,7 +1215,6 @@
                     let tradesA = userASnap.data().lastTradeDate === today ? (userASnap.data().tradesToday || 0) : 0;
                     let tradesB = userBSnap.data().lastTradeDate === today ? (userBSnap.data().tradesToday || 0) : 0;
                     
-                    // Valida de novo por segurança
                     if (tradesA >= 1) throw "O criador da oferta já atingiu o limite de trocas de hoje.";
                     if (tradesB >= 1) throw "Você atingiu seu limite diário de trocas.";
 
@@ -1164,7 +1241,7 @@
             }
         };
 
-        // --- LÓGICA DO GACHA SEGURO (GERA APENAS AO CLICAR) ---
+        // --- LÓGICA DO GACHA COM SUSPENSE PRÉVIO ---
         let currentPackCards = [];
         let selectedCardsIndices = [];
         let isOpeningPack = false;
@@ -1191,46 +1268,74 @@
             if (userData.pullsAvailable === 3) updateData.lastPullTimestamp = Date.now();
             await updateDoc(userRef, updateData);
 
-            // Preenche o array só com placeholders para impedir hacks visuais
-            currentPackCards = new Array(8).fill(null);
+            // Gera as cartas previamente na memória
+            currentPackCards = [];
+            let highestTierVal = 0;
+            let highestTierStr = 'D';
+            
+            for(let i=0; i<8; i++) {
+                const card = getRandomCard();
+                currentPackCards.push(card);
+                if (TIER_VALUES[card.tier] > highestTierVal) {
+                    highestTierVal = TIER_VALUES[card.tier];
+                    highestTierStr = card.tier;
+                }
+            }
             selectedCardsIndices = [];
 
             const pack = document.getElementById('booster-pack');
+            
+            // Inicia Efeitos de Som e Brilho baseados na melhor carta!
             if (pack) {
-                pack.classList.add('shaking');
-                setTimeout(() => { pack.classList.remove('shaking'); pack.classList.add('tearing'); }, 400);
+                if(highestTierVal >= 5) {
+                    pack.classList.add(`glowing-${highestTierStr}`, 'shaking-violent');
+                } else {
+                    pack.classList.add('shaking');
+                }
+                // Toca som pelo Sintetizador do Navegador!
+                window.playGachaSound(highestTierStr);
             }
+
+            // Suspense maior para cartas muito raras
+            const suspenseTime = highestTierVal >= 5 ? 1200 : 400;
 
             setTimeout(() => {
                 if (pack) {
-                    pack.classList.add('hidden'); pack.classList.remove('tearing');
+                    pack.classList.remove('shaking', 'shaking-violent', 'glowing-SS', 'glowing-S', 'glowing-A');
+                    pack.classList.add('tearing');
+                    // Efeito Visual Adicional se for Rara
+                    window.fireConfetti(highestTierStr);
                 }
-                const revealedContainer = document.getElementById('revealed-cards');
-                if(revealedContainer) {
-                    revealedContainer.innerHTML = '';
-                    revealedContainer.classList.remove('hidden');
 
-                    // Renderiza 8 cartas vazias (viradas para trás)
-                    for(let index=0; index<8; index++) {
-                        revealedContainer.innerHTML += `
-                            <div class="card-container w-24 h-36 sm:w-32 sm:h-48 md:w-40 md:h-60 cursor-pointer transform transition hover:scale-105" id="gacha-card-${index}" onclick="window.revealSingleCard(${index})">
-                                <div class="card-inner shadow-2xl rounded-xl" id="gacha-card-inner-${index}">
-                                    <div class="card-back text-3xl sm:text-4xl hover:shadow-blue-500/50 transition duration-300">❓</div>
-                                    <div class="card-front p-1 sm:p-2 flex flex-col" id="gacha-card-front-${index}"></div>
-                                </div>
-                            </div>`;
+                setTimeout(() => {
+                    if (pack) {
+                        pack.classList.add('hidden'); pack.classList.remove('tearing');
                     }
-                }
-            }, 1200);
+                    const revealedContainer = document.getElementById('revealed-cards');
+                    if(revealedContainer) {
+                        revealedContainer.innerHTML = '';
+                        revealedContainer.classList.remove('hidden');
+
+                        // Renderiza as 8 cartas de cabeça para baixo
+                        for(let index=0; index<8; index++) {
+                            revealedContainer.innerHTML += `
+                                <div class="card-container w-24 h-36 sm:w-32 sm:h-48 md:w-40 md:h-60 cursor-pointer transform transition hover:scale-105" id="gacha-card-${index}" onclick="window.revealSingleCard(${index})">
+                                    <div class="card-inner shadow-2xl rounded-xl" id="gacha-card-inner-${index}">
+                                        <div class="card-back text-3xl sm:text-4xl hover:shadow-blue-500/50 transition duration-300">❓</div>
+                                        <div class="card-front p-1 sm:p-2 flex flex-col" id="gacha-card-front-${index}"></div>
+                                    </div>
+                                </div>`;
+                        }
+                    }
+                }, 400); // Tempo do envelope sendo rasgado
+            }, suspenseTime);
         };
 
         window.revealSingleCard = async (index) => {
             const innerContainer = document.getElementById(`gacha-card-inner-${index}`);
             if (!innerContainer || selectedCardsIndices.length >= 2 || innerContainer.classList.contains('flipped')) return;
 
-            // GERA A CARTA APENAS AGORA!
-            const cardData = getRandomCard();
-            currentPackCards[index] = cardData;
+            const cardData = currentPackCards[index];
             selectedCardsIndices.push(index);
 
             const newInventory = { ...userData.inventory };
@@ -1243,27 +1348,15 @@
             const cardContainer = document.getElementById(`gacha-card-${index}`);
             if (cardContainer) cardContainer.classList.remove('hover:scale-105');
             
-            // EFEITOS DE BRILHO E DESTAQUE POR RARIDADE
-            const ringColors = {
-                'D': 'ring-gray-400',
-                'C': 'ring-green-400',
-                'B': 'ring-blue-400',
-                'A': 'ring-purple-400',
-                'S': 'ring-yellow-400',
-                'SS': 'ring-red-500'
-            };
-            
-            if (cardContainer) {
-                cardContainer.classList.add(`reveal-${cardData.tier}`, 'ring-4', ringColors[cardData.tier]);
-            }
+            // EFEITOS DE BRILHO AO VIRAR A CARTA
+            const ringColors = { 'D': 'ring-gray-400', 'C': 'ring-green-400', 'B': 'ring-blue-400', 'A': 'ring-purple-400', 'S': 'ring-yellow-400', 'SS': 'ring-red-500' };
+            if (cardContainer) cardContainer.classList.add(`reveal-${cardData.tier}`, 'ring-4', ringColors[cardData.tier]);
             
             if (selectedCardsIndices.length === 2) {
                 setTimeout(() => {
                     for(let idx=0; idx<8; idx++) {
                         if (!selectedCardsIndices.includes(idx)) {
-                            // Gera e revela automaticamente as 6 que sobraram (Sem ir pro inventário)
-                            const fakeCard = getRandomCard();
-                            currentPackCards[idx] = fakeCard;
+                            const fakeCard = currentPackCards[idx];
                             const innerCard = document.getElementById(`gacha-card-inner-${idx}`);
                             window.renderCardHTML(`gacha-card-front-${idx}`, fakeCard, false, false, userData.inventory);
                             if (innerCard) innerCard.classList.add('flipped');
@@ -1279,13 +1372,10 @@
                     const btnNext = document.getElementById('btn-next');
                     if (btnNext) {
                         btnNext.classList.remove('hidden');
-                        if (userData.pullsAvailable <= 0) {
-                            btnNext.innerText = "VER TEMPO DE RECARGA";
-                        } else {
-                            btnNext.innerText = "ABRIR PRÓXIMO PACOTE";
-                        }
+                        if (userData.pullsAvailable <= 0) btnNext.innerText = "VER TEMPO DE RECARGA";
+                        else btnNext.innerText = "ABRIR PRÓXIMO PACOTE";
                     }
-                }, 1000); // 1 segundo pra admirar a carta que tirou antes das ruins aparecerem
+                }, 1000); 
             }
         };
 
@@ -1294,12 +1384,12 @@
             const btnNext = document.getElementById('btn-next');
             if (revealedCards) revealedCards.classList.add('hidden');
             if (btnNext) btnNext.classList.add('hidden');
-            window.updateGachaUI(); // Centraliza a lógica de o que mostrar aqui
+            window.updateGachaUI(); 
         };
 
         window.updateGachaUI = () => {
             const pullsCountEl = document.getElementById('pulls-count');
-            if (pullsCountEl) pullsCountEl.innerText = userData.pullsAvailable;
+            if (pullsCountEl) pullsCountEl.innerText = userData.pullsAvailable || 0;
             
             const containerVazio = document.getElementById('out-of-pulls-container');
             const boosterPack = document.getElementById('booster-pack');
