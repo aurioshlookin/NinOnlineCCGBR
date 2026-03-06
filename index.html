@@ -12,8 +12,7 @@
     <style>
         body { background-color: #111827; color: #e5e7eb; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
-        /* Cores dos Ranks */
-        .rank-D { border-color: #9ca3af; box-shadow: 0 0 10px rgba(156, 163, 175, 0.3); }
+        /* Cores dos Ranks e Efeitos Base */
         .rank-C { border-color: #4ade80; box-shadow: 0 0 15px rgba(74, 222, 128, 0.4); }
         .rank-B { border-color: #60a5fa; box-shadow: 0 0 20px rgba(96, 165, 250, 0.5); }
         .rank-A { border-color: #c084fc; box-shadow: 0 0 25px rgba(192, 132, 252, 0.6); }
@@ -24,12 +23,19 @@
         }
         @keyframes pulse-red { 0% { box-shadow: 0 0 40px rgba(239, 68, 68, 0.8); } 50% { box-shadow: 0 0 60px rgba(239, 68, 68, 1); } 100% { box-shadow: 0 0 40px rgba(239, 68, 68, 0.8); } }
 
-        /* Efeitos de Revelação Escalonados por Raridade */
-        @keyframes reveal-D {
-            0% { transform: scale(1); filter: brightness(1); }
-            50% { transform: scale(1.02) translateY(-2px); filter: brightness(1.1); box-shadow: 0 0 10px #9ca3af; }
-            100% { transform: scale(1); box-shadow: 0 0 5px #9ca3af; }
+        /* Animação Holográfica para Cartas S e SS */
+        @keyframes foil-shine {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
+        .foil-anim {
+            background: linear-gradient(125deg, rgba(255,0,0,0.3), rgba(255,255,0,0.3), rgba(0,255,0,0.3), rgba(0,255,255,0.3), rgba(0,0,255,0.3), rgba(255,0,255,0.3));
+            background-size: 300% 300%;
+            animation: foil-shine 4s ease-in-out infinite;
+        }
+
+        /* Efeitos de Revelação Escalonados por Raridade */
         @keyframes reveal-C {
             0% { transform: scale(1); filter: brightness(1); }
             50% { transform: scale(1.05) translateY(-4px); filter: brightness(1.15); box-shadow: 0 0 15px #4ade80; }
@@ -58,7 +64,6 @@
             100% { transform: scale(1.12) rotateZ(0deg); box-shadow: 0 0 50px rgba(239, 68, 68, 1); }
         }
 
-        .reveal-D { animation: reveal-D 0.6s ease-out forwards !important; z-index: 10; border-color: #9ca3af !important; }
         .reveal-C { animation: reveal-C 0.7s ease-out forwards !important; z-index: 20; border-color: #4ade80 !important; }
         .reveal-B { animation: reveal-B 0.8s ease-out forwards !important; z-index: 30; border-color: #60a5fa !important; }
         .reveal-A { animation: reveal-A 0.9s ease-out forwards !important; z-index: 40; border-color: #c084fc !important; }
@@ -71,7 +76,7 @@
         .card-inner.flipped { transform: rotateY(180deg); }
         .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 0.75rem; }
         .card-back { background: linear-gradient(135deg, #1f2937, #111827); border: 4px solid #374151; display: flex; align-items: center; justify-content: center; }
-        .card-front { transform: rotateY(180deg); background-color: #ebdcb2; color: #1a202c; border-width: 4px; border-style: solid; }
+        .card-front { transform: rotateY(180deg); border-width: 4px; border-style: solid; overflow: hidden; }
         
         .tab-active { border-bottom: 2px solid #22c55e; color: #22c55e; }
         .tab-inactive { color: #9ca3af; }
@@ -122,7 +127,6 @@
                     <div class="text-sm bg-gray-800 px-3 py-1 rounded-full border border-green-500/50 shadow-inner">
                         Pulls: <span id="pulls-count" class="font-bold text-green-400">-</span>/3
                     </div>
-                    <!-- Temporizador de 8 Horas -->
                     <div id="pull-timer-container" class="text-[10px] text-gray-400 mt-1 hidden">
                         +1 em: <span id="pull-timer" class="text-green-400 font-bold">--:--:--</span>
                     </div>
@@ -314,7 +318,6 @@
                         <tr class="bg-gray-900 text-gray-400 text-sm border-b border-gray-700">
                             <th class="p-4 font-semibold">Ninja</th>
                             <th class="p-4 font-semibold text-center">Únicas</th>
-                            <th class="p-4 font-semibold text-center text-gray-400">D</th>
                             <th class="p-4 font-semibold text-center text-green-400">C</th>
                             <th class="p-4 font-semibold text-center text-blue-400">B</th>
                             <th class="p-4 font-semibold text-center text-purple-400">A</th>
@@ -421,16 +424,24 @@
                             <label class="block text-sm font-medium text-gray-300 mb-1">Nome da Carta</label>
                             <input type="text" id="admin-name" oninput="window.updateAdminPreview()" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:border-green-500 focus:outline-none" required placeholder="Ex: Masiel Bolado">
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-1">Raridade (Tier)</label>
-                            <select id="admin-tier" onchange="window.updateAdminPreview()" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:border-green-500 focus:outline-none">
-                                <option value="D">D - Comum (50%)</option>
-                                <option value="C">C - Incomum (30%)</option>
-                                <option value="B">B - Raro (13%)</option>
-                                <option value="A">A - Épico (5%)</option>
-                                <option value="S">S - Lendário (1.8%)</option>
-                                <option value="SS">SS - Mítico (0.2%)</option>
-                            </select>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">Raridade (Tier)</label>
+                                <select id="admin-tier" onchange="window.updateAdminPreview()" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:border-green-500 focus:outline-none">
+                                    <option value="C">C - Comum (52%)</option>
+                                    <option value="B">B - Raro (39%)</option>
+                                    <option value="A">A - Épico (8%)</option>
+                                    <option value="S">S - Lendário (0.9%)</option>
+                                    <option value="SS">SS - Mítico (0.01%)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">Estilo (Layout)</label>
+                                <select id="admin-layout" onchange="window.updateAdminPreview()" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:border-green-500 focus:outline-none">
+                                    <option value="standard">Padrão (Imagem Horizontal)</option>
+                                    <option value="full-art">Full Art (Imagem Inteira)</option>
+                                </select>
+                            </div>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-1">Descrição</label>
@@ -667,8 +678,9 @@
         let selectedAdminImage = ""; 
         let editingCardId = null;
 
-        const TIER_VALUES = { 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5, 'SS': 6 };
-        const TIER_ORDER = ['SS', 'S', 'A', 'B', 'C', 'D'];
+        // VALORES ATUALIZADOS SEM O RANK D
+        const TIER_VALUES = { 'C': 1, 'B': 2, 'A': 3, 'S': 4, 'SS': 5 };
+        const TIER_ORDER = ['SS', 'S', 'A', 'B', 'C'];
         let currentOfferQty = 1;
         let currentReqQty = 1;
 
@@ -1248,17 +1260,22 @@
             }
         };
 
-        // --- LÓGICA DO GACHA COM SUSPENSE PRÉVIO ---
+        // --- LÓGICA DO GACHA COM PROBABILIDADES ATUALIZADAS (1 a 10000) ---
         let currentPackCards = [];
         let selectedCardsIndices = [];
         let isOpeningPack = false;
 
         function getRandomCard() {
             if(cardDatabase.length === 0) return null; 
-            const roll = Math.floor(Math.random() * 1000) + 1;
-            let targetTier = 'D';
-            if (roll <= 500) targetTier = 'D'; else if (roll <= 800) targetTier = 'C'; else if (roll <= 930) targetTier = 'B';
-            else if (roll <= 980) targetTier = 'A'; else if (roll <= 998) targetTier = 'S'; else targetTier = 'SS';
+            
+            const roll = Math.floor(Math.random() * 10000) + 1;
+            let targetTier = 'C';
+            
+            if (roll <= 5209) targetTier = 'C'; 
+            else if (roll <= 9109) targetTier = 'B'; 
+            else if (roll <= 9909) targetTier = 'A'; 
+            else if (roll <= 9999) targetTier = 'S'; 
+            else targetTier = 'SS'; // Apenas o 10000
             
             let possibleCards = cardDatabase.filter(c => c.tier === targetTier);
             if(possibleCards.length === 0) possibleCards = cardDatabase; 
@@ -1277,7 +1294,7 @@
 
             currentPackCards = [];
             let highestTierVal = 0;
-            let highestTierStr = 'D';
+            let highestTierStr = 'C';
             
             for(let i=0; i<8; i++) {
                 const card = getRandomCard();
@@ -1292,7 +1309,7 @@
             const pack = document.getElementById('booster-pack');
             
             if (pack) {
-                if(highestTierVal >= 5) {
+                if(highestTierVal >= 4) { // Rank S ou SS
                     pack.classList.add(`glowing-${highestTierStr}`, 'shaking-violent');
                 } else {
                     pack.classList.add('shaking');
@@ -1300,7 +1317,7 @@
                 window.playGachaSound(highestTierStr);
             }
 
-            const suspenseTime = highestTierVal >= 5 ? 1200 : 400;
+            const suspenseTime = highestTierVal >= 4 ? 1200 : 400;
 
             setTimeout(() => {
                 if (pack) {
@@ -1325,7 +1342,7 @@
                                         <div class="card-back hover:shadow-green-500/50 transition duration-300 flex flex-col items-center justify-center">
                                             <img src="https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/img/icon.png" class="w-10 h-10 sm:w-16 sm:h-16 opacity-60 drop-shadow-[0_0_5px_rgba(34,197,94,0.4)]" alt="Card Logo">
                                         </div>
-                                        <div class="card-front p-1 sm:p-2 flex flex-col" id="gacha-card-front-${index}"></div>
+                                        <div class="card-front p-1 flex flex-col justify-between" id="gacha-card-front-${index}"></div>
                                     </div>
                                 </div>`;
                         }
@@ -1351,7 +1368,7 @@
             const cardContainer = document.getElementById(`gacha-card-${index}`);
             if (cardContainer) cardContainer.classList.remove('hover:scale-105');
             
-            const ringColors = { 'D': 'ring-gray-400', 'C': 'ring-green-400', 'B': 'ring-blue-400', 'A': 'ring-purple-400', 'S': 'ring-yellow-400', 'SS': 'ring-red-500' };
+            const ringColors = { 'C': 'ring-green-400', 'B': 'ring-blue-400', 'A': 'ring-purple-400', 'S': 'ring-yellow-400', 'SS': 'ring-red-500' };
             if (cardContainer) cardContainer.classList.add(`reveal-${cardData.tier}`, 'ring-4', ringColors[cardData.tier]);
             
             if (selectedCardsIndices.length === 2) {
@@ -1414,32 +1431,78 @@
             }
         };
 
-        // --- SISTEMA DE VISUALIZAÇÃO E ORDENAÇÃO DO ÁLBUM ---
+        // --- SISTEMA DE VISUALIZAÇÃO DE CARTAS (POKÉMON STYLE / FULL ART) ---
         window.renderCardHTML = (elementId, cardData, showQuantity = false, isAlbum = false, sourceInventory = {}) => {
             const container = document.getElementById(elementId);
             if(!container) return;
             const quantity = sourceInventory[cardData.id] || 0;
             
-            if (isAlbum) container.className = `w-full h-full p-2 sm:p-3 flex flex-col justify-between rounded-xl border-4 border-solid bg-[#ebdcb2] text-gray-900 rank-${cardData.tier}`;
-            else container.className = `card-front p-1 sm:p-2 flex flex-col justify-between rank-${cardData.tier}`;
+            const layout = cardData.layout || 'standard';
+            const isFullArt = layout === 'full-art';
+            
+            const rankClasses = {
+                'C': 'border-green-400 bg-gradient-to-br from-green-900 to-black',
+                'B': 'border-blue-400 bg-gradient-to-br from-blue-900 to-black',
+                'A': 'border-purple-400 bg-gradient-to-br from-purple-900 to-black',
+                'S': 'border-yellow-400 bg-gradient-to-br from-yellow-900 to-black',
+                'SS': 'border-red-500 bg-gradient-to-br from-red-900 to-black'
+            };
+            
+            const tierColorText = {
+                'C': 'text-green-400', 'B': 'text-blue-400', 'A': 'text-purple-400', 'S': 'text-yellow-400', 'SS': 'text-red-500'
+            };
+
+            if (isAlbum) container.className = `w-full h-full rounded-xl border-4 border-solid text-white relative overflow-hidden shadow-inner ${rankClasses[cardData.tier]}`;
+            else container.className = `card-front flex flex-col justify-between rounded-xl border-4 border-solid relative overflow-hidden ${rankClasses[cardData.tier]}`;
 
             const fullImageUrl = cardData.img ? (GITHUB_RAW_URL + cardData.img) : '';
 
-            container.innerHTML = `
-                <div class="flex justify-between items-start mb-1 sm:mb-2 absolute top-1 left-1 right-1 z-10">
-                    <span class="font-bold text-[10px] sm:text-xs bg-gray-900 text-white px-1 sm:px-2 py-0.5 sm:py-1 rounded shadow-md opacity-90 border border-gray-600">Rank ${cardData.tier}</span>
-                    ${showQuantity && quantity > 1 ? `<span class="font-bold text-[10px] sm:text-xs bg-green-600 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full shadow-md border border-green-400">x${quantity}</span>` : ''}
-                </div>
-                
-                <div class="flex-grow flex items-center justify-center bg-gray-300 rounded overflow-hidden relative border-2 border-gray-800">
-                   <img src="${fullImageUrl}" alt="${cardData.name}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://via.placeholder.com/150/cbd5e0/4a5568?text=Imagem';">
-                </div>
-                
-                <div class="mt-1 sm:mt-2 text-center bg-white/50 p-1 rounded backdrop-blur-sm border border-gray-400">
-                    <h3 class="font-bold text-xs sm:text-sm truncate leading-tight text-gray-900 drop-shadow-sm">${cardData.name}</h3>
-                    <p class="text-[9px] sm:text-[10px] text-gray-800 italic mt-0.5 line-clamp-2 leading-tight">${cardData.desc}</p>
-                </div>
-            `;
+            // Efeitos Foil (Holográficos)
+            let foilEffect = '';
+            if(cardData.tier === 'S') foilEffect = '<div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent mix-blend-overlay pointer-events-none z-20"></div>';
+            if(cardData.tier === 'SS') foilEffect = '<div class="absolute inset-0 foil-anim mix-blend-color-dodge opacity-60 pointer-events-none z-20"></div>';
+
+            let contentHTML = '';
+
+            if(isFullArt) {
+                contentHTML = `
+                    ${foilEffect}
+                    <div class="absolute inset-0 z-0">
+                        <img src="${fullImageUrl}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://via.placeholder.com/150/cbd5e0/4a5568?text=Sem+Imagem';">
+                    </div>
+                    <div class="absolute top-1 left-1 right-1 z-10 flex justify-between">
+                        <span class="font-black text-[10px] sm:text-xs bg-black/80 px-1.5 py-0.5 rounded border border-gray-600 ${tierColorText[cardData.tier]} shadow-md">R.${cardData.tier}</span>
+                    </div>
+                    <div class="absolute bottom-0 left-0 right-0 p-2 sm:p-3 bg-gradient-to-t from-black via-black/80 to-transparent z-10">
+                        <h3 class="font-black text-white text-xs sm:text-sm drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">${cardData.name}</h3>
+                        <p class="text-[9px] sm:text-[10px] text-gray-300 italic mt-0.5 leading-tight line-clamp-3">${cardData.desc}</p>
+                    </div>
+                    ${showQuantity && quantity > 1 ? `<div class="absolute top-1 right-1 bg-green-600 text-white text-[10px] sm:text-xs font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-green-400 z-40">x${quantity}</div>` : ''}
+                `;
+            } else {
+                // Layout Padrão (Tipo Pokémon)
+                contentHTML = `
+                    ${foilEffect}
+                    <div class="relative z-10 p-1 sm:p-2 h-full flex flex-col">
+                        <div class="flex justify-between items-center mb-1">
+                            <h3 class="font-bold text-[10px] sm:text-xs text-white drop-shadow-md truncate max-w-[70%]">${cardData.name}</h3>
+                            <span class="font-black text-[9px] sm:text-[10px] ${tierColorText[cardData.tier]} bg-black/60 px-1 rounded shadow-md">R.${cardData.tier}</span>
+                        </div>
+                        
+                        <div class="w-full aspect-[4/3] bg-black border-2 border-gray-500 overflow-hidden shadow-inner flex-shrink-0 rounded">
+                            <img src="${fullImageUrl}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://via.placeholder.com/150/cbd5e0/4a5568?text=Sem+Imagem';">
+                        </div>
+                        
+                        <div class="flex-grow mt-1 sm:mt-1.5 bg-black/40 p-1 sm:p-1.5 rounded border border-white/20 overflow-hidden text-center flex items-center justify-center">
+                            <p class="text-[8px] sm:text-[9.px] text-gray-200 italic leading-tight line-clamp-4">${cardData.desc}</p>
+                        </div>
+                        
+                        ${showQuantity && quantity > 1 ? `<div class="absolute bottom-1 right-1 bg-green-600 text-white text-[10px] sm:text-xs font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-green-400 z-40">x${quantity}</div>` : ''}
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = contentHTML;
         };
 
         window.refreshAlbum = () => {
@@ -1601,7 +1664,7 @@
             if (players.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-gray-500">Nenhum ninja encontrado.</td></tr>`; return; }
 
             players.forEach(player => {
-                let stats = { Total: 0, D: 0, C: 0, B: 0, A: 0, S: 0, SS: 0 };
+                let stats = { Total: 0, C: 0, B: 0, A: 0, S: 0, SS: 0 };
                 cardDatabase.forEach(c => { if(player.inventory && player.inventory[c.id]>0) { stats.Total++; stats[c.tier]++; } });
                 
                 tbody.innerHTML += `
@@ -1611,7 +1674,6 @@
                             <span class="font-bold text-white">${player.displayName || 'Ninja Oculto'}</span>
                         </td>
                         <td class="p-4 text-center font-bold text-lg">${stats.Total}</td>
-                        <td class="p-4 text-center text-gray-400 font-semibold">${stats.D}</td>
                         <td class="p-4 text-center text-green-400 font-semibold">${stats.C}</td>
                         <td class="p-4 text-center text-blue-400 font-semibold">${stats.B}</td>
                         <td class="p-4 text-center text-purple-400 font-semibold">${stats.A}</td>
@@ -1723,7 +1785,8 @@
             const tempCard = {
                 id: 'preview',
                 name: document.getElementById('admin-name').value || 'Nome da Carta',
-                tier: document.getElementById('admin-tier').value || 'D',
+                tier: document.getElementById('admin-tier').value || 'C',
+                layout: document.getElementById('admin-layout').value || 'standard',
                 desc: document.getElementById('admin-desc').value || 'Descrição...',
                 img: selectedAdminImage || ''
             };
@@ -1736,6 +1799,7 @@
             editingCardId = id;
             document.getElementById('admin-name').value = card.name;
             document.getElementById('admin-tier').value = card.tier;
+            document.getElementById('admin-layout').value = card.layout || 'standard';
             document.getElementById('admin-desc').value = card.desc;
             selectedAdminImage = card.img; 
             
@@ -1776,6 +1840,7 @@
                 const cardData = {
                     name: document.getElementById('admin-name').value,
                     tier: document.getElementById('admin-tier').value,
+                    layout: document.getElementById('admin-layout').value,
                     desc: document.getElementById('admin-desc').value,
                     img: selectedAdminImage,
                 };
