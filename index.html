@@ -127,7 +127,7 @@
         <div id="nav-auth-area" class="flex items-center gap-4">
             <div id="logged-out-view" class="flex gap-2">
                 <button onclick="window.showModal('login')" class="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition">Entrar</button>
-                <button onclick="window.showModal('register')" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition shadow-lg shadow-green-900/30">Cadastrar</button>
+                <button id="btn-nav-register" onclick="window.showModal('register')" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition shadow-lg shadow-green-900/30">Cadastrar</button>
             </div>
             <div id="logged-in-view" class="hidden items-center gap-4">
                 <div class="flex flex-col items-end">
@@ -157,7 +157,7 @@
         <!-- Aba de Trocas -->
         <button onclick="window.switchTab('trade')" id="tab-trade" class="px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition text-green-500 border-b-2 border-transparent hidden">Trocas 🤝</button>
         <!-- Aba Admin -->
-        <button onclick="window.switchTab('admin')" id="tab-admin" class="hidden px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition text-red-500 border-b-2 border-transparent">⚙️ Criar Cartas</button>
+        <button onclick="window.switchTab('admin')" id="tab-admin" class="hidden px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition text-red-500 border-b-2 border-transparent">⚙️ Painel Admin</button>
     </nav>
 
     <!-- Modal de Login/Registro -->
@@ -457,12 +457,63 @@
             </div>
         </section>
 
-        <!-- ABA: ADMIN (CRIAR CARTAS) -->
-        <section id="section-admin" class="w-full max-w-4xl hidden flex-col gap-6">
-            <div class="bg-gray-800 p-8 rounded-xl border border-red-900/50 shadow-2xl">
-                <h2 class="text-2xl font-bold text-red-500 mb-2 border-b border-gray-700 pb-2">Painel do Administrador</h2>
-                <p class="text-gray-400 text-sm mb-6">Crie ou edite cartas. Certifique-se de que a imagem já foi enviada para a pasta <code>assets/cards/</code> no GitHub.</p>
+        <!-- ABA: ADMIN -->
+        <section id="section-admin" class="w-full max-w-5xl hidden flex-col gap-8">
+            <h2 class="text-3xl font-bold text-red-500 border-b border-red-900 pb-2 drop-shadow-md">Painel do Administrador</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Controle de Cadastros -->
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-md relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-2 opacity-10 text-6xl pointer-events-none">⚙️</div>
+                    <h3 class="text-xl font-bold mb-2 text-white">Status do Servidor</h3>
+                    <p class="text-sm text-gray-400 mb-4">Novos cadastros: <span id="admin-reg-status" class="text-green-400 font-bold">LIGADO</span></p>
+                    <button onclick="window.toggleRegistration()" class="bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/30 text-white font-bold py-2 px-6 rounded-lg transition w-full border border-blue-400">Ligar/Desligar Cadastros</button>
+                </div>
                 
+                <!-- Gerenciar Pacotes -->
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-md relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-2 opacity-10 text-6xl pointer-events-none">🎁</div>
+                    <h3 class="text-xl font-bold mb-2 text-white">Dar/Tirar Pacotes</h3>
+                    <form id="admin-packs-form" class="space-y-3" onsubmit="window.managePacks(event)">
+                        <div class="flex gap-2">
+                            <input type="text" id="admin-target-user" placeholder="Nick do Jogador..." class="w-2/3 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-yellow-500" required>
+                            <input type="number" id="admin-target-amount" placeholder="Qtd (+/-)" class="w-1/3 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-yellow-500 text-center" required>
+                        </div>
+                        <button type="submit" id="btn-manage-packs" class="bg-yellow-600 hover:bg-yellow-500 shadow-lg shadow-yellow-900/30 text-white font-bold py-2 px-4 rounded-lg transition w-full border border-yellow-400">Aplicar Quantidade</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Dashboard de Balanceamento -->
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-md">
+                <h3 class="text-xl font-bold mb-2 text-white">Balanceamento de Cartas (Atual vs Ideal)</h3>
+                <p class="text-xs text-gray-400 mb-6">A quantidade "Ideal" é calculada dinamicamente com base no total de cartas, mantendo as proporções saudáveis: C(50%), B(30%), A(12%), S(6%), SS(2%).</p>
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
+                    <div class="bg-gray-900 p-3 rounded-lg border border-green-500/50 shadow-inner">
+                        <div class="text-green-400 font-bold text-sm mb-1">Rank C</div>
+                        <div id="admin-count-c" class="text-2xl font-black text-white">0 <span class="text-sm font-normal text-gray-500">/ 0</span></div>
+                    </div>
+                    <div class="bg-gray-900 p-3 rounded-lg border border-blue-500/50 shadow-inner">
+                        <div class="text-blue-400 font-bold text-sm mb-1">Rank B</div>
+                        <div id="admin-count-b" class="text-2xl font-black text-white">0 <span class="text-sm font-normal text-gray-500">/ 0</span></div>
+                    </div>
+                    <div class="bg-gray-900 p-3 rounded-lg border border-purple-500/50 shadow-inner">
+                        <div class="text-purple-400 font-bold text-sm mb-1">Rank A</div>
+                        <div id="admin-count-a" class="text-2xl font-black text-white">0 <span class="text-sm font-normal text-gray-500">/ 0</span></div>
+                    </div>
+                    <div class="bg-gray-900 p-3 rounded-lg border border-yellow-500/50 shadow-inner">
+                        <div class="text-yellow-400 font-bold text-sm mb-1">Rank S</div>
+                        <div id="admin-count-s" class="text-2xl font-black text-white">0 <span class="text-sm font-normal text-gray-500">/ 0</span></div>
+                    </div>
+                    <div class="bg-gray-900 p-3 rounded-lg border border-red-500/50 shadow-inner">
+                        <div class="text-red-500 font-bold text-sm mb-1">Rank SS</div>
+                        <div id="admin-count-ss" class="text-2xl font-black text-white">0 <span class="text-sm font-normal text-gray-500">/ 0</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-800 p-8 rounded-xl border border-red-900/50 shadow-2xl">
+                <h3 class="text-xl font-bold mb-4 text-white">Criar ou Editar Carta</h3>
                 <div class="flex flex-col md:flex-row gap-8">
                     <!-- Formulário da Carta -->
                     <form id="admin-form" class="space-y-4 flex-1">
@@ -474,11 +525,11 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-300 mb-1">Raridade (Tier)</label>
                                 <select id="admin-tier" onchange="window.updateAdminPreview()" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:border-green-500 focus:outline-none">
-                                    <option value="C">C - Comum (52%)</option>
-                                    <option value="B">B - Raro (39%)</option>
-                                    <option value="A">A - Épico (8%)</option>
-                                    <option value="S">S - Lendário (0.9%)</option>
-                                    <option value="SS">SS - Mítico (0.01%)</option>
+                                    <option value="C">C - Comum (56.0%)</option>
+                                    <option value="B">B - Raro (30.0%)</option>
+                                    <option value="A">A - Épico (10.3%)</option>
+                                    <option value="S">S - Lendário (3.5%)</option>
+                                    <option value="SS">SS - Mítico (0.2%)</option>
                                 </select>
                             </div>
                             <div>
@@ -563,7 +614,6 @@
         window.authMode = 'login';
         window.currentAlbumSort = 'tier-desc';
         window.currentAlbumView = 'grid';
-        // Atualizado: Estado passa a usar translação em pixels
         window.adminCardState = { transX: 0, transY: 0 }; 
         
         window.showModal = (mode) => {
@@ -642,7 +692,6 @@
             if(window.refreshAlbum) window.refreshAlbum();
         };
 
-        // --- SISTEMA DE ARRASTE DO ADMIN PREVIEW (ATUALIZADO PARA PIXELS E DIREÇÃO NATURAL) ---
         let isDraggingPreview = false;
         let dragStartX, dragStartY;
 
@@ -668,8 +717,6 @@
             
             const currentZoom = parseFloat(document.getElementById('admin-zoom').value) || 1;
             
-            // Soma positiva: mover o mouse para baixo move a imagem para baixo, etc.
-            // Divisão pelo zoom: garante que a imagem acompanhe exatamente o cursor!
             window.adminCardState.transX += dx / currentZoom; 
             window.adminCardState.transY += dy / currentZoom;
             
@@ -772,31 +819,126 @@
         // --- ESTADO GLOBAL ---
         let currentUser = null;
         let userData = { pullsAvailable: 0, inventory: {}, role: 'player', tradesToday: 0, lastTradeDate: "", lastPullTimestamp: null };
+        let globalSettings = { registrationsOpen: true };
         let unsubUser = null;
         let unsubCards = null;
         let unsubTrades = null;
+        let unsubSettings = null;
         let allOpenTrades = [];
         
-        // Torna cardDatabase globalmente disponível para o modal!
         window.cardDatabase = [];
         const GITHUB_RAW_URL = "https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/cards/";
         
         let selectedAdminImage = ""; 
         let editingCardId = null;
 
-        // VALORES ATUALIZADOS SEM O RANK D
         const TIER_VALUES = { 'C': 1, 'B': 2, 'A': 3, 'S': 4, 'SS': 5 };
         const TIER_ORDER = ['SS', 'S', 'A', 'B', 'C'];
         let currentOfferQty = 1;
         let currentReqQty = 1;
 
-        // --- MODAL DETALHE DA CARTA (Movido para dentro do Módulo para acessar as variáveis) ---
+        // --- FUNÇÃO PARA INICIAR LISTENERS GLOBAIS COM TRATAMENTO DE ERROS ---
+        const startGlobalListeners = () => {
+            if (!unsubSettings) {
+                unsubSettings = onSnapshot(doc(db, "settings", "global"), (docSnap) => {
+                    const regBtn = document.getElementById('btn-nav-register');
+                    const adminRegStatus = document.getElementById('admin-reg-status');
+
+                    if (docSnap.exists()) {
+                        globalSettings = docSnap.data();
+                        if (globalSettings.registrationsOpen) {
+                            if (regBtn) regBtn.classList.remove('hidden');
+                            if (adminRegStatus) { adminRegStatus.innerText = "LIGADO"; adminRegStatus.className = "text-green-400 font-bold"; }
+                        } else {
+                            if (regBtn) regBtn.classList.add('hidden');
+                            if (adminRegStatus) { adminRegStatus.innerText = "DESLIGADO"; adminRegStatus.className = "text-red-400 font-bold"; }
+                        }
+                    } else {
+                        if (currentUser && userData && userData.role === 'admin') {
+                            setDoc(doc(db, "settings", "global"), { registrationsOpen: true }).catch(err => console.warn(err));
+                        }
+                    }
+                }, (error) => {
+                    console.warn("Aviso: Falha de permissão ao ler configurações globais. O usuário precisa estar logado.", error.message);
+                    unsubSettings = null; // Permite tentar reconectar depois
+                });
+            }
+
+            if (!unsubCards) {
+                unsubCards = onSnapshot(collection(db, "cards"), (snapshot) => {
+                    window.cardDatabase = [];
+                    const count = {C:0, B:0, A:0, S:0, SS:0};
+
+                    snapshot.forEach(doc => { 
+                        const data = { id: doc.id, ...doc.data() };
+                        window.cardDatabase.push(data); 
+                        if(count[data.tier] !== undefined) count[data.tier]++;
+                    });
+                    
+                    // Atualizar Balanceamento
+                    const total = window.cardDatabase.length;
+                    const ideal = {
+                        C: Math.round(total * 0.50),
+                        B: Math.round(total * 0.30),
+                        A: Math.round(total * 0.12),
+                        S: Math.round(total * 0.06),
+                        SS: Math.round(total * 0.02)
+                    };
+
+                    ['C', 'B', 'A', 'S', 'SS'].forEach(tier => {
+                        const el = document.getElementById(`admin-count-${tier.toLowerCase()}`);
+                        if(el) el.innerHTML = `${count[tier]} <span class="text-sm font-normal text-gray-500">/ ${ideal[tier]}</span>`;
+                    });
+
+                    document.getElementById('total-cards-count').innerText = total;
+                    document.getElementById('admin-card-count').innerText = total;
+                    
+                    const adminList = document.getElementById('admin-card-list');
+                    if (adminList) {
+                        adminList.innerHTML = '';
+                        window.cardDatabase.forEach(c => {
+                            adminList.innerHTML += `
+                                <tr>
+                                    <td class="py-2">${c.name}</td>
+                                    <td>${c.tier}</td>
+                                    <td class="text-gray-500 text-xs">${c.img}</td>
+                                    <td><button type="button" onclick="window.editCard('${c.id}')" class="text-green-400 hover:text-green-300 text-xs font-bold bg-gray-800 px-2 py-1 rounded border border-gray-600 transition">Editar</button></td>
+                                </tr>`;
+                        });
+                    }
+
+                    if (total === 0) {
+                        document.getElementById('gacha-content').classList.add('hidden');
+                        document.getElementById('gacha-content').classList.remove('flex');
+                        if(currentUser) document.getElementById('gacha-empty-db').classList.remove('hidden');
+                    } else if (currentUser) {
+                        document.getElementById('gacha-content').classList.remove('hidden');
+                        document.getElementById('gacha-content').classList.add('flex');
+                        document.getElementById('gacha-empty-db').classList.add('hidden');
+                    }
+
+                    if (currentUser) {
+                        window.renderAlbumHTML('album-grid', userData.inventory);
+                        window.updateTradeOptions();
+                    }
+                    if (currentUser && userData.role === 'admin' && window.loadGitHubImages) window.loadGitHubImages();
+                }, (error) => {
+                    console.warn("Aviso: Falha de permissão ao ler catálogo de cartas. O usuário precisa estar logado.", error.message);
+                    unsubCards = null; // Permite tentar reconectar depois
+                });
+            }
+        };
+
+        // Tenta iniciar os listeners assim que o app carrega (caso o Firebase permita leitura pública)
+        startGlobalListeners();
+
+        // --- MODAL DETALHE DA CARTA ---
         window.showCardDetail = (cardId) => {
             if (!window.cardDatabase) return;
             const card = window.cardDatabase.find(c => c.id === cardId);
             if(!card) return;
             
-            const dropRates = { 'C': '52%', 'B': '39%', 'A': '8%', 'S': '0.9%', 'SS': '0.01%' };
+            const dropRates = { 'C': '56.0%', 'B': '30.0%', 'A': '10.3%', 'S': '3.5%', 'SS': '0.2%' };
             const tierColors = { 'C': 'text-green-400 border-green-400', 'B': 'text-blue-400 border-blue-400', 'A': 'text-purple-400 border-purple-400', 'S': 'text-yellow-400 border-yellow-400', 'SS': 'text-red-500 border-red-500' };
             
             document.getElementById('detail-card-name').innerText = card.name;
@@ -849,7 +991,7 @@
                     let newTimestamp = userData.lastPullTimestamp + (pullsEarned * EIGHT_HOURS);
                     if (newPulls === 3) newTimestamp = null; 
 
-                    updateDoc(doc(db, "users", currentUser.uid), { pullsAvailable: newPulls, lastPullTimestamp: newTimestamp });
+                    updateDoc(doc(db, "users", currentUser.uid), { pullsAvailable: newPulls, lastPullTimestamp: newTimestamp }).catch(e => console.warn(e));
                     
                     userData.pullsAvailable = newPulls;
                     userData.lastPullTimestamp = newTimestamp;
@@ -878,43 +1020,6 @@
             }
         }, 1000);
 
-        // --- INICIALIZAR CATÁLOGO (TEMPO REAL) ---
-        unsubCards = onSnapshot(collection(db, "cards"), (snapshot) => {
-            window.cardDatabase = [];
-            snapshot.forEach(doc => { window.cardDatabase.push({ id: doc.id, ...doc.data() }); });
-            
-            document.getElementById('total-cards-count').innerText = window.cardDatabase.length;
-            document.getElementById('admin-card-count').innerText = window.cardDatabase.length;
-            
-            const adminList = document.getElementById('admin-card-list');
-            adminList.innerHTML = '';
-            window.cardDatabase.forEach(c => {
-                adminList.innerHTML += `
-                    <tr>
-                        <td class="py-2">${c.name}</td>
-                        <td>${c.tier}</td>
-                        <td class="text-gray-500 text-xs">${c.img}</td>
-                        <td><button type="button" onclick="window.editCard('${c.id}')" class="text-green-400 hover:text-green-300 text-xs font-bold bg-gray-800 px-2 py-1 rounded border border-gray-600 transition">Editar</button></td>
-                    </tr>`;
-            });
-
-            if (window.cardDatabase.length === 0) {
-                document.getElementById('gacha-content').classList.add('hidden');
-                document.getElementById('gacha-content').classList.remove('flex');
-                if(currentUser) document.getElementById('gacha-empty-db').classList.remove('hidden');
-            } else if (currentUser) {
-                document.getElementById('gacha-content').classList.remove('hidden');
-                document.getElementById('gacha-content').classList.add('flex');
-                document.getElementById('gacha-empty-db').classList.add('hidden');
-            }
-
-            if (currentUser) {
-                window.renderAlbumHTML('album-grid', userData.inventory);
-                window.updateTradeOptions();
-            }
-            if (userData.role === 'admin' && window.loadGitHubImages) window.loadGitHubImages();
-        });
-
         // --- AUTENTICAÇÃO E VERIFICAÇÃO DE IP ---
         document.getElementById('auth-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -936,6 +1041,11 @@
             
             try {
                 if (window.authMode === 'register') {
+                    // BLOQUEIO DE CADASTRO GERAL
+                    if (!globalSettings.registrationsOpen && safeUsername !== 'auriosh' && safeUsername !== 'vilao') {
+                        throw new Error("Os cadastros estão desativados no momento.");
+                    }
+
                     // BLOQUEIO SECUNDÁRIO (LocalStorage)
                     if (localStorage.getItem('nin_ccg_registered') && safeUsername !== 'auriosh' && safeUsername !== 'vilao') {
                         throw new Error("Você já registrou uma conta neste dispositivo.");
@@ -974,10 +1084,10 @@
                         role: userRole,
                         tradesToday: 0,
                         lastTradeDate: new Date().toDateString(),
-                        ip: userIp // Salva o IP associado a conta
+                        ip: userIp 
                     });
                     
-                    localStorage.setItem('nin_ccg_registered', 'true'); // Marca no navegador
+                    localStorage.setItem('nin_ccg_registered', 'true'); 
                 } else {
                     await signInWithEmailAndPassword(auth, fakeEmail, pass);
                 }
@@ -1013,19 +1123,18 @@
                 document.getElementById('album-content').classList.add('flex');
                 document.getElementById('tab-trade').classList.remove('hidden');
 
-                if (window.cardDatabase.length > 0) {
-                    document.getElementById('gacha-content').classList.remove('hidden');
-                    document.getElementById('gacha-content').classList.add('flex');
-                    document.getElementById('gacha-empty-db').classList.add('hidden');
-                }
+                // Tenta ligar os listeners globais novamente, agora que estamos autenticados!
+                startGlobalListeners();
 
                 if(unsubUser) unsubUser();
                 unsubUser = onSnapshot(doc(db, "users", user.uid), async (docSnap) => {
                     if (docSnap.exists()) {
                         userData = docSnap.data();
-                        window._currentUserData = userData; // Exporta para o escopo global
+                        window._currentUserData = userData; 
 
-                        if (userData.pullsAvailable < 3 && !userData.lastPullTimestamp) await updateDoc(doc(db, "users", user.uid), { lastPullTimestamp: Date.now() });
+                        if (userData.pullsAvailable < 3 && !userData.lastPullTimestamp) {
+                            await updateDoc(doc(db, "users", user.uid), { lastPullTimestamp: Date.now() });
+                        }
                         if ((user.displayName.toLowerCase() === 'auriosh' || user.displayName.toLowerCase() === 'vilao') && userData.role !== 'admin') {
                             await updateDoc(doc(db, "users", user.uid), { role: 'admin' });
                         }
@@ -1038,6 +1147,8 @@
                         if (userData.role === 'admin') document.getElementById('tab-admin').classList.remove('hidden');
                         else document.getElementById('tab-admin').classList.add('hidden');
                     }
+                }, (error) => {
+                    console.error("Erro no listener de dados do usuário:", error.message);
                 });
 
                 if(unsubTrades) unsubTrades();
@@ -1046,6 +1157,8 @@
                     snapshot.forEach(doc => allOpenTrades.push({ id: doc.id, ...doc.data() }));
                     window.renderTradeBoard();
                     window.updateTradeLimitsUI();
+                }, (error) => {
+                    console.error("Erro no listener do mural de trocas:", error.message);
                 });
 
             } else {
@@ -1064,8 +1177,10 @@
                 document.getElementById('album-content').classList.add('hidden');
                 document.getElementById('album-content').classList.remove('flex');
                 
-                if(unsubUser) unsubUser();
-                if(unsubTrades) unsubTrades();
+                if(unsubUser) { unsubUser(); unsubUser = null; }
+                if(unsubTrades) { unsubTrades(); unsubTrades = null; }
+                if(unsubCards) { unsubCards(); unsubCards = null; }
+                if(unsubSettings) { unsubSettings(); unsubSettings = null; }
             }
         });
 
@@ -1446,7 +1561,51 @@
             }
         };
 
-        // --- LÓGICA DO GACHA COM PROBABILIDADES ATUALIZADAS (1 a 10000) ---
+        // --- FUNCIONALIDADES ADMIN EXTRAS ---
+        window.toggleRegistration = async () => {
+            if (!currentUser || userData.role !== 'admin') return;
+            const newState = !globalSettings.registrationsOpen;
+            try {
+                await setDoc(doc(db, "settings", "global"), { registrationsOpen: newState }, { merge: true });
+                window.showMessage(newState ? "Cadastros LIGADOS com sucesso." : "Cadastros DESLIGADOS com sucesso.");
+            } catch (e) {
+                window.showMessage("Erro ao alterar configurações: " + e.message);
+            }
+        };
+
+        window.managePacks = async (e) => {
+            e.preventDefault();
+            if (!currentUser || userData.role !== 'admin') return;
+            
+            const btn = document.getElementById('btn-manage-packs');
+            const targetNick = document.getElementById('admin-target-user').value.trim().toLowerCase();
+            const amount = parseInt(document.getElementById('admin-target-amount').value);
+            
+            if(!targetNick || isNaN(amount)) return window.showMessage("Preencha os dados corretamente.");
+            
+            btn.disabled = true;
+            try {
+                const q = query(collection(db, "users"), where("displayNameLower", "==", targetNick));
+                const snap = await getDocs(q);
+                if(snap.empty) throw new Error("Jogador não encontrado.");
+                
+                const targetDoc = snap.docs[0];
+                const currentPulls = targetDoc.data().pullsAvailable || 0;
+                let newPulls = currentPulls + amount;
+                if(newPulls < 0) newPulls = 0;
+                
+                await updateDoc(doc(db, "users", targetDoc.id), { pullsAvailable: newPulls });
+                window.showMessage(`Sucesso! O jogador ${targetDoc.data().displayName} agora tem ${newPulls} pacotes.`);
+                document.getElementById('admin-target-user').value = '';
+                document.getElementById('admin-target-amount').value = '';
+            } catch (err) {
+                window.showMessage(err.message);
+            } finally {
+                btn.disabled = false;
+            }
+        };
+
+        // --- LÓGICA DO GACHA (BALANCEADO) ---
         let currentPackCards = [];
         let selectedCardsIndices = [];
         let isOpeningPack = false;
@@ -1454,14 +1613,15 @@
         function getRandomCard() {
             if(window.cardDatabase.length === 0) return null; 
             
+            // ROLETA (1 A 10000) - NOVA CHANCE (MÉDIA DE 25% PARA 'S' POR PACOTE)
             const roll = Math.floor(Math.random() * 10000) + 1;
             let targetTier = 'C';
             
-            if (roll <= 5209) targetTier = 'C'; 
-            else if (roll <= 9109) targetTier = 'B'; 
-            else if (roll <= 9909) targetTier = 'A'; 
-            else if (roll <= 9999) targetTier = 'S'; 
-            else targetTier = 'SS'; // Apenas o 10000
+            if (roll <= 5600) targetTier = 'C';          // 56.0%
+            else if (roll <= 8600) targetTier = 'B';     // 30.0%
+            else if (roll <= 9630) targetTier = 'A';     // 10.3%
+            else if (roll <= 9980) targetTier = 'S';     // 3.5%
+            else targetTier = 'SS';                      // 0.2%
             
             let possibleCards = window.cardDatabase.filter(c => c.tier === targetTier);
             if(possibleCards.length === 0) possibleCards = window.cardDatabase; 
@@ -1476,7 +1636,7 @@
             const userRef = doc(db, "users", currentUser.uid);
             let updateData = { pullsAvailable: userData.pullsAvailable - 1 };
             if (userData.pullsAvailable === 3) updateData.lastPullTimestamp = Date.now();
-            await updateDoc(userRef, updateData);
+            await updateDoc(userRef, updateData).catch(e => console.error(e));
 
             currentPackCards = [];
             let highestTierVal = 0;
@@ -1511,11 +1671,10 @@
                     pack.classList.add('tearing');
                     window.fireConfetti(highestTierStr);
                     
-                    // Flash Effect da explosão do pacote
                     const flash = document.getElementById('pack-flash');
                     if (flash) {
                         flash.classList.remove('hidden');
-                        void flash.offsetWidth; // Força re-renderização para a transição funcionar
+                        void flash.offsetWidth; 
                         flash.classList.remove('opacity-0');
                         flash.classList.add('opacity-100');
                         setTimeout(() => {
@@ -1536,15 +1695,14 @@
                         revealedContainer.classList.remove('hidden');
 
                         for(let index=0; index<8; index++) {
-                            // Container externo faz a animação cascata entrar, container interno mantém o efeito de HOVER original
                             revealedContainer.innerHTML += `
                                 <div class="opacity-0" style="animation: card-deal 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards ${index * 0.12}s;">
-                                    <div class="card-container w-24 h-36 sm:w-32 sm:h-48 md:w-40 md:h-60 cursor-pointer transform transition hover:scale-105" id="gacha-card-${index}" onclick="window.revealSingleCard(${index})">
+                                    <div class="card-container w-24 h-36 sm:w-32 sm:h-48 md:w-40 md:h-60 cursor-pointer transform transition hover:scale-105 rounded-xl" id="gacha-card-${index}" onclick="window.revealSingleCard(${index})">
                                         <div class="card-inner shadow-2xl rounded-xl" id="gacha-card-inner-${index}">
-                                            <div class="card-back hover:shadow-green-500/50 transition duration-300 flex flex-col items-center justify-center">
+                                            <div class="card-back hover:shadow-green-500/50 transition duration-300 flex flex-col items-center justify-center rounded-xl">
                                                 <img src="https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/img/icon.png" class="w-10 h-10 sm:w-16 sm:h-16 opacity-60 drop-shadow-[0_0_5px_rgba(34,197,94,0.4)]" alt="Card Logo">
                                             </div>
-                                            <div class="card-front p-1 flex flex-col justify-between" id="gacha-card-front-${index}"></div>
+                                            <div class="card-front p-1 flex flex-col justify-between rounded-xl" id="gacha-card-front-${index}"></div>
                                         </div>
                                     </div>
                                 </div>`;
@@ -1557,7 +1715,6 @@
         window.revealSingleCard = async (index) => {
             const innerContainer = document.getElementById(`gacha-card-inner-${index}`);
             
-            // SE A CARTA JÁ ESTIVER VIRADA (as que escolheu ou as que sobraram), ABRE DETALHES
             if (innerContainer && innerContainer.classList.contains('flipped')) {
                 const cardData = currentPackCards[index];
                 if (cardData) window.showCardDetail(cardData.id);
@@ -1571,7 +1728,7 @@
 
             const newInventory = { ...userData.inventory };
             newInventory[cardData.id] = (newInventory[cardData.id] || 0) + 1;
-            await updateDoc(doc(db, "users", currentUser.uid), { inventory: newInventory });
+            await updateDoc(doc(db, "users", currentUser.uid), { inventory: newInventory }).catch(e => console.error(e));
 
             window.renderCardHTML(`gacha-card-front-${index}`, cardData, false, false, newInventory);
             innerContainer.classList.add('flipped');
@@ -1593,7 +1750,6 @@
                             
                             const leftCardContainer = document.getElementById(`gacha-card-${idx}`);
                             if (leftCardContainer) {
-                                // Deixa 70% de opacidade pra ler melhor e não remove a ação de clicar!
                                 leftCardContainer.classList.add('opacity-70', 'grayscale');
                                 leftCardContainer.classList.remove('hover:scale-105', 'z-50', 'z-10');
                             }
@@ -1652,9 +1808,7 @@
             const layout = cardData.layout || 'standard';
             const isFullArt = layout === 'full-art';
             
-            // Valores personalizáveis (TRANSLATE PIXELS E CONTAIN)
             const zoom = cardData.imageZoom || 1;
-            // Para as cartas novas usa TransX/Y, se for uma antiga que usava PosX (%) vamos considerar zero.
             const transX = cardData.imageTransX ?? 0;
             const transY = cardData.imageTransY ?? 0;
             
@@ -1682,7 +1836,6 @@
 
             const fullImageUrl = cardData.img ? (GITHUB_RAW_URL + cardData.img) : '';
 
-            // Efeitos Foil (Holográficos)
             let foilEffect = '';
             if(cardData.tier === 'S') foilEffect = '<div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent mix-blend-overlay pointer-events-none z-20"></div>';
             if(cardData.tier === 'SS') foilEffect = '<div class="absolute inset-0 foil-anim mix-blend-color-dodge opacity-60 pointer-events-none z-20"></div>';
@@ -1705,7 +1858,6 @@
                     ${showQuantity && quantity > 1 ? `<div class="absolute top-1 right-1 bg-green-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-green-400 z-40 pointer-events-none">x${quantity}</div>` : ''}
                 `;
             } else {
-                // Layout Padrão (Tipo Pokémon)
                 contentHTML = `
                     ${foilEffect}
                     <div class="relative z-10 p-1 sm:p-2 h-full flex flex-col pointer-events-none">
@@ -1878,8 +2030,9 @@
                 });
                 window.renderPlayersTable(allPlayersCache);
             } catch (err) {
-                errorEl.innerText = "Erro ao carregar ranking.";
+                errorEl.innerText = "Erro de permissão ou falha ao carregar ranking.";
                 errorEl.classList.remove('hidden');
+                console.warn(err);
             } finally {
                 loadingEl.classList.add('hidden');
             }
