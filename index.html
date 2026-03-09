@@ -888,6 +888,46 @@
             }
         };
 
+        window.playCardClickSound = (tier) => {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+
+            const createOsc = (type, freq, time, duration, vol) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, time);
+                gain.gain.setValueAtTime(0, time);
+                gain.gain.linearRampToValueAtTime(vol, time + duration * 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(time);
+                osc.stop(time + duration);
+            };
+
+            // Sound design: Snappy, ascending chimes for higher tiers
+            if(tier === 'SS') {
+                createOsc('triangle', 523.25, now, 0.3, 0.2); // C5
+                createOsc('triangle', 659.25, now + 0.05, 0.3, 0.2); // E5
+                createOsc('triangle', 783.99, now + 0.1, 0.3, 0.2); // G5
+                createOsc('sine', 1046.50, now + 0.15, 0.5, 0.3); // C6 sparkle
+            } else if(tier === 'S') {
+                createOsc('triangle', 523.25, now, 0.3, 0.2); // C5
+                createOsc('triangle', 659.25, now + 0.05, 0.3, 0.2); // E5
+                createOsc('sine', 783.99, now + 0.1, 0.4, 0.2); // G5
+            } else if(tier === 'A') {
+                createOsc('triangle', 440.00, now, 0.2, 0.15); // A4
+                createOsc('sine', 554.37, now + 0.05, 0.3, 0.15); // C#5
+            } else if(tier === 'B') {
+                createOsc('triangle', 392.00, now, 0.2, 0.15); // G4
+                createOsc('sine', 493.88, now + 0.05, 0.2, 0.15); // B4
+            } else { // C
+                createOsc('sine', 349.23, now, 0.15, 0.1); // F4 (single soft chime)
+                createOsc('square', 200, now, 0.05, 0.05); // Tiny mechanical click
+            }
+        };
+
         window.fireConfetti = (tier) => {
             if(typeof confetti !== 'function') return;
             if(tier === 'SS') {
@@ -1464,6 +1504,8 @@
             const cardData = achievPackCards[index];
             achievSelectedIndices.push(index);
 
+            window.playCardClickSound(cardData.tier);
+
             const newInventory = { ...userData.inventory };
             newInventory[cardData.id] = (newInventory[cardData.id] || 0) + 1;
             await updateDoc(doc(db, "users", currentUser.uid), { inventory: newInventory }).catch(e => console.error(e));
@@ -1618,6 +1660,8 @@
 
             const cardData = currentPackCards[index];
             selectedCardsIndices.push(index);
+
+            window.playCardClickSound(cardData.tier);
 
             const newInventory = { ...userData.inventory };
             newInventory[cardData.id] = (newInventory[cardData.id] || 0) + 1;
@@ -1774,6 +1818,8 @@
             if (!window.cardDatabase) return;
             const card = window.cardDatabase.find(c => c.id === cardId);
             if(!card) return;
+
+            window.playCardClickSound(card.tier);
             
             const dropRates = { 'C': '56.0%', 'B': '30.0%', 'A': '10.3%', 'S': '3.5%', 'SS': '0.2%' };
             const tierColors = { 'C': 'text-green-400 border-green-400', 'B': 'text-blue-400 border-blue-400', 'A': 'text-purple-400 border-purple-400', 'S': 'text-yellow-400 border-yellow-400', 'SS': 'text-red-500 border-red-500' };
