@@ -89,7 +89,7 @@
         .pack-bottom { height: 80%; bottom: 0; border-radius: 0 0 12px 12px; border-top: none; z-index: 30; display: flex; align-items: center; justify-content: center; transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
         .pack-cards-bg { position: absolute; top: 20px; left: 10px; right: 10px; bottom: 20px; background: #1f2937; border-radius: 8px; z-index: 20; }
         
-        /* Pacote Premium Cores */
+        /* Pacote Premium Cores (Exclusivo Conquistas) */
         .pack-premium .pack-top, .pack-premium .pack-bottom { background: linear-gradient(135deg, #7f1d1d, #450a0a); border-color: #facc15; }
         .pack-premium .pack-top { border-bottom: 3px dashed #facc15; }
         .pack-premium .pack-cards-bg { background: #451a03; border: 1px solid #facc15; box-shadow: inset 0 0 20px rgba(250, 204, 21, 0.2); }
@@ -136,8 +136,8 @@
             </div>
             <div id="logged-in-view" class="hidden items-center gap-4">
                 <div class="flex flex-col items-end">
-                    <div class="text-sm bg-gray-800 px-3 py-1 rounded-full border border-green-500/50 shadow-inner">
-                        Pulls: <span id="pulls-count" class="font-bold text-green-400">-</span>/3
+                    <div class="text-sm bg-gray-800 px-3 py-1 rounded-full border border-green-500/50 shadow-inner flex items-center gap-2">
+                        <span>Pulls: <span id="pulls-count" class="font-bold text-green-400">-</span>/3</span>
                     </div>
                     <div id="pull-timer-container" class="text-[10px] text-gray-400 mt-1 hidden">
                         +1 em: <span id="pull-timer" class="text-green-400 font-bold">--:--:--</span>
@@ -158,6 +158,7 @@
     <nav class="flex justify-center bg-gray-800 border-b border-gray-700 overflow-x-auto whitespace-nowrap shadow-md">
         <button onclick="window.switchTab('gacha')" id="tab-gacha" class="px-6 py-3 font-semibold tab-active hover:bg-gray-700 transition">Roleta (Gacha)</button>
         <button onclick="window.switchTab('album')" id="tab-album" class="px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition">Meu Álbum</button>
+        <button onclick="window.switchTab('achievements')" id="tab-achievements" class="hidden px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition text-blue-400 border-b-2 border-transparent">Conquistas 🏆</button>
         <button onclick="window.switchTab('explore')" id="tab-explore" class="px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition text-yellow-500 border-b-2 border-transparent">Comunidade 🔍</button>
         <button onclick="window.switchTab('trade')" id="tab-trade" class="px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition text-green-500 border-b-2 border-transparent hidden">Trocas 🤝</button>
         <button onclick="window.switchTab('admin')" id="tab-admin" class="hidden px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition text-red-500 border-b-2 border-transparent">⚙️ Painel Admin</button>
@@ -212,12 +213,13 @@
         </div>
     </div>
 
-    <!-- Modal de Detalhes da Carta (COM O BOTÃO X EXTERNO CORRIGIDO) -->
+    <!-- Modal de Detalhes da Carta (COM O BOTÃO X EXTERNO CORRIGIDO NA VIEWPORT) -->
     <div id="card-detail-modal" class="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-[110] hidden backdrop-blur-md p-4 pt-16 md:pt-4">
-        <!-- BOTÃO X FICOU AQUI FORA DA DIV DA CARTA -->
-        <button onclick="window.closeCardDetail()" class="absolute top-4 right-4 md:top-8 md:right-8 text-gray-300 hover:text-white text-4xl z-[120] w-12 h-12 rounded-full bg-gray-900 border-2 border-gray-600 flex items-center justify-center transition hover:bg-red-600 hover:border-red-400 shadow-2xl">&times;</button>
         
-        <div class="bg-gray-800 rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.8)] max-w-4xl w-full border border-gray-700 flex flex-col md:flex-row overflow-y-auto max-h-[85vh]">
+        <!-- O BOTÃO X AGORA ESTÁ FIXADO NA TELA (VIEWPORT) -->
+        <button onclick="window.closeCardDetail()" class="fixed top-4 right-4 md:top-8 md:right-8 text-gray-300 hover:text-white text-4xl z-[120] w-12 h-12 rounded-full bg-gray-900 border-2 border-gray-600 flex items-center justify-center transition hover:bg-red-600 hover:border-red-400 shadow-2xl">&times;</button>
+        
+        <div class="bg-gray-800 rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.8)] max-w-4xl w-full border border-gray-700 flex flex-col md:flex-row overflow-y-auto max-h-[85vh] relative mt-10 md:mt-0">
             <!-- Card Showcase -->
             <div class="w-full md:w-1/2 p-8 flex justify-center items-center bg-gray-900 border-b md:border-b-0 md:border-r border-gray-700 relative min-h-[450px]">
                 <div class="w-[240px] sm:w-[300px] aspect-[2/3] flex-shrink-0 shadow-2xl transform transition hover:scale-105 rounded-xl">
@@ -249,8 +251,41 @@
         </div>
     </div>
 
+    <!-- OVERLAY GERAL DE ABERTURA DE PACOTE (USADO PARA CONQUISTAS) -->
+    <div id="achiev-pack-overlay" class="fixed inset-0 bg-black/95 z-[200] hidden flex-col items-center justify-center p-4 backdrop-blur-md">
+        <h2 id="achiev-overlay-title" class="text-3xl font-bold text-white mb-8 drop-shadow-md animate-pulse">Abra sua Recompensa!</h2>
+        <div id="achiev-pack-flash" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full bg-white z-[250] pointer-events-none opacity-0 hidden transition-opacity duration-300 rounded-full blur-[80px] mix-blend-overlay"></div>
+        
+        <!-- O Pacote que será clicado -->
+        <div id="achiev-booster-pack" class="pack cursor-pointer" onclick="window.triggerAchievPackOpening()">
+            <div class="pack-cards-bg shadow-inner"></div>
+            <div class="pack-top"></div>
+            <div class="pack-bottom flex-col gap-3 relative overflow-hidden">
+                <div id="achiev-pack-bg" class="absolute inset-0 bg-gradient-to-t from-red-600/30 to-transparent hidden"></div>
+                
+                <!-- Ícone Shuriken (Para Premium) -->
+                <svg id="achiev-pack-icon-premium" class="w-16 h-16 text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,1)] hidden z-10" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0L14.5 9.5L24 12L14.5 14.5L12 24L9.5 14.5L0 12L9.5 9.5Z"/>
+                </svg>
+                <!-- Ícone Logo (Para Básico) -->
+                <div id="achiev-pack-icon-basic" class="w-24 h-24 flex items-center justify-center drop-shadow-[0_0_15px_rgba(34,197,94,0.6)] z-10">
+                    <img src="https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/img/icon.png" class="w-full h-full object-contain">
+                </div>
+                
+                <span id="achiev-pack-label" class="block text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-green-300 to-green-600 tracking-widest drop-shadow-[0_2px_2px_rgba(0,0,0,1)] z-10">NIN</span>
+                <span id="achiev-pack-sublabel" class="block text-xs text-gray-300 font-bold tracking-widest uppercase z-10">Pacote Básico</span>
+            </div>
+        </div>
+
+        <div id="achiev-revealed-cards" class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 md:gap-6 lg:gap-8 hidden w-full max-w-5xl place-items-center"></div>
+
+        <button id="btn-achiev-close" onclick="window.closeAchievOverlay()" class="hidden mt-10 bg-green-600 hover:bg-green-500 text-white font-bold py-4 px-10 rounded-full text-xl shadow-lg shadow-green-900/30 transition transform hover:scale-105 border border-green-400">
+            CONCLUIR RESGATE
+        </button>
+    </div>
+
     <!-- Conteúdo Principal -->
-    <main class="flex-grow p-4 md:p-8 flex flex-col items-center">
+    <main class="flex-grow p-4 md:p-8 flex flex-col items-center w-full">
 
         <!-- ABA: GACHA -->
         <section id="section-gacha" class="w-full max-w-5xl flex flex-col items-center gap-8">
@@ -266,15 +301,14 @@
             </div>
 
             <div id="gacha-content" class="hidden w-full flex-col items-center gap-8">
-                <!-- Dashboard de Conquistas e Progresso no Gacha -->
+                <!-- Status Simplificado no Gacha -->
                 <div class="w-full bg-gray-800 border border-gray-700 p-4 rounded-xl shadow-md flex justify-between items-center gap-4 flex-wrap">
                     <div>
-                        <h3 class="text-green-400 font-bold text-sm uppercase">Progresso Ninja</h3>
-                        <p class="text-white text-2xl font-black"><span id="total-packs-opened">0</span> <span class="text-sm text-gray-400 font-normal">pacotes abertos no total</span></p>
+                        <h3 class="text-green-400 font-bold text-sm uppercase">Packs Abertos</h3>
+                        <p class="text-white text-2xl font-black"><span id="gacha-total-packs-opened">0</span></p>
                     </div>
                     <div class="text-right">
-                        <p class="text-xs text-gray-400">Próximo <strong>Pacote Premium</strong> garantido em:</p>
-                        <p class="text-yellow-400 font-bold text-lg"><span id="packs-to-premium">10</span> pacotes abertos</p>
+                        <button onclick="window.switchTab('achievements')" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded shadow text-sm font-bold transition">Ver Conquistas 🏆</button>
                     </div>
                 </div>
 
@@ -284,45 +318,27 @@
                 </div>
 
                 <div id="gacha-area" class="relative flex flex-col justify-center items-center min-h-[400px] w-full gap-8">
-                    
                     <!-- Flash Overlay para a Explosão do Pacote -->
                     <div id="pack-flash" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full bg-white z-[100] pointer-events-none opacity-0 hidden transition-opacity duration-300 rounded-full blur-[80px] mix-blend-overlay"></div>
 
-                    <!-- Div dos Pacotes (Normal e Premium) -->
-                    <div id="packs-selection-area" class="flex flex-col sm:flex-row gap-8 items-center justify-center">
-                        
-                        <!-- Pacote Normal -->
-                        <div id="booster-pack" class="pack" onclick="window.openPack(false)">
-                            <div class="pack-cards-bg shadow-inner"></div>
-                            <div class="pack-top"></div>
-                            <div class="pack-bottom flex-col gap-3">
-                                <div class="w-24 h-24 flex items-center justify-center drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]">
-                                    <img src="https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/img/icon.png" alt="Logo" class="w-full h-full object-contain">
-                                </div>
-                                <span class="block text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-green-300 to-green-600 tracking-widest drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">NIN</span>
-                                <span class="block text-xs text-gray-300 font-bold tracking-widest uppercase">Pacote Básico</span>
+                    <!-- Pacote Normal -->
+                    <div id="booster-pack" class="pack" onclick="window.openPack()">
+                        <div class="pack-cards-bg shadow-inner"></div>
+                        <div class="pack-top"></div>
+                        <div class="pack-bottom flex-col gap-3">
+                            <div class="w-24 h-24 flex items-center justify-center drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]">
+                                <img src="https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/img/icon.png" alt="Logo" class="w-full h-full object-contain">
                             </div>
+                            <span class="block text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-green-300 to-green-600 tracking-widest drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">NIN</span>
+                            <span class="block text-xs text-gray-300 font-bold tracking-widest uppercase">Pacote Básico</span>
                         </div>
-
-                        <!-- Pacote Premium -->
-                        <div id="booster-pack-premium" class="pack pack-premium glowing-premium hidden" onclick="window.openPack(true)">
-                            <div class="pack-cards-bg shadow-inner"></div>
-                            <div class="pack-top"></div>
-                            <div class="pack-bottom flex-col gap-3 relative overflow-hidden">
-                                <div class="absolute inset-0 bg-gradient-to-t from-red-600/30 to-transparent"></div>
-                                <div class="text-yellow-400 text-5xl drop-shadow-[0_0_10px_rgba(250,204,21,1)]">👑</div>
-                                <span class="block text-3xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-yellow-600 tracking-widest drop-shadow-[0_2px_2px_rgba(0,0,0,1)] z-10">PREMIUM</span>
-                                <span class="block text-xs text-yellow-200 font-bold tracking-widest uppercase bg-black/50 px-2 py-1 rounded z-10">Disponível: <span id="premium-packs-count">0</span></span>
-                            </div>
-                        </div>
-
                     </div>
                     
                     <!-- Container de Temporizador Grande -->
                     <div id="out-of-pulls-container" class="hidden flex-col items-center justify-center bg-gray-800 p-8 rounded-xl border border-gray-700 w-full max-w-md mx-auto shadow-2xl">
                         <div class="text-6xl mb-4 opacity-30">⏳</div>
                         <h3 class="text-2xl font-bold text-gray-200 mb-2">Sem Pacotes Básicos!</h3>
-                        <p class="text-gray-400 text-center mb-6">Sua energia acabou. Aguarde a recarga para voltar a abrir pacotes e expandir seu álbum.</p>
+                        <p class="text-gray-400 text-center mb-6">Sua energia acabou. Aguarde a recarga para voltar a abrir pacotes.</p>
                         <div class="bg-gray-900 px-8 py-4 rounded-lg border border-gray-700 text-center shadow-inner">
                             <span class="block text-xs text-gray-500 uppercase font-bold mb-1">Próximo pacote em:</span>
                             <span id="large-pull-timer" class="text-4xl font-black text-green-400 tracking-wider">--:--:--</span>
@@ -338,6 +354,18 @@
             </div>
         </section>
 
+        <!-- ABA: CONQUISTAS -->
+        <section id="section-achievements" class="w-full max-w-5xl hidden flex-col gap-8">
+            <div class="text-center space-y-2 mb-4">
+                <h2 class="text-4xl font-bold text-blue-400 drop-shadow-md">Conquistas Ninja 🏆</h2>
+                <p class="text-gray-400">Complete missões e resgate prêmios exclusivos. Pacotes resgatados aqui são abertos imediatamente!</p>
+            </div>
+            
+            <div id="achievements-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                <!-- Conquistas geradas pelo JS -->
+            </div>
+        </section>
+
         <!-- ABA: ÁLBUM -->
         <section id="section-album" class="w-full max-w-6xl hidden flex-col gap-6">
             <div id="album-locked" class="text-center bg-gray-800 p-8 rounded-xl border border-gray-700">
@@ -346,7 +374,6 @@
             </div>
 
             <div id="album-content" class="hidden flex-col gap-6 w-full">
-                <!-- Controle e Filtros do Álbum -->
                 <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
                     <div class="flex items-center gap-3">
                         <h2 class="text-2xl font-bold text-gray-100">Meu Álbum</h2>
@@ -371,7 +398,6 @@
                     </div>
                 </div>
 
-                <!-- Container do Álbum (Dinâmico) -->
                 <div id="album-grid"></div>
             </div>
         </section>
@@ -381,7 +407,7 @@
             <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 flex flex-col md:flex-row gap-4 items-center justify-between shadow-md">
                 <div>
                     <h2 class="text-2xl font-bold text-yellow-500">Ranking & Comunidade</h2>
-                    <p class="text-gray-400 text-sm">Pesquise ninjas e veja quem tem as melhores coleções.</p>
+                    <p class="text-gray-400 text-sm">Pesquise ninjas e veja as medalhas de quem tem as melhores coleções.</p>
                 </div>
                 <div class="flex w-full md:w-auto gap-2">
                     <input type="text" id="search-input" oninput="window.filterPlayers()" placeholder="Nick do Ninja..." class="w-full md:w-64 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-green-500">
@@ -553,7 +579,6 @@
                             <input type="text" id="admin-name" oninput="window.updateAdminPreview()" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:border-green-500 focus:outline-none" required placeholder="Ex: Masiel Bolado">
                         </div>
                         
-                        <!-- NOVOS CAMPOS: NÚMERO E VERSÃO -->
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-300 mb-1">Número (Ex: 001)</label>
@@ -690,31 +715,33 @@
         };
 
         window.switchTab = (tabName) => {
-            ['gacha', 'album', 'explore', 'trade', 'admin'].forEach(t => {
+            ['gacha', 'album', 'explore', 'trade', 'admin', 'achievements'].forEach(t => {
                 const sec = document.getElementById(`section-${t}`);
                 const btn = document.getElementById(`tab-${t}`);
-                if(!btn) return;
+                if(!btn || !sec) return;
 
                 if (t === tabName) {
                     sec.classList.remove('hidden'); sec.classList.add('flex');
-                    btn.classList.remove('tab-inactive', 'text-yellow-600', 'text-green-500', 'text-red-600', 'border-transparent');
+                    btn.classList.remove('tab-inactive', 'text-yellow-600', 'text-green-500', 'text-red-600', 'text-blue-400', 'border-transparent');
                     btn.classList.add('tab-active');
                     if(t === 'explore') btn.classList.add('text-yellow-500', 'border-yellow-500');
                     if(t === 'trade') btn.classList.add('text-green-500', 'border-green-500');
                     if(t === 'admin') btn.classList.add('text-red-500', 'border-red-500');
+                    if(t === 'achievements') btn.classList.add('text-blue-400', 'border-blue-400');
 
                     if (t === 'explore' && window.loadAllPlayers) window.loadAllPlayers(); 
                     if (t === 'admin' && window.loadGitHubImages) {
-                        window.loadGitHubImages(); 
-                        window.updateAdminPreview(); 
+                        window.loadGitHubImages(); window.updateAdminPreview(); 
                     }
+                    if (t === 'achievements' && window.renderAchievements) window.renderAchievements();
                 } else {
                     sec.classList.add('hidden'); sec.classList.remove('flex');
-                    btn.classList.remove('tab-active', 'text-yellow-500', 'border-yellow-500', 'text-green-500', 'border-green-500', 'text-red-500', 'border-red-500');
+                    btn.classList.remove('tab-active', 'text-yellow-500', 'border-yellow-500', 'text-green-500', 'border-green-500', 'text-red-500', 'border-red-500', 'text-blue-400', 'border-blue-400');
                     btn.classList.add('tab-inactive', 'border-transparent');
                     if(t === 'explore') btn.classList.add('text-yellow-600');
                     if(t === 'trade') btn.classList.add('text-green-500');
                     if(t === 'admin') btn.classList.add('text-red-600');
+                    if(t === 'achievements') btn.classList.add('text-blue-400');
                 }
             });
         };
@@ -734,6 +761,14 @@
                 }
             });
             if(window.refreshAlbum) window.refreshAlbum();
+        };
+
+        window.updateAlbumViewSettings = () => {
+            const sortSelect = document.getElementById('album-sort');
+            if (sortSelect) {
+                window.currentAlbumSort = sortSelect.value;
+                if(window.refreshAlbum) window.refreshAlbum();
+            }
         };
 
         let isDraggingPreview = false;
@@ -775,7 +810,6 @@
         document.addEventListener('mousedown', handleDragStart);
         document.addEventListener('mousemove', handleDragMove);
         document.addEventListener('mouseup', handleDragEnd);
-        
         document.addEventListener('touchstart', handleDragStart, {passive: false});
         document.addEventListener('touchmove', handleDragMove, {passive: false});
         document.addEventListener('touchend', handleDragEnd);
@@ -862,12 +896,13 @@
 
         // --- ESTADO GLOBAL ---
         let currentUser = null;
-        let userData = { pullsAvailable: 0, inventory: {}, role: 'player', tradesToday: 0, lastTradeDate: "", lastPullTimestamp: null, totalPacksOpened: 0, premiumPacksAvailable: 0 };
+        let userData = { 
+            pullsAvailable: 0, inventory: {}, role: 'player', tradesToday: 0, 
+            lastTradeDate: "", lastPullTimestamp: null, totalPacksOpened: 0, 
+            claimedAchievements: {} 
+        };
         let globalSettings = { registrationsOpen: true };
-        let unsubUser = null;
-        let unsubCards = null;
-        let unsubTrades = null;
-        let unsubSettings = null;
+        let unsubUser = null; let unsubCards = null; let unsubTrades = null; let unsubSettings = null;
         let allOpenTrades = [];
         
         window.cardDatabase = [];
@@ -878,8 +913,7 @@
 
         const TIER_VALUES = { 'C': 1, 'B': 2, 'A': 3, 'S': 4, 'SS': 5 };
         const TIER_ORDER = ['SS', 'S', 'A', 'B', 'C'];
-        let currentOfferQty = 1;
-        let currentReqQty = 1;
+        let currentOfferQty = 1; let currentReqQty = 1;
 
         // --- FUNÇÃO PARA INICIAR LISTENERS GLOBAIS COM TRATAMENTO DE ERROS ---
         const startGlobalListeners = () => {
@@ -897,15 +931,10 @@
                             if (regBtn) regBtn.classList.add('hidden');
                             if (adminRegStatus) { adminRegStatus.innerText = "DESLIGADO"; adminRegStatus.className = "text-red-400 font-bold"; }
                         }
-                    } else {
-                        if (currentUser && userData && userData.role === 'admin') {
-                            setDoc(doc(db, "settings", "global"), { registrationsOpen: true }).catch(err => console.warn(err));
-                        }
+                    } else if (currentUser && userData && userData.role === 'admin') {
+                        setDoc(doc(db, "settings", "global"), { registrationsOpen: true }).catch(err => console.warn(err));
                     }
-                }, (error) => {
-                    console.warn("Aviso: Falha ao ler configurações. Aguardando login.");
-                    unsubSettings = null; 
-                });
+                }, () => { unsubSettings = null; });
             }
 
             if (!unsubCards) {
@@ -919,13 +948,10 @@
                         if(count[data.tier] !== undefined) count[data.tier]++;
                     });
                     
-                    // Atualizar Balanceamento
                     const total = window.cardDatabase.length;
                     const ideal = {
-                        C: Math.round(total * 0.50),
-                        B: Math.round(total * 0.30),
-                        A: Math.round(total * 0.12),
-                        S: Math.round(total * 0.06),
+                        C: Math.round(total * 0.50), B: Math.round(total * 0.30),
+                        A: Math.round(total * 0.12), S: Math.round(total * 0.06),
                         SS: Math.round(total * 0.02)
                     };
 
@@ -940,7 +966,6 @@
                     const adminList = document.getElementById('admin-card-list');
                     if (adminList) {
                         adminList.innerHTML = '';
-                        // Ordenar por número para facilitar a visualização do admin
                         let sortedAdminDb = [...window.cardDatabase].sort((a,b) => (a.cardNumber || '0').localeCompare(b.cardNumber || '0'));
                         
                         sortedAdminDb.forEach(c => {
@@ -968,16 +993,13 @@
                     if (currentUser) {
                         window.renderAlbumHTML('album-grid', userData.inventory);
                         window.updateTradeOptions();
+                        window.renderAchievements();
                     }
                     if (currentUser && userData.role === 'admin' && window.loadGitHubImages) window.loadGitHubImages();
-                }, (error) => {
-                    console.warn("Aviso: Falha ao ler catálogo de cartas. Aguardando login.");
-                    unsubCards = null; 
-                });
+                }, () => { unsubCards = null; });
             }
         };
 
-        // Tenta iniciar os listeners assim que o app carrega
         startGlobalListeners();
 
         // --- TEMPORIZADOR DE PULLS (A CADA 8 HORAS) ---
@@ -1036,39 +1058,25 @@
             const safeUsername = username.toLowerCase().replace(/[^a-z0-9]/g, '');
             if(safeUsername.length < 3) {
                 errorEl.innerText = "Seu usuário deve ter pelo menos 3 letras.";
-                errorEl.classList.remove('hidden');
-                return;
+                errorEl.classList.remove('hidden'); return;
             }
             const fakeEmail = `${safeUsername}@nincard.com`;
             
-            submitBtn.disabled = true;
-            submitBtn.innerText = "Aguarde...";
+            submitBtn.disabled = true; submitBtn.innerText = "Aguarde...";
             
             try {
                 if (window.authMode === 'register') {
-                    if (!globalSettings.registrationsOpen && safeUsername !== 'auriosh' && safeUsername !== 'vilao') {
-                        throw new Error("Os cadastros estão desativados no momento.");
-                    }
-                    if (localStorage.getItem('nin_ccg_registered') && safeUsername !== 'auriosh' && safeUsername !== 'vilao') {
-                        throw new Error("Você já registrou uma conta neste dispositivo.");
-                    }
+                    if (!globalSettings.registrationsOpen && safeUsername !== 'auriosh' && safeUsername !== 'vilao') throw new Error("Os cadastros estão desativados no momento.");
+                    if (localStorage.getItem('nin_ccg_registered') && safeUsername !== 'auriosh' && safeUsername !== 'vilao') throw new Error("Você já registrou uma conta neste dispositivo.");
 
                     let userIp = 'unknown';
-                    try {
-                        const ipRes = await fetch('https://api.ipify.org?format=json');
-                        const ipData = await ipRes.json();
-                        userIp = ipData.ip;
-                    } catch(err) { console.warn("Erro ao ler IP", err); }
+                    try { const ipRes = await fetch('https://api.ipify.org?format=json'); const ipData = await ipRes.json(); userIp = ipData.ip; } catch(err) { }
 
                     const allUsersSnap = await getDocs(collection(db, "users"));
                     let ipInUse = false;
-                    allUsersSnap.forEach(doc => {
-                        if (doc.data().ip === userIp && userIp !== 'unknown') ipInUse = true;
-                    });
+                    allUsersSnap.forEach(doc => { if (doc.data().ip === userIp && userIp !== 'unknown') ipInUse = true; });
 
-                    if (ipInUse && safeUsername !== 'auriosh' && safeUsername !== 'vilao') {
-                        throw new Error("Limite atingido: Já existe uma conta registrada na sua rede/IP.");
-                    }
+                    if (ipInUse && safeUsername !== 'auriosh' && safeUsername !== 'vilao') throw new Error("Limite atingido: Já existe uma conta registrada na sua rede/IP.");
 
                     const userCredential = await createUserWithEmailAndPassword(auth, fakeEmail, pass);
                     await updateProfile(userCredential.user, { displayName: username });
@@ -1076,17 +1084,10 @@
                     const userRole = (safeUsername === 'auriosh' || safeUsername === 'vilao') ? 'admin' : 'player';
 
                     await setDoc(doc(db, "users", userCredential.user.uid), {
-                        displayName: username,
-                        displayNameLower: username.toLowerCase(),
-                        pullsAvailable: 3,
-                        lastPullTimestamp: null,
-                        inventory: {},
-                        role: userRole,
-                        tradesToday: 0,
-                        lastTradeDate: new Date().toDateString(),
-                        totalPacksOpened: 0,
-                        premiumPacksAvailable: 0,
-                        ip: userIp 
+                        displayName: username, displayNameLower: username.toLowerCase(),
+                        pullsAvailable: 3, lastPullTimestamp: null, inventory: {}, role: userRole,
+                        tradesToday: 0, lastTradeDate: new Date().toDateString(), totalPacksOpened: 0, 
+                        claimedAchievements: {}, ip: userIp 
                     });
                     
                     localStorage.setItem('nin_ccg_registered', 'true'); 
@@ -1098,9 +1099,7 @@
                 let errorMsg = error.message.replace('Firebase: ', '');
                 if (error.code === 'auth/email-already-in-use') errorMsg = "Este usuário já está em uso!";
                 if (error.code === 'auth/invalid-credential') errorMsg = "Usuário ou senha incorretos!";
-                
-                errorEl.innerText = errorMsg;
-                errorEl.classList.remove('hidden');
+                errorEl.innerText = errorMsg; errorEl.classList.remove('hidden');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerText = window.authMode === 'register' ? 'Cadastrar' : 'Entrar';
@@ -1124,6 +1123,7 @@
                 document.getElementById('album-content').classList.remove('hidden');
                 document.getElementById('album-content').classList.add('flex');
                 document.getElementById('tab-trade').classList.remove('hidden');
+                document.getElementById('tab-achievements').classList.remove('hidden');
 
                 startGlobalListeners();
 
@@ -1131,7 +1131,7 @@
                 unsubUser = onSnapshot(doc(db, "users", user.uid), async (docSnap) => {
                     if (docSnap.exists()) {
                         userData = docSnap.data();
-                        window._currentUserData = userData; 
+                        if(!userData.claimedAchievements) userData.claimedAchievements = {};
 
                         if (userData.pullsAvailable < 3 && !userData.lastPullTimestamp) {
                             await updateDoc(doc(db, "users", user.uid), { lastPullTimestamp: Date.now() });
@@ -1143,23 +1143,19 @@
                         window.updateGachaUI();
                         window.renderAlbumHTML('album-grid', userData.inventory);
                         window.updateTradeOptions(); 
-                        window.updateTradeLimitsUI();
+                        window.updateTradeLimitsUI(); 
+                        window.renderAchievements();
 
                         if (userData.role === 'admin') document.getElementById('tab-admin').classList.remove('hidden');
                         else document.getElementById('tab-admin').classList.add('hidden');
                     }
-                }, (error) => {
-                    console.error("Erro no listener de dados do usuário:", error.message);
                 });
 
                 if(unsubTrades) unsubTrades();
                 unsubTrades = onSnapshot(query(collection(db, "trades"), where("status", "==", "open")), (snapshot) => {
                     allOpenTrades = [];
                     snapshot.forEach(doc => allOpenTrades.push({ id: doc.id, ...doc.data() }));
-                    window.renderTradeBoard();
-                    window.updateTradeLimitsUI();
-                }, (error) => {
-                    console.error("Erro no listener do mural de trocas:", error.message);
+                    window.renderTradeBoard(); window.updateTradeLimitsUI();
                 });
 
             } else {
@@ -1168,6 +1164,7 @@
                 document.getElementById('logged-in-view').classList.remove('flex');
                 document.getElementById('tab-admin').classList.add('hidden');
                 document.getElementById('tab-trade').classList.add('hidden');
+                document.getElementById('tab-achievements').classList.add('hidden');
                 
                 document.getElementById('gacha-locked').classList.remove('hidden');
                 document.getElementById('gacha-content').classList.add('hidden');
@@ -1185,28 +1182,847 @@
             }
         });
 
+        // --- SISTEMA DE MEDALHAS ---
+        window.getUserMedals = (inventory) => {
+            if(!inventory || window.cardDatabase.length === 0) return null;
+            
+            const totalCounts = { C:0, B:0, A:0, S:0, SS:0 };
+            window.cardDatabase.forEach(c => totalCounts[c.tier]++);
+            
+            const userCounts = { C:0, B:0, A:0, S:0, SS:0 };
+            Object.keys(inventory).forEach(id => {
+                if(inventory[id] > 0) {
+                    const c = window.cardDatabase.find(card => card.id === id);
+                    if(c) userCounts[c.tier]++;
+                }
+            });
+
+            const hasC = totalCounts.C > 0 && userCounts.C === totalCounts.C;
+            const hasB = totalCounts.B > 0 && userCounts.B === totalCounts.B;
+            const hasA = totalCounts.A > 0 && userCounts.A === totalCounts.A;
+            const hasS = totalCounts.S > 0 && userCounts.S === totalCounts.S;
+            const hasSS = totalCounts.SS > 0 && userCounts.SS === totalCounts.SS;
+            const hasALL = hasC && hasB && hasA && hasS && hasSS;
+
+            if (hasALL) return `<span title="Mestre Ninja Absoluto (Coleção Completa!)" class="text-xl drop-shadow-[0_0_10px_#ff0000]">🔥</span>`;
+            if (hasSS) return `<span title="Colecionador Rank SS" class="text-xl drop-shadow-[0_0_5px_#ff00ff]">🌟</span>`;
+            if (hasS) return `<span title="Colecionador Rank S" class="text-xl drop-shadow-[0_0_5px_#00ffff]">💎</span>`;
+            if (hasA) return `<span title="Colecionador Rank A" class="text-xl drop-shadow-[0_0_5px_#ffd700]">🥇</span>`;
+            if (hasB) return `<span title="Colecionador Rank B" class="text-xl drop-shadow-[0_0_5px_#c0c0c0]">🥈</span>`;
+            if (hasC) return `<span title="Colecionador Rank C" class="text-xl drop-shadow-[0_0_5px_#cd7f32]">🥉</span>`;
+            return '';
+        };
+
+        window.checkTierComplete = (tier) => {
+            if(window.cardDatabase.length === 0) return false;
+            let total = 0; let owned = 0;
+            window.cardDatabase.forEach(c => {
+                if(c.tier === tier) {
+                    total++;
+                    if(userData.inventory && userData.inventory[c.id] > 0) owned++;
+                }
+            });
+            return total > 0 && owned === total;
+        };
+
+        // --- SISTEMA DE CONQUISTAS ---
+        window.renderAchievements = () => {
+            const grid = document.getElementById('achievements-grid');
+            if(!grid || !currentUser) return;
+            
+            const totalOpened = userData.totalPacksOpened || 0;
+            const claimedTens = userData.claimedAchievements?.tens || 0;
+            const maxTens = Math.floor(totalOpened / 10);
+            const tensIsReady = maxTens > claimedTens;
+
+            const achievements = [
+                { 
+                    id: 'first3', title: 'Primeiros Passos', desc: 'Abra 3 pacotes básicos. <br><span class="text-[10px] text-gray-500">Prêmio: +1 Pacote Básico</span>', 
+                    isReady: totalOpened >= 3, isClaimed: userData.claimedAchievements?.first3, 
+                    type: 'basic', progress: `${Math.min(3, totalOpened)}/3`
+                },
+                { 
+                    id: 'tens', title: 'Veterano Constante', desc: 'A cada 10 pacotes abertos, ganhe 1 Premium.<br><span class="text-[10px] text-gray-500">Prêmio: Pacote Shuriken Premium (S/SS)</span>', 
+                    isReady: tensIsReady, isClaimed: false, 
+                    type: 'premium', progress: `${totalOpened % 10}/10`, isRepeatable: true
+                },
+                { 
+                    id: 'tierC', title: 'Colecionador Rank C 🥉', desc: 'Obtenha todas as cartas Rank C.<br><span class="text-[10px] text-gray-500">Prêmio: Pacote Premium</span>', 
+                    isReady: window.checkTierComplete('C'), isClaimed: userData.claimedAchievements?.tierC, type: 'premium'
+                },
+                { 
+                    id: 'tierB', title: 'Colecionador Rank B 🥈', desc: 'Obtenha todas as cartas Rank B.<br><span class="text-[10px] text-gray-500">Prêmio: Pacote Premium</span>', 
+                    isReady: window.checkTierComplete('B'), isClaimed: userData.claimedAchievements?.tierB, type: 'premium'
+                },
+                { 
+                    id: 'tierA', title: 'Colecionador Rank A 🥇', desc: 'Obtenha todas as cartas Rank A.<br><span class="text-[10px] text-gray-500">Prêmio: Pacote Premium</span>', 
+                    isReady: window.checkTierComplete('A'), isClaimed: userData.claimedAchievements?.tierA, type: 'premium'
+                },
+                { 
+                    id: 'tierS', title: 'Colecionador Rank S 💎', desc: 'Obtenha todas as cartas Rank S.<br><span class="text-[10px] text-gray-500">Prêmio: Pacote Premium</span>', 
+                    isReady: window.checkTierComplete('S'), isClaimed: userData.claimedAchievements?.tierS, type: 'premium'
+                },
+                { 
+                    id: 'tierSS', title: 'Colecionador Rank SS 🌟', desc: 'Obtenha todas as cartas Rank SS.<br><span class="text-[10px] text-gray-500">Prêmio: Pacote Premium</span>', 
+                    isReady: window.checkTierComplete('SS'), isClaimed: userData.claimedAchievements?.tierSS, type: 'premium'
+                }
+            ];
+
+            grid.innerHTML = '';
+            achievements.forEach(achiev => {
+                let btnHTML = '';
+                let bgClass = achiev.isClaimed && !achiev.isRepeatable ? 'bg-gray-800 opacity-50' : 'bg-gray-800';
+                let borderClass = achiev.isReady && !achiev.isClaimed ? (achiev.type === 'premium' ? 'border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.3)]' : 'border-green-400 shadow-[0_0_15px_rgba(34,197,94,0.3)]') : 'border-gray-700';
+
+                if (achiev.isClaimed && !achiev.isRepeatable) {
+                    btnHTML = `<button disabled class="w-full bg-gray-700 text-gray-400 font-bold py-2 rounded-lg cursor-not-allowed">Já Resgatado</button>`;
+                } else if (achiev.isReady) {
+                    const colorBtn = achiev.type === 'premium' ? 'bg-yellow-600 hover:bg-yellow-500 text-white' : 'bg-green-600 hover:bg-green-500 text-white';
+                    btnHTML = `<button id="btn-claim-${achiev.id}" onclick="window.claimAchievement('${achiev.id}', '${achiev.type}')" class="w-full ${colorBtn} font-bold py-2 rounded-lg transition shadow-lg animate-pulse">RESGATAR E ABRIR!</button>`;
+                } else {
+                    btnHTML = `<button disabled class="w-full bg-gray-900 border border-gray-600 text-gray-500 font-bold py-2 rounded-lg cursor-not-allowed">Bloqueado</button>`;
+                }
+
+                grid.innerHTML += `
+                    <div class="${bgClass} border ${borderClass} p-5 rounded-xl flex flex-col justify-between transition-all">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="text-xl font-bold ${achiev.type==='premium'?'text-yellow-400':'text-green-400'}">${achiev.title}</h3>
+                                <p class="text-sm text-gray-300 mt-1">${achiev.desc}</p>
+                            </div>
+                            ${achiev.progress ? `<span class="bg-gray-900 border border-gray-600 px-2 py-1 rounded text-xs font-bold text-gray-400">${achiev.progress}</span>` : ''}
+                        </div>
+                        ${btnHTML}
+                    </div>
+                `;
+            });
+        };
+
+        let currentAchievType = 'basic';
+        let achievPackCards = [];
+        let achievSelectedIndices = [];
+        let isOpeningAchiev = false;
+
+        window.claimAchievement = async (achievId, type) => {
+            if(isOpeningAchiev) return;
+            
+            // Trava de segurança extra para evitar cliques múltiplos acidentais!
+            const totalOpened = userData.totalPacksOpened || 0;
+            if (achievId === 'tens') {
+                const claimedTens = userData.claimedAchievements?.tens || 0;
+                const maxTens = Math.floor(totalOpened / 10);
+                if (maxTens <= claimedTens) return; 
+            } else {
+                if (userData.claimedAchievements?.[achievId]) return;
+            }
+
+            isOpeningAchiev = true;
+            
+            // Bloqueia visualmente o botão para mostrar que está processando
+            const btn = document.getElementById(`btn-claim-${achievId}`);
+            if(btn) { btn.disabled = true; btn.innerText = "Processando..."; }
+
+            const newClaimed = { ...userData.claimedAchievements };
+            if (achievId === 'tens') {
+                newClaimed.tens = (newClaimed.tens || 0) + 1;
+            } else {
+                newClaimed[achievId] = true;
+            }
+
+            try {
+                await updateDoc(doc(db, "users", currentUser.uid), { claimedAchievements: newClaimed });
+                
+                // Configurar Overlay de Abertura
+                currentAchievType = type;
+                achievPackCards = [];
+                for(let i=0; i<8; i++) {
+                    achievPackCards.push(getRandomCard(type === 'premium'));
+                }
+                achievSelectedIndices = [];
+
+                const overlay = document.getElementById('achiev-pack-overlay');
+                const pack = document.getElementById('achiev-booster-pack');
+                const revealed = document.getElementById('achiev-revealed-cards');
+                const btnClose = document.getElementById('btn-achiev-close');
+                
+                const bgPremium = document.getElementById('achiev-pack-bg');
+                const iconPremium = document.getElementById('achiev-pack-icon-premium');
+                const iconBasic = document.getElementById('achiev-pack-icon-basic');
+                const label = document.getElementById('achiev-pack-label');
+                const sublabel = document.getElementById('achiev-pack-sublabel');
+
+                if(type === 'premium') {
+                    pack.className = 'pack pack-premium glowing-premium cursor-pointer';
+                    bgPremium.classList.remove('hidden');
+                    iconPremium.classList.remove('hidden');
+                    iconBasic.classList.add('hidden');
+                    label.innerText = "PREMIUM"; label.className = "block text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-yellow-600 tracking-widest drop-shadow-[0_2px_2px_rgba(0,0,0,1)] z-10";
+                    sublabel.innerText = "Pacote de Conquista"; sublabel.className = "block text-xs text-yellow-200 font-bold tracking-widest uppercase bg-black/50 px-2 py-1 rounded z-10";
+                } else {
+                    pack.className = 'pack shaking cursor-pointer';
+                    bgPremium.classList.add('hidden');
+                    iconPremium.classList.add('hidden');
+                    iconBasic.classList.remove('hidden');
+                    label.innerText = "NIN"; label.className = "block text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-green-300 to-green-600 tracking-widest drop-shadow-[0_2px_2px_rgba(0,0,0,1)] z-10";
+                    sublabel.innerText = "Pacote Básico"; sublabel.className = "block text-xs text-gray-300 font-bold tracking-widest uppercase z-10";
+                }
+
+                pack.classList.remove('hidden', 'tearing');
+                revealed.classList.add('hidden');
+                btnClose.classList.add('hidden');
+                document.getElementById('achiev-overlay-title').innerText = "Abra sua Recompensa!";
+
+                overlay.classList.remove('hidden');
+                overlay.classList.add('flex');
+
+            } catch(e) {
+                console.error(e);
+                window.showMessage("Erro ao resgatar conquista.");
+                isOpeningAchiev = false;
+                if(btn) { btn.disabled = false; btn.innerText = "RESGATAR E ABRIR!"; }
+            }
+        };
+
+        window.triggerAchievPackOpening = () => {
+            const pack = document.getElementById('achiev-booster-pack');
+            if(pack.classList.contains('tearing')) return;
+
+            document.getElementById('achiev-overlay-title').innerText = "Escolha 2 Cartas!";
+            document.getElementById('achiev-overlay-title').classList.remove('animate-pulse');
+
+            let highestTierStr = currentAchievType === 'premium' ? 'SS' : 'A'; // Fake it for sound
+            window.playGachaSound(highestTierStr);
+
+            pack.classList.add('tearing');
+            window.fireConfetti(highestTierStr);
+            
+            const flash = document.getElementById('achiev-pack-flash');
+            if (flash) {
+                flash.classList.remove('hidden'); void flash.offsetWidth; 
+                flash.classList.remove('opacity-0'); flash.classList.add('opacity-100');
+                setTimeout(() => {
+                    flash.classList.remove('opacity-100'); flash.classList.add('opacity-0');
+                    setTimeout(() => flash.classList.add('hidden'), 300);
+                }, 250);
+            }
+
+            setTimeout(() => {
+                pack.classList.add('hidden');
+                const revealedContainer = document.getElementById('achiev-revealed-cards');
+                revealedContainer.innerHTML = '';
+                revealedContainer.classList.remove('hidden');
+
+                for(let index=0; index<8; index++) {
+                    revealedContainer.innerHTML += `
+                        <div class="opacity-0" style="animation: card-deal 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards ${index * 0.12}s;">
+                            <div class="card-container w-24 h-36 sm:w-32 sm:h-48 md:w-40 md:h-60 cursor-pointer transform transition hover:scale-105 rounded-xl" id="achiev-card-${index}" onclick="window.revealAchievCard(${index})">
+                                <div class="card-inner shadow-2xl rounded-xl" id="achiev-card-inner-${index}">
+                                    <div class="card-back ${currentAchievType === 'premium' ? 'border-yellow-400 bg-gradient-to-br from-red-900 to-black' : 'hover:shadow-green-500/50'} transition duration-300 flex flex-col items-center justify-center rounded-xl border-[4px]">
+                                        <img src="https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/img/icon.png" class="w-10 h-10 sm:w-16 sm:h-16 opacity-60 drop-shadow-[0_0_5px_rgba(34,197,94,0.4)]" alt="Card Logo">
+                                    </div>
+                                    <div class="card-front p-1 flex flex-col justify-between rounded-xl" id="achiev-card-front-${index}"></div>
+                                </div>
+                            </div>
+                        </div>`;
+                }
+            }, 500);
+        };
+
+        window.revealAchievCard = async (index) => {
+            const innerContainer = document.getElementById(`achiev-card-inner-${index}`);
+            if (innerContainer && innerContainer.classList.contains('flipped')) {
+                const cardData = achievPackCards[index];
+                if (cardData) window.showCardDetail(cardData.id);
+                return;
+            }
+
+            if (!innerContainer || achievSelectedIndices.length >= 2) return;
+
+            const cardData = achievPackCards[index];
+            achievSelectedIndices.push(index);
+
+            const newInventory = { ...userData.inventory };
+            newInventory[cardData.id] = (newInventory[cardData.id] || 0) + 1;
+            await updateDoc(doc(db, "users", currentUser.uid), { inventory: newInventory }).catch(e => console.error(e));
+
+            window.renderCardHTML(`achiev-card-front-${index}`, cardData, false, false, newInventory);
+            innerContainer.classList.add('flipped');
+            
+            const cardContainer = document.getElementById(`achiev-card-${index}`);
+            if (cardContainer) cardContainer.classList.remove('hover:scale-105');
+            
+            const ringColors = { 'C': 'ring-green-400', 'B': 'ring-blue-400', 'A': 'ring-purple-400', 'S': 'ring-yellow-400', 'SS': 'ring-red-500' };
+            if (cardContainer) cardContainer.classList.add(`reveal-${cardData.tier}`, 'ring-4', ringColors[cardData.tier]);
+            
+            if (achievSelectedIndices.length === 2) {
+                setTimeout(() => {
+                    for(let idx=0; idx<8; idx++) {
+                        if (!achievSelectedIndices.includes(idx)) {
+                            const fakeCard = achievPackCards[idx];
+                            const innerCard = document.getElementById(`achiev-card-inner-${idx}`);
+                            window.renderCardHTML(`achiev-card-front-${idx}`, fakeCard, false, false, userData.inventory);
+                            if (innerCard) innerCard.classList.add('flipped');
+                            
+                            const leftCardContainer = document.getElementById(`achiev-card-${idx}`);
+                            if (leftCardContainer) {
+                                leftCardContainer.classList.add('opacity-70', 'grayscale');
+                                leftCardContainer.classList.remove('hover:scale-105', 'z-50', 'z-10');
+                            }
+                        }
+                    }
+                    document.getElementById('btn-achiev-close').classList.remove('hidden');
+                }, 1000); 
+            }
+        };
+
+        window.closeAchievOverlay = () => {
+            document.getElementById('achiev-pack-overlay').classList.add('hidden');
+            document.getElementById('achiev-pack-overlay').classList.remove('flex');
+            isOpeningAchiev = false;
+        };
+
+        // --- LÓGICA DO GACHA BÁSICO ---
+        let currentPackCards = [];
+        let selectedCardsIndices = [];
+        let isOpeningPack = false;
+
+        function getRandomCard(isPremium = false) {
+            if(window.cardDatabase.length === 0) return null; 
+            
+            let targetTier = 'C';
+            if (isPremium) {
+                const roll = Math.floor(Math.random() * 100) + 1;
+                targetTier = roll <= 90 ? 'S' : 'SS';
+            } else {
+                const roll = Math.floor(Math.random() * 10000) + 1;
+                if (roll <= 5600) targetTier = 'C';          
+                else if (roll <= 8600) targetTier = 'B';     
+                else if (roll <= 9630) targetTier = 'A';     
+                else if (roll <= 9980) targetTier = 'S';     
+                else targetTier = 'SS';                      
+            }
+            
+            let possibleCards = window.cardDatabase.filter(c => c.tier === targetTier);
+            if(possibleCards.length === 0 && isPremium) possibleCards = window.cardDatabase.filter(c => c.tier === 'S' || c.tier === 'SS');
+            if(possibleCards.length === 0) possibleCards = window.cardDatabase; 
+            
+            return possibleCards[Math.floor(Math.random() * possibleCards.length)];
+        }
+
+        window.openPack = async () => {
+            if (!currentUser || isOpeningPack || window.cardDatabase.length === 0 || userData.pullsAvailable <= 0) return;
+            isOpeningPack = true;
+            
+            const userRef = doc(db, "users", currentUser.uid);
+            let updateData = { pullsAvailable: userData.pullsAvailable - 1 };
+            if (userData.pullsAvailable === 3) updateData.lastPullTimestamp = Date.now();
+            updateData.totalPacksOpened = (userData.totalPacksOpened || 0) + 1;
+            
+            await updateDoc(userRef, updateData).catch(e => console.error(e));
+
+            currentPackCards = [];
+            let highestTierVal = 0; let highestTierStr = 'C';
+            
+            for(let i=0; i<8; i++) {
+                const card = getRandomCard(false);
+                currentPackCards.push(card);
+                if (TIER_VALUES[card.tier] > highestTierVal) {
+                    highestTierVal = TIER_VALUES[card.tier];
+                    highestTierStr = card.tier;
+                }
+            }
+            selectedCardsIndices = [];
+
+            const pack = document.getElementById('booster-pack');
+            if (pack) {
+                if(highestTierVal >= 4) { pack.classList.add(`glowing-${highestTierStr}`, 'shaking-violent'); } 
+                else { pack.classList.add('shaking'); }
+                window.playGachaSound(highestTierStr);
+            }
+
+            const suspenseTime = highestTierVal >= 4 ? 1200 : 400;
+
+            setTimeout(() => {
+                if (pack) {
+                    pack.classList.remove('shaking', 'shaking-violent', 'glowing-SS', 'glowing-S', 'glowing-A');
+                    pack.classList.add('tearing');
+                    window.fireConfetti(highestTierStr);
+                    
+                    const flash = document.getElementById('pack-flash');
+                    if (flash) {
+                        flash.classList.remove('hidden'); void flash.offsetWidth; 
+                        flash.classList.remove('opacity-0'); flash.classList.add('opacity-100');
+                        setTimeout(() => {
+                            flash.classList.remove('opacity-100'); flash.classList.add('opacity-0');
+                            setTimeout(() => flash.classList.add('hidden'), 300);
+                        }, 250);
+                    }
+                }
+
+                setTimeout(() => {
+                    if (pack) { pack.classList.add('hidden'); pack.classList.remove('tearing'); }
+                    const revealedContainer = document.getElementById('revealed-cards');
+                    if(revealedContainer) {
+                        revealedContainer.innerHTML = ''; revealedContainer.classList.remove('hidden');
+
+                        for(let index=0; index<8; index++) {
+                            revealedContainer.innerHTML += `
+                                <div class="opacity-0" style="animation: card-deal 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards ${index * 0.12}s;">
+                                    <div class="card-container w-24 h-36 sm:w-32 sm:h-48 md:w-40 md:h-60 cursor-pointer transform transition hover:scale-105 rounded-xl" id="gacha-card-${index}" onclick="window.revealSingleCard(${index})">
+                                        <div class="card-inner shadow-2xl rounded-xl" id="gacha-card-inner-${index}">
+                                            <div class="card-back hover:shadow-green-500/50 transition duration-300 flex flex-col items-center justify-center rounded-xl border-[4px]">
+                                                <img src="https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/img/icon.png" class="w-10 h-10 sm:w-16 sm:h-16 opacity-60 drop-shadow-[0_0_5px_rgba(34,197,94,0.4)]" alt="Card Logo">
+                                            </div>
+                                            <div class="card-front p-1 flex flex-col justify-between rounded-xl" id="gacha-card-front-${index}"></div>
+                                        </div>
+                                    </div>
+                                </div>`;
+                        }
+                    }
+                }, 400); 
+            }, suspenseTime);
+        };
+
+        window.revealSingleCard = async (index) => {
+            const innerContainer = document.getElementById(`gacha-card-inner-${index}`);
+            if (innerContainer && innerContainer.classList.contains('flipped')) {
+                const cardData = currentPackCards[index];
+                if (cardData) window.showCardDetail(cardData.id);
+                return;
+            }
+
+            if (!innerContainer || selectedCardsIndices.length >= 2) return;
+
+            const cardData = currentPackCards[index];
+            selectedCardsIndices.push(index);
+
+            const newInventory = { ...userData.inventory };
+            newInventory[cardData.id] = (newInventory[cardData.id] || 0) + 1;
+            await updateDoc(doc(db, "users", currentUser.uid), { inventory: newInventory }).catch(e => console.error(e));
+
+            window.renderCardHTML(`gacha-card-front-${index}`, cardData, false, false, newInventory);
+            innerContainer.classList.add('flipped');
+            
+            const cardContainer = document.getElementById(`gacha-card-${index}`);
+            if (cardContainer) cardContainer.classList.remove('hover:scale-105');
+            
+            const ringColors = { 'C': 'ring-green-400', 'B': 'ring-blue-400', 'A': 'ring-purple-400', 'S': 'ring-yellow-400', 'SS': 'ring-red-500' };
+            if (cardContainer) cardContainer.classList.add(`reveal-${cardData.tier}`, 'ring-4', ringColors[cardData.tier]);
+            
+            if (selectedCardsIndices.length === 2) {
+                setTimeout(() => {
+                    for(let idx=0; idx<8; idx++) {
+                        if (!selectedCardsIndices.includes(idx)) {
+                            const fakeCard = currentPackCards[idx];
+                            const innerCard = document.getElementById(`gacha-card-inner-${idx}`);
+                            window.renderCardHTML(`gacha-card-front-${idx}`, fakeCard, false, false, userData.inventory);
+                            if (innerCard) innerCard.classList.add('flipped');
+                            
+                            const leftCardContainer = document.getElementById(`gacha-card-${idx}`);
+                            if (leftCardContainer) {
+                                leftCardContainer.classList.add('opacity-70', 'grayscale');
+                                leftCardContainer.classList.remove('hover:scale-105', 'z-50', 'z-10');
+                            }
+                        }
+                    }
+                    isOpeningPack = false;
+                    document.getElementById('btn-next').classList.remove('hidden');
+                }, 1000); 
+            }
+        };
+
+        window.resetPackArea = () => {
+            const revealedCards = document.getElementById('revealed-cards');
+            const btnNext = document.getElementById('btn-next');
+            if (revealedCards) revealedCards.classList.add('hidden');
+            if (btnNext) btnNext.classList.add('hidden');
+            window.updateGachaUI(); 
+        };
+
+        window.updateGachaUI = () => {
+            const pullsCountEl = document.getElementById('pulls-count');
+            if (pullsCountEl) pullsCountEl.innerText = userData.pullsAvailable || 0;
+            
+            document.getElementById('gacha-total-packs-opened').innerText = userData.totalPacksOpened || 0;
+            
+            const containerVazio = document.getElementById('out-of-pulls-container');
+            const boosterPack = document.getElementById('booster-pack');
+
+            if (userData.pullsAvailable <= 0 && !isOpeningPack) {
+                if (boosterPack) boosterPack.classList.add('hidden');
+                if (containerVazio) { containerVazio.classList.remove('hidden'); containerVazio.classList.add('flex'); }
+            } else if (!isOpeningPack && window.cardDatabase.length > 0) {
+                if (boosterPack) boosterPack.classList.remove('hidden');
+                if (containerVazio) { containerVazio.classList.add('hidden'); containerVazio.classList.remove('flex'); }
+            }
+        };
+
+        // --- SISTEMA DE VISUALIZAÇÃO DE CARTAS ---
+        window.renderCardHTML = (elementId, cardData, showQuantity = false, isAlbum = false, sourceInventory = {}) => {
+            const container = document.getElementById(elementId);
+            if(!container) return;
+            const quantity = sourceInventory[cardData.id] || 0;
+            
+            const layout = cardData.layout || 'standard';
+            const isFullArt = layout === 'full-art';
+            
+            const zoom = cardData.imageZoom || 1;
+            const transX = cardData.imageTransX ?? 0;
+            const transY = cardData.imageTransY ?? 0;
+            
+            const imgStyle = `width: 100%; height: 100%; object-fit: contain; transform: translate(${transX}px, ${transY}px) scale(${zoom}); transform-origin: center;`;
+
+            const nameFontSize = cardData.nameFontSize ? `${cardData.nameFontSize}px` : (isFullArt ? '14px' : '12px');
+            const descFontSize = cardData.descFontSize ? `${cardData.descFontSize}px` : (isFullArt ? '10px' : '9px');
+            const nameStyle = `font-size: ${nameFontSize}; line-height: 1.1;`;
+            const descStyle = `font-size: ${descFontSize}; line-height: 1.2;`;
+
+            const rankClasses = {
+                'C': 'border-green-400 bg-gradient-to-br from-green-900 to-black',
+                'B': 'border-blue-400 bg-gradient-to-br from-blue-900 to-black',
+                'A': 'border-purple-400 bg-gradient-to-br from-purple-900 to-black',
+                'S': 'border-yellow-400 bg-gradient-to-br from-yellow-900 to-black',
+                'SS': 'border-red-500 bg-gradient-to-br from-red-900 to-black'
+            };
+            
+            const tierColorText = {
+                'C': 'text-green-400', 'B': 'text-blue-400', 'A': 'text-purple-400', 'S': 'text-yellow-400', 'SS': 'text-red-500'
+            };
+
+            if (isAlbum) container.className = `w-full h-full rounded-xl border-4 border-solid text-white relative overflow-hidden shadow-inner ${rankClasses[cardData.tier]}`;
+            else container.className = `card-front flex flex-col justify-between rounded-xl border-4 border-solid relative overflow-hidden ${rankClasses[cardData.tier]}`;
+
+            const fullImageUrl = cardData.img ? (GITHUB_RAW_URL + cardData.img) : '';
+            const collectionText = `${cardData.cardVersion || 'V1'} • #${cardData.cardNumber || '000'}`;
+
+            let foilEffect = '';
+            if(cardData.tier === 'S') foilEffect = '<div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent mix-blend-overlay pointer-events-none z-20"></div>';
+            if(cardData.tier === 'SS') foilEffect = '<div class="absolute inset-0 foil-anim mix-blend-color-dodge opacity-60 pointer-events-none z-20"></div>';
+
+            let contentHTML = '';
+
+            if(isFullArt) {
+                contentHTML = `
+                    ${foilEffect}
+                    <div class="absolute inset-0 z-0 pointer-events-none overflow-hidden flex items-center justify-center">
+                        <img src="${fullImageUrl}" style="${imgStyle}" onerror="this.onerror=null; this.src='https://via.placeholder.com/150/cbd5e0/4a5568?text=Sem+Imagem';">
+                    </div>
+                    <div class="absolute top-1 left-1 right-1 z-10 flex justify-between pointer-events-none">
+                        <span class="font-black text-xs bg-black/80 px-1.5 py-0.5 rounded border border-gray-600 ${tierColorText[cardData.tier]} shadow-md">R.${cardData.tier}</span>
+                    </div>
+                    <div class="absolute bottom-0 left-0 right-0 p-2 sm:p-3 bg-gradient-to-t from-black via-black/80 to-transparent z-10 pointer-events-none pb-4 sm:pb-5">
+                        <h3 class="font-black text-white drop-shadow-[0_2px_2px_rgba(0,0,0,1)]" style="${nameStyle}">${cardData.name}</h3>
+                        <p class="text-gray-300 italic mt-0.5 leading-tight line-clamp-3" style="${descStyle}">${cardData.desc}</p>
+                    </div>
+                    <div class="absolute bottom-1 left-1 z-10 pointer-events-none">
+                        <span class="text-[7px] sm:text-[9px] text-gray-300 font-bold bg-black/50 px-1 rounded">${collectionText}</span>
+                    </div>
+                    ${showQuantity && quantity > 1 ? `<div class="absolute top-1 right-1 bg-green-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-green-400 z-40 pointer-events-none">x${quantity}</div>` : ''}
+                `;
+            } else {
+                contentHTML = `
+                    ${foilEffect}
+                    <div class="relative z-10 p-1 sm:p-2 h-full flex flex-col pointer-events-none">
+                        <div class="flex justify-between items-center mb-1">
+                            <h3 class="font-bold text-white drop-shadow-md truncate max-w-[70%]" style="${nameStyle}">${cardData.name}</h3>
+                            <span class="font-black text-[10px] sm:text-xs ${tierColorText[cardData.tier]} bg-black/60 px-1 rounded shadow-md">R.${cardData.tier}</span>
+                        </div>
+                        
+                        <div class="w-full aspect-[4/3] bg-black border-2 border-gray-500 overflow-hidden shadow-inner flex-shrink-0 rounded flex items-center justify-center">
+                            <img src="${fullImageUrl}" style="${imgStyle}" onerror="this.onerror=null; this.src='https://via.placeholder.com/150/cbd5e0/4a5568?text=Sem+Imagem';">
+                        </div>
+                        
+                        <div class="flex-grow mt-1 sm:mt-1.5 bg-black/40 p-1 sm:p-1.5 rounded border border-white/20 overflow-hidden text-center flex flex-col items-center justify-center relative">
+                            <p class="text-gray-200 italic leading-tight line-clamp-4" style="${descStyle}">${cardData.desc}</p>
+                        </div>
+                        
+                        <div class="mt-0.5 text-left pointer-events-none">
+                            <span class="text-[7px] sm:text-[9px] text-gray-400 font-bold">${collectionText}</span>
+                        </div>
+
+                        ${showQuantity && quantity > 1 ? `<div class="absolute bottom-1 right-1 bg-green-600 text-white text-[10px] sm:text-xs font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-green-400 z-40">x${quantity}</div>` : ''}
+                    </div>
+                `;
+            }
+            container.innerHTML = contentHTML;
+        };
+
+        window.showCardDetail = (cardId) => {
+            if (!window.cardDatabase) return;
+            const card = window.cardDatabase.find(c => c.id === cardId);
+            if(!card) return;
+            
+            const dropRates = { 'C': '56.0%', 'B': '30.0%', 'A': '10.3%', 'S': '3.5%', 'SS': '0.2%' };
+            const tierColors = { 'C': 'text-green-400 border-green-400', 'B': 'text-blue-400 border-blue-400', 'A': 'text-purple-400 border-purple-400', 'S': 'text-yellow-400 border-yellow-400', 'SS': 'text-red-500 border-red-500' };
+            
+            document.getElementById('detail-card-name').innerText = card.name;
+            document.getElementById('detail-card-desc').innerText = card.desc;
+            
+            const tierEl = document.getElementById('detail-card-tier');
+            tierEl.innerText = `Rank ${card.tier}`;
+            tierEl.className = `px-3 py-1 font-black text-sm rounded shadow-md border ${tierColors[card.tier]} bg-gray-900`;
+            
+            document.getElementById('detail-card-chance').innerText = `Chance Drop: ${dropRates[card.tier]}`;
+            
+            let qty = 0;
+            if(userData && userData.inventory) { qty = userData.inventory[cardId] || 0; }
+            
+            const ownedEl = document.getElementById('detail-card-owned');
+            const ownedContainer = document.getElementById('detail-card-owned-container');
+            
+            if(qty > 0) {
+                ownedEl.innerText = qty;
+                ownedContainer.classList.remove('hidden'); ownedContainer.classList.add('flex');
+            } else {
+                ownedContainer.classList.add('hidden'); ownedContainer.classList.remove('flex');
+            }
+            
+            window.renderCardHTML('detail-card-container', card, false, true, userData ? userData.inventory : {});
+            document.getElementById('card-detail-modal').classList.remove('hidden');
+            document.getElementById('card-detail-modal').classList.add('flex');
+        };
+
+        window.closeCardDetail = () => {
+            document.getElementById('card-detail-modal').classList.add('hidden');
+            document.getElementById('card-detail-modal').classList.remove('flex');
+        };
+
+        window.refreshAlbum = () => { window.renderAlbumHTML('album-grid', userData.inventory); };
+
+        window.renderAlbumHTML = (gridId, sourceInventory) => {
+            const grid = document.getElementById(gridId);
+            if(!grid) return;
+            
+            const isMyAlbum = gridId === 'album-grid';
+            const mode = isMyAlbum ? window.currentAlbumView : 'grid';
+            const sort = isMyAlbum ? window.currentAlbumSort : 'tier-desc';
+
+            let uniqueCards = 0;
+            let cardsArray = [...window.cardDatabase];
+
+            cardsArray.sort((a, b) => {
+                const qtyA = sourceInventory[a.id] || 0;
+                const qtyB = sourceInventory[b.id] || 0;
+                if (sort === 'tier-desc') return TIER_VALUES[b.tier] - TIER_VALUES[a.tier];
+                if (sort === 'tier-asc') return TIER_VALUES[a.tier] - TIER_VALUES[b.tier];
+                if (sort === 'qty-desc') return qtyB - qtyA;
+                if (sort === 'name-asc') return a.name.localeCompare(b.name);
+                return 0;
+            });
+
+            cardsArray.forEach(card => { if((sourceInventory[card.id] || 0) > 0) uniqueCards++; });
+
+            if (isMyAlbum) {
+                const countEl = document.getElementById('collection-count');
+                if (countEl) countEl.innerText = uniqueCards;
+            }
+
+            grid.innerHTML = '';
+            
+            if (mode === 'grid') {
+                grid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4';
+                cardsArray.forEach(card => {
+                    const quantity = sourceInventory[card.id] || 0;
+                    const wrapper = document.createElement('div');
+                    
+                    if (quantity > 0) {
+                        wrapper.className = "w-full aspect-[2/3] relative rounded-xl transition transform hover:scale-105 shadow-lg cursor-pointer";
+                        wrapper.onclick = () => window.showCardDetail(card.id);
+                        const innerCard = document.createElement('div');
+                        innerCard.id = `card-${gridId}-${card.id}`;
+                        innerCard.className = "w-full h-full";
+                        wrapper.appendChild(innerCard);
+                        grid.appendChild(wrapper);
+                        window.renderCardHTML(innerCard.id, card, true, true, sourceInventory);
+                    } else {
+                        wrapper.className = "w-full aspect-[2/3] relative rounded-xl transition shadow-lg bg-gray-800 border-2 border-gray-700 flex items-center justify-center opacity-50";
+                        wrapper.innerHTML = `<span class="text-gray-500 font-bold text-xl">?</span>`;
+                        grid.appendChild(wrapper);
+                    }
+                });
+            } else if (mode === 'table') {
+                grid.className = 'w-full overflow-x-auto bg-gray-800 rounded-xl border border-gray-700';
+                let tableHTML = `<table class="w-full text-left text-sm whitespace-nowrap"><thead class="bg-gray-900 text-gray-400 border-b border-gray-700"><tr><th class="p-3">Imagem</th><th class="p-3">Carta</th><th class="p-3">Nº</th><th class="p-3">Rank</th><th class="p-3">Descrição</th><th class="p-3 text-center">Quantidade</th></tr></thead><tbody class="divide-y divide-gray-700">`;
+                
+                cardsArray.forEach(card => {
+                    const quantity = sourceInventory[card.id] || 0;
+                    const hasCard = quantity > 0;
+                    const fullImageUrl = GITHUB_RAW_URL + card.img;
+                    
+                    if (hasCard) {
+                        tableHTML += `<tr class="hover:bg-gray-700 text-white transition duration-150 cursor-pointer" onclick="window.showCardDetail('${card.id}')">
+                            <td class="p-2"><img src="${fullImageUrl}" class="w-8 h-10 object-cover rounded border border-gray-500"></td>
+                            <td class="p-3 font-bold">${card.name}</td>
+                            <td class="p-3 text-gray-400 font-bold">#${card.cardNumber || '000'}</td>
+                            <td class="p-3 font-bold text-yellow-400">${card.tier}</td>
+                            <td class="p-3 truncate max-w-[200px]">${card.desc}</td>
+                            <td class="p-3 text-center font-bold ${quantity > 1 ? 'text-green-400' : ''}">x${quantity}</td>
+                        </tr>`;
+                    } else {
+                        tableHTML += `<tr class="opacity-50 bg-gray-800 text-gray-500 transition duration-150">
+                            <td class="p-2"><div class="w-8 h-10 bg-gray-700 rounded border border-gray-600 flex items-center justify-center font-bold">?</div></td>
+                            <td class="p-3 font-bold">???</td>
+                            <td class="p-3 font-bold">#???</td>
+                            <td class="p-3 font-bold">${card.tier}</td>
+                            <td class="p-3">???</td>
+                            <td class="p-3 text-center font-bold">-</td>
+                        </tr>`;
+                    }
+                });
+                tableHTML += `</tbody></table>`;
+                grid.innerHTML = tableHTML;
+            } else if (mode === 'ranked') {
+                grid.className = 'flex flex-col gap-8 w-full';
+                TIER_ORDER.forEach(tier => {
+                    const cardsInTier = cardsArray.filter(c => c.tier === tier);
+                    if(cardsInTier.length === 0) return;
+                    
+                    let tierOwned = 0;
+                    cardsInTier.forEach(c => { if((sourceInventory[c.id] || 0) > 0) tierOwned++; });
+                    
+                    let sectionHTML = `<div>
+                        <h3 class="text-xl font-bold border-b border-gray-700 pb-2 mb-4 text-white flex justify-between">Rank ${tier} <span class="text-sm text-gray-400 font-normal">${tierOwned}/${cardsInTier.length}</span></h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4" id="tier-grid-${tier}"></div>
+                    </div>`;
+                    grid.insertAdjacentHTML('beforeend', sectionHTML);
+                    
+                    const tierGrid = document.getElementById(`tier-grid-${tier}`);
+                    cardsInTier.forEach(card => {
+                        const quantity = sourceInventory[card.id] || 0;
+                        const wrapper = document.createElement('div');
+                        
+                        if (quantity > 0) {
+                            wrapper.className = "w-full aspect-[2/3] relative rounded-xl transition transform hover:scale-105 shadow-lg cursor-pointer";
+                            wrapper.onclick = () => window.showCardDetail(card.id);
+                            const innerCard = document.createElement('div');
+                            innerCard.id = `card-rank-${card.id}`;
+                            innerCard.className = "w-full h-full";
+                            wrapper.appendChild(innerCard);
+                            tierGrid.appendChild(wrapper);
+                            window.renderCardHTML(innerCard.id, card, true, true, sourceInventory);
+                        } else {
+                            wrapper.className = "w-full aspect-[2/3] relative rounded-xl transition shadow-lg bg-gray-800 border-2 border-gray-700 flex items-center justify-center opacity-50";
+                            wrapper.innerHTML = `<span class="text-gray-500 font-bold text-xl">?</span>`;
+                            tierGrid.appendChild(wrapper);
+                        }
+                    });
+                });
+            }
+        };
+
+        // --- RANKING GERAL (COM MEDALHAS) ---
+        let allPlayersCache = [];
+        window.loadAllPlayers = async (forceRefresh = false) => {
+            if (allPlayersCache.length > 0 && !forceRefresh) return; 
+
+            const errorEl = document.getElementById('explore-error');
+            const loadingEl = document.getElementById('loading-players');
+            const tbody = document.getElementById('players-table-body');
+            
+            errorEl.classList.add('hidden');
+            tbody.innerHTML = '';
+            loadingEl.classList.remove('hidden');
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "users"));
+                allPlayersCache = [];
+                querySnapshot.forEach(doc => allPlayersCache.push({ uid: doc.id, ...doc.data() }));
+                
+                allPlayersCache.sort((a, b) => {
+                    let stA = 0, stB = 0;
+                    window.cardDatabase.forEach(c => { if(a.inventory && a.inventory[c.id]>0) stA++; if(b.inventory && b.inventory[c.id]>0) stB++; });
+                    return stB - stA;
+                });
+                window.renderPlayersTable(allPlayersCache);
+            } catch (err) {
+                errorEl.innerText = "Erro de permissão ou falha ao carregar ranking.";
+                errorEl.classList.remove('hidden');
+                console.warn(err);
+            } finally {
+                loadingEl.classList.add('hidden');
+            }
+        };
+
+        window.renderPlayersTable = (players) => {
+            const tbody = document.getElementById('players-table-body');
+            tbody.innerHTML = '';
+            if (players.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-gray-500">Nenhum ninja encontrado.</td></tr>`; return; }
+
+            players.forEach(player => {
+                let stats = { Total: 0, C: 0, B: 0, A: 0, S: 0, SS: 0 };
+                window.cardDatabase.forEach(c => { if(player.inventory && player.inventory[c.id]>0) { stats.Total++; stats[c.tier]++; } });
+                
+                const medalHTML = window.getUserMedals(player.inventory);
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-700 transition duration-150 ease-in-out">
+                        <td class="p-4 flex items-center gap-3 min-w-[150px]">
+                            <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.displayName || player.uid}" class="w-8 h-8 rounded-full border border-gray-600 bg-gray-800">
+                            <span class="font-bold text-white">${player.displayName || 'Ninja Oculto'}</span>
+                            ${medalHTML ? `<div class="ml-1 cursor-help">${medalHTML}</div>` : ''}
+                        </td>
+                        <td class="p-4 text-center font-bold text-lg">${stats.Total}</td>
+                        <td class="p-4 text-center text-green-400 font-semibold">${stats.C}</td>
+                        <td class="p-4 text-center text-blue-400 font-semibold">${stats.B}</td>
+                        <td class="p-4 text-center text-purple-400 font-semibold">${stats.A}</td>
+                        <td class="p-4 text-center text-yellow-400 font-semibold">${stats.S}</td>
+                        <td class="p-4 text-center text-red-400 font-bold">${stats.SS}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="window.viewPlayerAlbum('${player.uid}')" class="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded-lg text-xs font-bold transition shadow">Ver Álbum</button>
+                        </td>
+                    </tr>`;
+            });
+        };
+
+        window.filterPlayers = () => {
+            const searchVal = document.getElementById('search-input').value.trim().toLowerCase();
+            if (!searchVal) return window.renderPlayersTable(allPlayersCache);
+            window.renderPlayersTable(allPlayersCache.filter(p => p.displayNameLower && p.displayNameLower.includes(searchVal)));
+        };
+
+        window.viewPlayerAlbum = (uid) => {
+            const player = allPlayersCache.find(p => p.uid === uid);
+            if (!player) return;
+            document.getElementById('explore-table-container').classList.add('hidden');
+            document.getElementById('explore-name').innerText = player.displayName;
+            document.getElementById('explore-avatar').src = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.displayName || player.uid}`;
+            window.renderAlbumHTML('explore-grid', player.inventory);
+            document.getElementById('explore-results').classList.remove('hidden');
+            document.getElementById('explore-results').classList.add('flex');
+        };
+
+        window.closePlayerAlbum = () => {
+            document.getElementById('explore-results').classList.add('hidden');
+            document.getElementById('explore-results').classList.remove('flex');
+            document.getElementById('explore-table-container').classList.remove('hidden');
+        };
+
+        // --- TROCAS (TRADE) COM LIMITES CORRIGIDOS ---
         window.updateTradeLimitsUI = () => {
-            if(!currentUser) return;
+            if(!currentUser || !userData) return;
             const today = new Date().toDateString();
             
             const tradesToday = userData.lastTradeDate === today ? (userData.tradesToday || 0) : 0;
             const hasActiveTrade = allOpenTrades.some(t => t.fromUserId === currentUser.uid);
             
-            document.getElementById('trade-limit-count').innerText = tradesToday;
+            const countEl = document.getElementById('trade-limit-count');
+            if (countEl) countEl.innerText = tradesToday;
             
             const blocker = document.getElementById('trade-form-blocker');
-            if (tradesToday >= 1) {
-                blocker.classList.remove('hidden');
-                document.getElementById('trade-form-blocker-msg').innerText = "Você já concluiu uma troca hoje. Volte amanhã à 00:00!";
-            } else if (hasActiveTrade) {
-                blocker.classList.remove('hidden');
-                document.getElementById('trade-form-blocker-msg').innerText = "Você já tem uma oferta ativa no mural. Cancele-a antes de criar outra.";
-            } else {
-                blocker.classList.add('hidden');
+            if (blocker) {
+                const msg = document.getElementById('trade-form-blocker-msg');
+                if (tradesToday >= 1) {
+                    blocker.classList.remove('hidden');
+                    if(msg) msg.innerText = "Você já concluiu uma troca hoje. Volte amanhã à 00:00!";
+                } else if (hasActiveTrade) {
+                    blocker.classList.remove('hidden');
+                    if(msg) msg.innerText = "Você já tem uma oferta ativa no mural. Cancele-a antes de criar outra.";
+                } else {
+                    blocker.classList.add('hidden');
+                }
             }
         };
 
-        // --- SISTEMA DE TROCAS (TRADE) (Inalterado, apenas omitido da exibição pra poupar espaço, funciona normalmente) ---
         window.updateTradeOptions = () => {
             const offerSelect = document.getElementById('trade-offer');
             if(!offerSelect) return;
@@ -1422,8 +2238,7 @@
                 if(!userASnap.exists()) throw "O criador da oferta não foi encontrado.";
                 const invA = userASnap.data().inventory || {};
 
-                let validCardsForB = [];
-                let totalSupplyable = 0;
+                let validCardsForB = []; let totalSupplyable = 0;
 
                 window.cardDatabase.forEach(c => {
                     if (c.tier === reqTier && (invA[c.id] || 0) === 0) {
@@ -1477,17 +2292,13 @@
 
             if (selectedIndex > -1) {
                 state.selectedIds.splice(selectedIndex, 1);
-                el.classList.remove('border-green-400');
-                el.classList.add('border-transparent');
-                check.classList.remove('flex');
-                check.classList.add('hidden');
+                el.classList.remove('border-green-400'); el.classList.add('border-transparent');
+                check.classList.remove('flex'); check.classList.add('hidden');
             } else {
                 if (state.selectedIds.length >= state.reqQty) return;
                 state.selectedIds.push({ cardId, instanceId });
-                el.classList.remove('border-transparent');
-                el.classList.add('border-green-400');
-                check.classList.remove('hidden');
-                check.classList.add('flex');
+                el.classList.remove('border-transparent'); el.classList.add('border-green-400');
+                check.classList.remove('hidden'); check.classList.add('flex');
             }
             document.getElementById('btn-confirm-accept').disabled = (state.selectedIds.length !== state.reqQty);
         };
@@ -1497,8 +2308,7 @@
             const finalCardsToSend = state.selectedIds.map(item => item.cardId);
 
             const btn = document.getElementById('btn-confirm-accept');
-            btn.disabled = true;
-            btn.innerText = "Processando Troca...";
+            btn.disabled = true; btn.innerText = "Processando Troca...";
 
             try {
                 await runTransaction(db, async (transaction) => {
@@ -1512,11 +2322,9 @@
                     const userASnap = await transaction.get(userARef);
                     const userBSnap = await transaction.get(userBRef);
 
-                    let invA = userASnap.data().inventory || {};
-                    let invB = userBSnap.data().inventory || {};
+                    let invA = userASnap.data().inventory || {}; let invB = userBSnap.data().inventory || {};
 
                     const offQty = tradeSnap.data().offerQuantity || 1;
-
                     const today = new Date().toDateString();
                     let tradesA = userASnap.data().lastTradeDate === today ? (userASnap.data().tradesToday || 0) : 0;
                     let tradesB = userBSnap.data().lastTradeDate === today ? (userBSnap.data().tradesToday || 0) : 0;
@@ -1526,8 +2334,7 @@
 
                     finalCardsToSend.forEach(id => {
                         if((invB[id] || 0) < 1) throw "Inventário insuficiente! Alguém já usou essa carta.";
-                        invB[id]--;
-                        invA[id] = (invA[id] || 0) + 1;
+                        invB[id]--; invA[id] = (invA[id] || 0) + 1;
                     });
 
                     invB[state.offerId] = (invB[state.offerId] || 0) + offQty;
@@ -1542,8 +2349,7 @@
             } catch (e) {
                 window.showMessage("Falha na transação. Você atualizou as Regras do Firebase conforme o tutorial?");
             } finally {
-                btn.disabled = false;
-                btn.innerText = "Confirmar Envio";
+                btn.disabled = false; btn.innerText = "Confirmar Envio";
             }
         };
 
@@ -1582,560 +2388,12 @@
                 
                 await updateDoc(doc(db, "users", targetDoc.id), { pullsAvailable: newPulls });
                 window.showMessage(`Sucesso! O jogador ${targetDoc.data().displayName} agora tem ${newPulls} pacotes.`);
-                document.getElementById('admin-target-user').value = '';
-                document.getElementById('admin-target-amount').value = '';
+                document.getElementById('admin-target-user').value = ''; document.getElementById('admin-target-amount').value = '';
             } catch (err) {
                 window.showMessage(err.message);
             } finally {
                 btn.disabled = false;
             }
-        };
-
-        // --- LÓGICA DO GACHA (COM PACOTES PREMIUM E CONQUISTAS) ---
-        let currentPackCards = [];
-        let selectedCardsIndices = [];
-        let isOpeningPack = false;
-        let isOpeningPremium = false;
-        let pendingAchievementMessage = null;
-
-        function getRandomCard(isPremium = false) {
-            if(window.cardDatabase.length === 0) return null; 
-            
-            let targetTier = 'C';
-            if (isPremium) {
-                // PREMIUM: 90% chance de S, 10% chance de SS
-                const roll = Math.floor(Math.random() * 100) + 1;
-                targetTier = roll <= 90 ? 'S' : 'SS';
-            } else {
-                // NORMAL: Balanceamento Padrão
-                const roll = Math.floor(Math.random() * 10000) + 1;
-                if (roll <= 5600) targetTier = 'C';          // 56.0%
-                else if (roll <= 8600) targetTier = 'B';     // 30.0%
-                else if (roll <= 9630) targetTier = 'A';     // 10.3%
-                else if (roll <= 9980) targetTier = 'S';     // 3.5%
-                else targetTier = 'SS';                      // 0.2%
-            }
-            
-            let possibleCards = window.cardDatabase.filter(c => c.tier === targetTier);
-            if(possibleCards.length === 0 && isPremium) possibleCards = window.cardDatabase.filter(c => c.tier === 'S' || c.tier === 'SS');
-            if(possibleCards.length === 0) possibleCards = window.cardDatabase; 
-            
-            return possibleCards[Math.floor(Math.random() * possibleCards.length)];
-        }
-
-        window.openPack = async (isPremium = false) => {
-            if (!currentUser || isOpeningPack || window.cardDatabase.length === 0) return;
-            
-            if (!isPremium && userData.pullsAvailable <= 0) return;
-            if (isPremium && (userData.premiumPacksAvailable || 0) <= 0) return;
-
-            isOpeningPack = true;
-            isOpeningPremium = isPremium;
-            pendingAchievementMessage = null;
-            
-            // Lógica de update e conquistas
-            const userRef = doc(db, "users", currentUser.uid);
-            let updateData = {};
-            
-            if (isPremium) {
-                updateData.premiumPacksAvailable = (userData.premiumPacksAvailable || 1) - 1;
-            } else {
-                updateData.pullsAvailable = userData.pullsAvailable - 1;
-                if (userData.pullsAvailable === 3) updateData.lastPullTimestamp = Date.now();
-                
-                // Sistema de Progressão e Conquistas (só conta em pacotes normais abertos)
-                let currentOpened = userData.totalPacksOpened || 0;
-                let nextOpened = currentOpened + 1;
-                updateData.totalPacksOpened = nextOpened;
-
-                if (nextOpened === 3) {
-                    updateData.pullsAvailable += 1;
-                    pendingAchievementMessage = "🎯 CONQUISTA DESBLOQUEADA: Primeiros Passos!\nVocê abriu seus primeiros 3 pacotes e ganhou +1 Pacote Básico de presente!";
-                }
-                if (nextOpened > 0 && nextOpened % 10 === 0) {
-                    updateData.premiumPacksAvailable = (userData.premiumPacksAvailable || 0) + 1;
-                    pendingAchievementMessage = `🏆 CONQUISTA DESBLOQUEADA: Colecionador!\nVocê já abriu ${nextOpened} pacotes totais e ganhou 1 PACOTE PREMIUM 100% S/SS garantido!`;
-                }
-            }
-
-            await updateDoc(userRef, updateData).catch(e => console.error(e));
-
-            currentPackCards = [];
-            let highestTierVal = 0;
-            let highestTierStr = 'C';
-            
-            for(let i=0; i<8; i++) {
-                const card = getRandomCard(isPremium);
-                currentPackCards.push(card);
-                if (TIER_VALUES[card.tier] > highestTierVal) {
-                    highestTierVal = TIER_VALUES[card.tier];
-                    highestTierStr = card.tier;
-                }
-            }
-            selectedCardsIndices = [];
-
-            const packId = isPremium ? 'booster-pack-premium' : 'booster-pack';
-            const pack = document.getElementById(packId);
-            
-            if (pack) {
-                if(highestTierVal >= 4) { pack.classList.add(`glowing-${highestTierStr}`, 'shaking-violent'); } 
-                else { pack.classList.add('shaking'); }
-                window.playGachaSound(highestTierStr);
-            }
-
-            const suspenseTime = highestTierVal >= 4 ? 1200 : 400;
-
-            setTimeout(() => {
-                if (pack) {
-                    pack.classList.remove('shaking', 'shaking-violent', 'glowing-SS', 'glowing-S', 'glowing-A', 'glowing-premium');
-                    pack.classList.add('tearing');
-                    window.fireConfetti(highestTierStr);
-                    
-                    const flash = document.getElementById('pack-flash');
-                    if (flash) {
-                        flash.classList.remove('hidden'); void flash.offsetWidth; 
-                        flash.classList.remove('opacity-0'); flash.classList.add('opacity-100');
-                        setTimeout(() => {
-                            flash.classList.remove('opacity-100'); flash.classList.add('opacity-0');
-                            setTimeout(() => flash.classList.add('hidden'), 300);
-                        }, 250);
-                    }
-                }
-
-                setTimeout(() => {
-                    document.getElementById('packs-selection-area').classList.add('hidden');
-                    if (pack) { pack.classList.add('hidden'); pack.classList.remove('tearing'); }
-                    
-                    const revealedContainer = document.getElementById('revealed-cards');
-                    if(revealedContainer) {
-                        revealedContainer.innerHTML = '';
-                        revealedContainer.classList.remove('hidden');
-
-                        for(let index=0; index<8; index++) {
-                            revealedContainer.innerHTML += `
-                                <div class="opacity-0" style="animation: card-deal 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards ${index * 0.12}s;">
-                                    <div class="card-container w-24 h-36 sm:w-32 sm:h-48 md:w-40 md:h-60 cursor-pointer transform transition hover:scale-105 rounded-xl" id="gacha-card-${index}" onclick="window.revealSingleCard(${index})">
-                                        <div class="card-inner shadow-2xl rounded-xl" id="gacha-card-inner-${index}">
-                                            <div class="card-back ${isPremium ? 'border-yellow-400 bg-gradient-to-br from-red-900 to-black' : 'hover:shadow-green-500/50'} transition duration-300 flex flex-col items-center justify-center rounded-xl border-[4px]">
-                                                <img src="https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/img/icon.png" class="w-10 h-10 sm:w-16 sm:h-16 opacity-60 drop-shadow-[0_0_5px_rgba(34,197,94,0.4)]" alt="Card Logo">
-                                            </div>
-                                            <div class="card-front p-1 flex flex-col justify-between rounded-xl" id="gacha-card-front-${index}"></div>
-                                        </div>
-                                    </div>
-                                </div>`;
-                        }
-                    }
-                }, 400); 
-            }, suspenseTime);
-        };
-
-        window.revealSingleCard = async (index) => {
-            const innerContainer = document.getElementById(`gacha-card-inner-${index}`);
-            if (innerContainer && innerContainer.classList.contains('flipped')) {
-                const cardData = currentPackCards[index];
-                if (cardData) window.showCardDetail(cardData.id);
-                return;
-            }
-
-            if (!innerContainer || selectedCardsIndices.length >= 2) return;
-
-            const cardData = currentPackCards[index];
-            selectedCardsIndices.push(index);
-
-            const newInventory = { ...userData.inventory };
-            newInventory[cardData.id] = (newInventory[cardData.id] || 0) + 1;
-            await updateDoc(doc(db, "users", currentUser.uid), { inventory: newInventory }).catch(e => console.error(e));
-
-            window.renderCardHTML(`gacha-card-front-${index}`, cardData, false, false, newInventory);
-            innerContainer.classList.add('flipped');
-            
-            const cardContainer = document.getElementById(`gacha-card-${index}`);
-            if (cardContainer) cardContainer.classList.remove('hover:scale-105');
-            
-            const ringColors = { 'C': 'ring-green-400', 'B': 'ring-blue-400', 'A': 'ring-purple-400', 'S': 'ring-yellow-400', 'SS': 'ring-red-500' };
-            if (cardContainer) cardContainer.classList.add(`reveal-${cardData.tier}`, 'ring-4', ringColors[cardData.tier]);
-            
-            if (selectedCardsIndices.length === 2) {
-                setTimeout(() => {
-                    for(let idx=0; idx<8; idx++) {
-                        if (!selectedCardsIndices.includes(idx)) {
-                            const fakeCard = currentPackCards[idx];
-                            const innerCard = document.getElementById(`gacha-card-inner-${idx}`);
-                            window.renderCardHTML(`gacha-card-front-${idx}`, fakeCard, false, false, userData.inventory);
-                            if (innerCard) innerCard.classList.add('flipped');
-                            
-                            const leftCardContainer = document.getElementById(`gacha-card-${idx}`);
-                            if (leftCardContainer) {
-                                leftCardContainer.classList.add('opacity-70', 'grayscale');
-                                leftCardContainer.classList.remove('hover:scale-105', 'z-50', 'z-10');
-                            }
-                        }
-                    }
-                    isOpeningPack = false;
-                    const btnNext = document.getElementById('btn-next');
-                    if (btnNext) {
-                        btnNext.classList.remove('hidden');
-                    }
-                    
-                    if (pendingAchievementMessage) {
-                        setTimeout(() => { window.showMessage(pendingAchievementMessage); }, 800);
-                    }
-                }, 1000); 
-            }
-        };
-
-        window.resetPackArea = () => {
-            const revealedCards = document.getElementById('revealed-cards');
-            const btnNext = document.getElementById('btn-next');
-            const selectionArea = document.getElementById('packs-selection-area');
-            
-            if (revealedCards) revealedCards.classList.add('hidden');
-            if (btnNext) btnNext.classList.add('hidden');
-            if (selectionArea) selectionArea.classList.remove('hidden');
-            
-            window.updateGachaUI(); 
-        };
-
-        window.updateGachaUI = () => {
-            const pullsCountEl = document.getElementById('pulls-count');
-            if (pullsCountEl) pullsCountEl.innerText = userData.pullsAvailable || 0;
-            
-            // Dashboard Progress
-            const totalOpened = userData.totalPacksOpened || 0;
-            document.getElementById('total-packs-opened').innerText = totalOpened;
-            document.getElementById('packs-to-premium').innerText = 10 - (totalOpened % 10);
-            
-            const premiumCount = userData.premiumPacksAvailable || 0;
-            const btnPremium = document.getElementById('booster-pack-premium');
-            
-            if (premiumCount > 0) {
-                document.getElementById('premium-packs-count').innerText = premiumCount;
-                btnPremium.classList.remove('hidden');
-            } else {
-                btnPremium.classList.add('hidden');
-            }
-            
-            const containerVazio = document.getElementById('out-of-pulls-container');
-            const boosterPack = document.getElementById('booster-pack');
-            const msgCooldown = document.getElementById('cooldown-msg');
-
-            if (userData.pullsAvailable <= 0 && !isOpeningPack) {
-                if (boosterPack) boosterPack.classList.add('hidden');
-                if (msgCooldown) msgCooldown.classList.add('hidden'); 
-                if (containerVazio) {
-                    containerVazio.classList.remove('hidden');
-                    containerVazio.classList.add('flex');
-                }
-            } else if (!isOpeningPack && window.cardDatabase.length > 0) {
-                if (boosterPack) boosterPack.classList.remove('hidden');
-                if (containerVazio) {
-                    containerVazio.classList.add('hidden');
-                    containerVazio.classList.remove('flex');
-                }
-                if (msgCooldown) msgCooldown.classList.add('hidden');
-            }
-        };
-
-        // --- SISTEMA DE VISUALIZAÇÃO DE CARTAS (ATUALIZADO COM NÚMERO E VERSÃO) ---
-        window.renderCardHTML = (elementId, cardData, showQuantity = false, isAlbum = false, sourceInventory = {}) => {
-            const container = document.getElementById(elementId);
-            if(!container) return;
-            const quantity = sourceInventory[cardData.id] || 0;
-            
-            const layout = cardData.layout || 'standard';
-            const isFullArt = layout === 'full-art';
-            
-            const zoom = cardData.imageZoom || 1;
-            const transX = cardData.imageTransX ?? 0;
-            const transY = cardData.imageTransY ?? 0;
-            
-            const imgStyle = `width: 100%; height: 100%; object-fit: contain; transform: translate(${transX}px, ${transY}px) scale(${zoom}); transform-origin: center;`;
-
-            const nameFontSize = cardData.nameFontSize ? `${cardData.nameFontSize}px` : (isFullArt ? '14px' : '12px');
-            const descFontSize = cardData.descFontSize ? `${cardData.descFontSize}px` : (isFullArt ? '10px' : '9px');
-            const nameStyle = `font-size: ${nameFontSize}; line-height: 1.1;`;
-            const descStyle = `font-size: ${descFontSize}; line-height: 1.2;`;
-
-            const rankClasses = {
-                'C': 'border-green-400 bg-gradient-to-br from-green-900 to-black',
-                'B': 'border-blue-400 bg-gradient-to-br from-blue-900 to-black',
-                'A': 'border-purple-400 bg-gradient-to-br from-purple-900 to-black',
-                'S': 'border-yellow-400 bg-gradient-to-br from-yellow-900 to-black',
-                'SS': 'border-red-500 bg-gradient-to-br from-red-900 to-black'
-            };
-            
-            const tierColorText = {
-                'C': 'text-green-400', 'B': 'text-blue-400', 'A': 'text-purple-400', 'S': 'text-yellow-400', 'SS': 'text-red-500'
-            };
-
-            if (isAlbum) container.className = `w-full h-full rounded-xl border-4 border-solid text-white relative overflow-hidden shadow-inner ${rankClasses[cardData.tier]}`;
-            else container.className = `card-front flex flex-col justify-between rounded-xl border-4 border-solid relative overflow-hidden ${rankClasses[cardData.tier]}`;
-
-            const fullImageUrl = cardData.img ? (GITHUB_RAW_URL + cardData.img) : '';
-            
-            // Texto da Coleção (Versão + Número)
-            const collectionText = `${cardData.cardVersion || 'V1'} • #${cardData.cardNumber || '000'}`;
-
-            let foilEffect = '';
-            if(cardData.tier === 'S') foilEffect = '<div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent mix-blend-overlay pointer-events-none z-20"></div>';
-            if(cardData.tier === 'SS') foilEffect = '<div class="absolute inset-0 foil-anim mix-blend-color-dodge opacity-60 pointer-events-none z-20"></div>';
-
-            let contentHTML = '';
-
-            if(isFullArt) {
-                contentHTML = `
-                    ${foilEffect}
-                    <div class="absolute inset-0 z-0 pointer-events-none overflow-hidden flex items-center justify-center">
-                        <img src="${fullImageUrl}" style="${imgStyle}" onerror="this.onerror=null; this.src='https://via.placeholder.com/150/cbd5e0/4a5568?text=Sem+Imagem';">
-                    </div>
-                    <div class="absolute top-1 left-1 right-1 z-10 flex justify-between pointer-events-none">
-                        <span class="font-black text-xs bg-black/80 px-1.5 py-0.5 rounded border border-gray-600 ${tierColorText[cardData.tier]} shadow-md">R.${cardData.tier}</span>
-                    </div>
-                    <div class="absolute bottom-0 left-0 right-0 p-2 sm:p-3 bg-gradient-to-t from-black via-black/80 to-transparent z-10 pointer-events-none pb-4 sm:pb-5">
-                        <h3 class="font-black text-white drop-shadow-[0_2px_2px_rgba(0,0,0,1)]" style="${nameStyle}">${cardData.name}</h3>
-                        <p class="text-gray-300 italic mt-0.5 leading-tight line-clamp-3" style="${descStyle}">${cardData.desc}</p>
-                    </div>
-                    <div class="absolute bottom-1 left-1 z-10 pointer-events-none">
-                        <span class="text-[7px] sm:text-[9px] text-gray-300 font-bold bg-black/50 px-1 rounded">${collectionText}</span>
-                    </div>
-                    ${showQuantity && quantity > 1 ? `<div class="absolute top-1 right-1 bg-green-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-green-400 z-40 pointer-events-none">x${quantity}</div>` : ''}
-                `;
-            } else {
-                contentHTML = `
-                    ${foilEffect}
-                    <div class="relative z-10 p-1 sm:p-2 h-full flex flex-col pointer-events-none">
-                        <div class="flex justify-between items-center mb-1">
-                            <h3 class="font-bold text-white drop-shadow-md truncate max-w-[70%]" style="${nameStyle}">${cardData.name}</h3>
-                            <span class="font-black text-[10px] sm:text-xs ${tierColorText[cardData.tier]} bg-black/60 px-1 rounded shadow-md">R.${cardData.tier}</span>
-                        </div>
-                        
-                        <div class="w-full aspect-[4/3] bg-black border-2 border-gray-500 overflow-hidden shadow-inner flex-shrink-0 rounded flex items-center justify-center">
-                            <img src="${fullImageUrl}" style="${imgStyle}" onerror="this.onerror=null; this.src='https://via.placeholder.com/150/cbd5e0/4a5568?text=Sem+Imagem';">
-                        </div>
-                        
-                        <div class="flex-grow mt-1 sm:mt-1.5 bg-black/40 p-1 sm:p-1.5 rounded border border-white/20 overflow-hidden text-center flex flex-col items-center justify-center relative">
-                            <p class="text-gray-200 italic leading-tight line-clamp-4" style="${descStyle}">${cardData.desc}</p>
-                        </div>
-                        
-                        <div class="mt-0.5 text-left pointer-events-none">
-                            <span class="text-[7px] sm:text-[9px] text-gray-400 font-bold">${collectionText}</span>
-                        </div>
-
-                        ${showQuantity && quantity > 1 ? `<div class="absolute bottom-1 right-1 bg-green-600 text-white text-[10px] sm:text-xs font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-green-400 z-40">x${quantity}</div>` : ''}
-                    </div>
-                `;
-            }
-            
-            container.innerHTML = contentHTML;
-        };
-
-        window.refreshAlbum = () => {
-            window.renderAlbumHTML('album-grid', userData.inventory);
-        };
-
-        window.renderAlbumHTML = (gridId, sourceInventory) => {
-            const grid = document.getElementById(gridId);
-            if(!grid) return;
-            
-            const isMyAlbum = gridId === 'album-grid';
-            const mode = isMyAlbum ? window.currentAlbumView : 'grid';
-            const sort = isMyAlbum ? window.currentAlbumSort : 'tier-desc';
-
-            let uniqueCards = 0;
-            let cardsArray = [...window.cardDatabase];
-
-            cardsArray.sort((a, b) => {
-                const qtyA = sourceInventory[a.id] || 0;
-                const qtyB = sourceInventory[b.id] || 0;
-                if (sort === 'tier-desc') return TIER_VALUES[b.tier] - TIER_VALUES[a.tier];
-                if (sort === 'tier-asc') return TIER_VALUES[a.tier] - TIER_VALUES[b.tier];
-                if (sort === 'qty-desc') return qtyB - qtyA;
-                if (sort === 'name-asc') return a.name.localeCompare(b.name);
-                return 0;
-            });
-
-            cardsArray.forEach(card => { if((sourceInventory[card.id] || 0) > 0) uniqueCards++; });
-
-            if (isMyAlbum) {
-                const countEl = document.getElementById('collection-count');
-                if (countEl) countEl.innerText = uniqueCards;
-            }
-
-            grid.innerHTML = '';
-            
-            if (mode === 'grid') {
-                grid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4';
-                cardsArray.forEach(card => {
-                    const quantity = sourceInventory[card.id] || 0;
-                    const wrapper = document.createElement('div');
-                    
-                    if (quantity > 0) {
-                        wrapper.className = "w-full aspect-[2/3] relative rounded-xl transition transform hover:scale-105 shadow-lg cursor-pointer";
-                        wrapper.onclick = () => window.showCardDetail(card.id);
-                        const innerCard = document.createElement('div');
-                        innerCard.id = `card-${gridId}-${card.id}`;
-                        innerCard.className = "w-full h-full";
-                        wrapper.appendChild(innerCard);
-                        grid.appendChild(wrapper);
-                        window.renderCardHTML(innerCard.id, card, true, true, sourceInventory);
-                    } else {
-                        wrapper.className = "w-full aspect-[2/3] relative rounded-xl transition shadow-lg bg-gray-800 border-2 border-gray-700 flex items-center justify-center opacity-50";
-                        wrapper.innerHTML = `<span class="text-gray-500 font-bold text-xl">?</span>`;
-                        grid.appendChild(wrapper);
-                    }
-                });
-            } else if (mode === 'table') {
-                grid.className = 'w-full overflow-x-auto bg-gray-800 rounded-xl border border-gray-700';
-                let tableHTML = `<table class="w-full text-left text-sm whitespace-nowrap"><thead class="bg-gray-900 text-gray-400 border-b border-gray-700"><tr><th class="p-3">Imagem</th><th class="p-3">Carta</th><th class="p-3">Nº</th><th class="p-3">Rank</th><th class="p-3">Descrição</th><th class="p-3 text-center">Quantidade</th></tr></thead><tbody class="divide-y divide-gray-700">`;
-                
-                cardsArray.forEach(card => {
-                    const quantity = sourceInventory[card.id] || 0;
-                    const hasCard = quantity > 0;
-                    const fullImageUrl = GITHUB_RAW_URL + card.img;
-                    
-                    if (hasCard) {
-                        tableHTML += `<tr class="hover:bg-gray-700 text-white transition duration-150 cursor-pointer" onclick="window.showCardDetail('${card.id}')">
-                            <td class="p-2"><img src="${fullImageUrl}" class="w-8 h-10 object-cover rounded border border-gray-500"></td>
-                            <td class="p-3 font-bold">${card.name}</td>
-                            <td class="p-3 text-gray-400 font-bold">#${card.cardNumber || '000'}</td>
-                            <td class="p-3 font-bold text-yellow-400">${card.tier}</td>
-                            <td class="p-3 truncate max-w-[200px]">${card.desc}</td>
-                            <td class="p-3 text-center font-bold ${quantity > 1 ? 'text-green-400' : ''}">x${quantity}</td>
-                        </tr>`;
-                    } else {
-                        tableHTML += `<tr class="opacity-50 bg-gray-800 text-gray-500 transition duration-150">
-                            <td class="p-2"><div class="w-8 h-10 bg-gray-700 rounded border border-gray-600 flex items-center justify-center font-bold">?</div></td>
-                            <td class="p-3 font-bold">???</td>
-                            <td class="p-3 font-bold">#???</td>
-                            <td class="p-3 font-bold">${card.tier}</td>
-                            <td class="p-3">???</td>
-                            <td class="p-3 text-center font-bold">-</td>
-                        </tr>`;
-                    }
-                });
-                tableHTML += `</tbody></table>`;
-                grid.innerHTML = tableHTML;
-            } else if (mode === 'ranked') {
-                grid.className = 'flex flex-col gap-8 w-full';
-                TIER_ORDER.forEach(tier => {
-                    const cardsInTier = cardsArray.filter(c => c.tier === tier);
-                    if(cardsInTier.length === 0) return;
-                    
-                    let tierOwned = 0;
-                    cardsInTier.forEach(c => { if((sourceInventory[c.id] || 0) > 0) tierOwned++; });
-                    
-                    let sectionHTML = `<div>
-                        <h3 class="text-xl font-bold border-b border-gray-700 pb-2 mb-4 text-white flex justify-between">Rank ${tier} <span class="text-sm text-gray-400 font-normal">${tierOwned}/${cardsInTier.length}</span></h3>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4" id="tier-grid-${tier}"></div>
-                    </div>`;
-                    grid.insertAdjacentHTML('beforeend', sectionHTML);
-                    
-                    const tierGrid = document.getElementById(`tier-grid-${tier}`);
-                    cardsInTier.forEach(card => {
-                        const quantity = sourceInventory[card.id] || 0;
-                        const wrapper = document.createElement('div');
-                        
-                        if (quantity > 0) {
-                            wrapper.className = "w-full aspect-[2/3] relative rounded-xl transition transform hover:scale-105 shadow-lg cursor-pointer";
-                            wrapper.onclick = () => window.showCardDetail(card.id);
-                            const innerCard = document.createElement('div');
-                            innerCard.id = `card-rank-${card.id}`;
-                            innerCard.className = "w-full h-full";
-                            wrapper.appendChild(innerCard);
-                            tierGrid.appendChild(wrapper);
-                            window.renderCardHTML(innerCard.id, card, true, true, sourceInventory);
-                        } else {
-                            wrapper.className = "w-full aspect-[2/3] relative rounded-xl transition shadow-lg bg-gray-800 border-2 border-gray-700 flex items-center justify-center opacity-50";
-                            wrapper.innerHTML = `<span class="text-gray-500 font-bold text-xl">?</span>`;
-                            tierGrid.appendChild(wrapper);
-                        }
-                    });
-                });
-            }
-        };
-
-        // --- RANKING GERAL ---
-        let allPlayersCache = [];
-        window.loadAllPlayers = async (forceRefresh = false) => {
-            if (allPlayersCache.length > 0 && !forceRefresh) return; 
-
-            const errorEl = document.getElementById('explore-error');
-            const loadingEl = document.getElementById('loading-players');
-            const tbody = document.getElementById('players-table-body');
-            
-            errorEl.classList.add('hidden');
-            tbody.innerHTML = '';
-            loadingEl.classList.remove('hidden');
-
-            try {
-                const querySnapshot = await getDocs(collection(db, "users"));
-                allPlayersCache = [];
-                querySnapshot.forEach(doc => allPlayersCache.push({ uid: doc.id, ...doc.data() }));
-                
-                allPlayersCache.sort((a, b) => {
-                    let stA = 0, stB = 0;
-                    window.cardDatabase.forEach(c => { if(a.inventory && a.inventory[c.id]>0) stA++; if(b.inventory && b.inventory[c.id]>0) stB++; });
-                    return stB - stA;
-                });
-                window.renderPlayersTable(allPlayersCache);
-            } catch (err) {
-                errorEl.innerText = "Erro de permissão ou falha ao carregar ranking.";
-                errorEl.classList.remove('hidden');
-                console.warn(err);
-            } finally {
-                loadingEl.classList.add('hidden');
-            }
-        };
-
-        window.renderPlayersTable = (players) => {
-            const tbody = document.getElementById('players-table-body');
-            tbody.innerHTML = '';
-            if (players.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-gray-500">Nenhum ninja encontrado.</td></tr>`; return; }
-
-            players.forEach(player => {
-                let stats = { Total: 0, C: 0, B: 0, A: 0, S: 0, SS: 0 };
-                window.cardDatabase.forEach(c => { if(player.inventory && player.inventory[c.id]>0) { stats.Total++; stats[c.tier]++; } });
-                
-                tbody.innerHTML += `
-                    <tr class="hover:bg-gray-700 transition duration-150 ease-in-out">
-                        <td class="p-4 flex items-center gap-3 min-w-[150px]">
-                            <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.displayName || player.uid}" class="w-8 h-8 rounded-full border border-gray-600 bg-gray-800">
-                            <span class="font-bold text-white">${player.displayName || 'Ninja Oculto'}</span>
-                        </td>
-                        <td class="p-4 text-center font-bold text-lg">${stats.Total}</td>
-                        <td class="p-4 text-center text-green-400 font-semibold">${stats.C}</td>
-                        <td class="p-4 text-center text-blue-400 font-semibold">${stats.B}</td>
-                        <td class="p-4 text-center text-purple-400 font-semibold">${stats.A}</td>
-                        <td class="p-4 text-center text-yellow-400 font-semibold">${stats.S}</td>
-                        <td class="p-4 text-center text-red-400 font-bold">${stats.SS}</td>
-                        <td class="p-4 text-center">
-                            <button onclick="window.viewPlayerAlbum('${player.uid}')" class="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded-lg text-xs font-bold transition shadow">Ver Álbum</button>
-                        </td>
-                    </tr>`;
-            });
-        };
-
-        window.filterPlayers = () => {
-            const searchVal = document.getElementById('search-input').value.trim().toLowerCase();
-            if (!searchVal) return window.renderPlayersTable(allPlayersCache);
-            window.renderPlayersTable(allPlayersCache.filter(p => p.displayNameLower && p.displayNameLower.includes(searchVal)));
-        };
-
-        window.viewPlayerAlbum = (uid) => {
-            const player = allPlayersCache.find(p => p.uid === uid);
-            if (!player) return;
-            document.getElementById('explore-table-container').classList.add('hidden');
-            document.getElementById('explore-name').innerText = player.displayName;
-            document.getElementById('explore-avatar').src = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.displayName || player.uid}`;
-            window.renderAlbumHTML('explore-grid', player.inventory);
-            document.getElementById('explore-results').classList.remove('hidden');
-            document.getElementById('explore-results').classList.add('flex');
-        };
-
-        window.closePlayerAlbum = () => {
-            document.getElementById('explore-results').classList.add('hidden');
-            document.getElementById('explore-results').classList.remove('flex');
-            document.getElementById('explore-table-container').classList.remove('hidden');
         };
 
         // --- LÓGICA DE ADMINISTRADOR ---
@@ -2149,12 +2407,8 @@
             const grid = document.getElementById('github-images-grid');
             const emptyMsg = document.getElementById('github-images-empty');
 
-            loading.classList.remove('hidden');
-            emptyMsg.classList.add('hidden');
-            
-            if (!editingCardId) {
-                selectedAdminImage = "";
-            }
+            loading.classList.remove('hidden'); emptyMsg.classList.add('hidden');
+            if (!editingCardId) selectedAdminImage = "";
 
             try {
                 const response = await fetch('https://api.github.com/repos/aurioshlookin/NinCardMemeCollectionBR/contents/assets/cards');
@@ -2162,18 +2416,12 @@
                 const files = await response.json();
 
                 const usedImages = window.cardDatabase.filter(c => c.id !== editingCardId).map(c => c.img);
-                const availableImages = files.filter(f =>
-                    f.type === 'file' &&
-                    f.name.match(/\.(png|jpg|jpeg|gif)$/i) &&
-                    !usedImages.includes(f.name)
-                );
+                const availableImages = files.filter(f => f.type === 'file' && f.name.match(/\.(png|jpg|jpeg|gif)$/i) && !usedImages.includes(f.name));
 
-                grid.innerHTML = ''; 
-                loading.classList.add('hidden');
+                grid.innerHTML = ''; loading.classList.add('hidden');
 
                 if (availableImages.length === 0) {
-                    emptyMsg.classList.remove('hidden');
-                    return;
+                    emptyMsg.classList.remove('hidden'); return;
                 }
 
                 availableImages.forEach(file => {
@@ -2182,8 +2430,7 @@
                     imgDiv.onclick = () => window.selectAdminImage(file.name, imgDiv);
                     
                     if (selectedAdminImage === file.name) {
-                        imgDiv.classList.remove('border-transparent');
-                        imgDiv.classList.add('border-green-500', 'ring-2', 'ring-green-400');
+                        imgDiv.classList.remove('border-transparent'); imgDiv.classList.add('border-green-500', 'ring-2', 'ring-green-400');
                     }
 
                     imgDiv.innerHTML = `
@@ -2192,7 +2439,6 @@
                     `;
                     grid.appendChild(imgDiv);
                 });
-
             } catch (err) {
                 loading.innerText = "Erro ao carregar imagens. Pasta assets/cards existe?";
                 loading.classList.replace('text-green-400', 'text-red-400');
@@ -2252,25 +2498,16 @@
             
             document.getElementById('admin-submit').innerText = "SALVAR ALTERAÇÕES";
             document.getElementById('admin-cancel-btn').classList.remove('hidden');
-            window.updateAdminPreview();
-            window.loadGitHubImages(); 
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.updateAdminPreview(); window.loadGitHubImages(); window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
         window.cancelEdit = () => {
-            editingCardId = null;
-            document.getElementById('admin-form').reset();
-            selectedAdminImage = "";
-            
-            document.getElementById('admin-zoom').value = 1;
-            document.getElementById('admin-name-size').value = 12;
-            document.getElementById('admin-desc-size').value = 9;
+            editingCardId = null; document.getElementById('admin-form').reset(); selectedAdminImage = "";
+            document.getElementById('admin-zoom').value = 1; document.getElementById('admin-name-size').value = 12; document.getElementById('admin-desc-size').value = 9;
             window.adminCardState = { transX: 0, transY: 0 };
-            
             document.getElementById('admin-submit').innerText = "CRIAR CARTA E ADICIONAR AO JOGO";
             document.getElementById('admin-cancel-btn').classList.add('hidden');
-            window.updateAdminPreview();
-            window.loadGitHubImages();
+            window.updateAdminPreview(); window.loadGitHubImages();
         };
 
         document.getElementById('admin-form').addEventListener('submit', async (e) => {
@@ -2281,13 +2518,10 @@
             if (!selectedAdminImage) {
                 msg.innerText = "Erro: Selecione a imagem acima clicando nela!";
                 msg.className = "text-center font-bold text-sm mt-2 text-red-400";
-                msg.classList.remove('hidden');
-                setTimeout(() => msg.classList.add('hidden'), 3000);
-                return;
+                msg.classList.remove('hidden'); setTimeout(() => msg.classList.add('hidden'), 3000); return;
             }
 
-            btn.disabled = true;
-            btn.innerText = "Processando...";
+            btn.disabled = true; btn.innerText = "Processando...";
 
             try {
                 const cardData = {
@@ -2299,8 +2533,7 @@
                     desc: document.getElementById('admin-desc').value,
                     img: selectedAdminImage,
                     imageZoom: parseFloat(document.getElementById('admin-zoom').value) || 1,
-                    imageTransX: window.adminCardState.transX,
-                    imageTransY: window.adminCardState.transY,
+                    imageTransX: window.adminCardState.transX, imageTransY: window.adminCardState.transY,
                     nameFontSize: parseInt(document.getElementById('admin-name-size').value) || (document.getElementById('admin-layout').value === 'full-art' ? 14 : 12),
                     descFontSize: parseInt(document.getElementById('admin-desc-size').value) || (document.getElementById('admin-layout').value === 'full-art' ? 10 : 9)
                 };
@@ -2318,17 +2551,12 @@
                 }
                 
                 msg.className = "text-center font-bold text-sm mt-2 text-green-400";
-                msg.classList.remove('hidden');
-                document.getElementById('admin-form').reset();
-                selectedAdminImage = ""; 
-                
-                document.getElementById('admin-zoom').value = 1;
-                document.getElementById('admin-name-size').value = 12;
-                document.getElementById('admin-desc-size').value = 9;
+                msg.classList.remove('hidden'); document.getElementById('admin-form').reset();
+                selectedAdminImage = ""; document.getElementById('admin-zoom').value = 1;
+                document.getElementById('admin-name-size').value = 12; document.getElementById('admin-desc-size').value = 9;
                 window.adminCardState = { transX: 0, transY: 0 };
                 
-                window.updateAdminPreview(); 
-                window.loadGitHubImages(); 
+                window.updateAdminPreview(); window.loadGitHubImages(); 
             } catch (err) {
                 msg.innerText = "Erro: " + err.message;
                 msg.className = "text-center font-bold text-sm mt-2 text-red-400";
