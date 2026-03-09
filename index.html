@@ -104,6 +104,13 @@
         .pack.tearing .pack-top { transform: translateY(-100px) rotate(-10deg); opacity: 0; }
         .pack.tearing .pack-bottom { transform: translateY(50px); opacity: 0; }
         .pack.tearing .pack-cards-bg { opacity: 0; transition: opacity 0.3s delay 0.3s; }
+        
+        /* Nova Animação de Distribuição de Cartas */
+        @keyframes card-deal {
+            0% { opacity: 0; transform: scale(0.3) translateY(150px) rotate(-15deg); filter: blur(4px); }
+            60% { opacity: 1; filter: blur(0); }
+            100% { opacity: 1; transform: scale(1) translateY(0) rotate(0deg); filter: blur(0); }
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col relative bg-gray-900">
@@ -264,6 +271,9 @@
 
                 <div id="gacha-area" class="relative flex justify-center items-center min-h-[400px] w-full">
                     
+                    <!-- Flash Overlay para a Explosão do Pacote -->
+                    <div id="pack-flash" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full bg-white z-[100] pointer-events-none opacity-0 hidden transition-opacity duration-300 rounded-full blur-[80px] mix-blend-overlay"></div>
+
                     <div id="booster-pack" class="pack" onclick="window.openPack()">
                         <div class="pack-cards-bg shadow-inner"></div>
                         <div class="pack-top"></div>
@@ -287,7 +297,7 @@
                         </div>
                     </div>
 
-                    <div id="revealed-cards" class="flex flex-wrap justify-center gap-2 sm:gap-4 md:gap-8 hidden w-full"></div>
+                    <div id="revealed-cards" class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 md:gap-6 lg:gap-8 hidden w-full place-items-center"></div>
                 </div>
 
                 <button id="btn-next" onclick="window.resetPackArea()" class="hidden bg-green-600 hover:bg-green-500 text-white font-bold py-4 px-8 rounded-full text-xl shadow-lg shadow-green-900/30 transition transform hover:scale-105 active:scale-95 border border-green-400">
@@ -1500,6 +1510,20 @@
                     pack.classList.remove('shaking', 'shaking-violent', 'glowing-SS', 'glowing-S', 'glowing-A');
                     pack.classList.add('tearing');
                     window.fireConfetti(highestTierStr);
+                    
+                    // Flash Effect da explosão do pacote
+                    const flash = document.getElementById('pack-flash');
+                    if (flash) {
+                        flash.classList.remove('hidden');
+                        void flash.offsetWidth; // Força re-renderização para a transição funcionar
+                        flash.classList.remove('opacity-0');
+                        flash.classList.add('opacity-100');
+                        setTimeout(() => {
+                            flash.classList.remove('opacity-100');
+                            flash.classList.add('opacity-0');
+                            setTimeout(() => flash.classList.add('hidden'), 300);
+                        }, 250);
+                    }
                 }
 
                 setTimeout(() => {
@@ -1512,13 +1536,16 @@
                         revealedContainer.classList.remove('hidden');
 
                         for(let index=0; index<8; index++) {
+                            // Container externo faz a animação cascata entrar, container interno mantém o efeito de HOVER original
                             revealedContainer.innerHTML += `
-                                <div class="card-container w-24 h-36 sm:w-32 sm:h-48 md:w-40 md:h-60 cursor-pointer transform transition hover:scale-105" id="gacha-card-${index}" onclick="window.revealSingleCard(${index})">
-                                    <div class="card-inner shadow-2xl rounded-xl" id="gacha-card-inner-${index}">
-                                        <div class="card-back hover:shadow-green-500/50 transition duration-300 flex flex-col items-center justify-center">
-                                            <img src="https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/img/icon.png" class="w-10 h-10 sm:w-16 sm:h-16 opacity-60 drop-shadow-[0_0_5px_rgba(34,197,94,0.4)]" alt="Card Logo">
+                                <div class="opacity-0" style="animation: card-deal 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards ${index * 0.12}s;">
+                                    <div class="card-container w-24 h-36 sm:w-32 sm:h-48 md:w-40 md:h-60 cursor-pointer transform transition hover:scale-105" id="gacha-card-${index}" onclick="window.revealSingleCard(${index})">
+                                        <div class="card-inner shadow-2xl rounded-xl" id="gacha-card-inner-${index}">
+                                            <div class="card-back hover:shadow-green-500/50 transition duration-300 flex flex-col items-center justify-center">
+                                                <img src="https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/img/icon.png" class="w-10 h-10 sm:w-16 sm:h-16 opacity-60 drop-shadow-[0_0_5px_rgba(34,197,94,0.4)]" alt="Card Logo">
+                                            </div>
+                                            <div class="card-front p-1 flex flex-col justify-between" id="gacha-card-front-${index}"></div>
                                         </div>
-                                        <div class="card-front p-1 flex flex-col justify-between" id="gacha-card-front-${index}"></div>
                                     </div>
                                 </div>`;
                         }
