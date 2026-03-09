@@ -81,7 +81,7 @@
         .tab-active { border-bottom: 2px solid #22c55e; color: #22c55e; }
         .tab-inactive { color: #9ca3af; }
 
-        /* Pacotinho (Booster Pack) Customizado Ninja */
+        /* Pacotinhos (Booster Packs) */
         .pack { width: 220px; height: 320px; position: relative; cursor: pointer; transition: transform 0.2s; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5)); }
         .pack:hover { transform: scale(1.05) rotate(2deg); }
         .pack-top, .pack-bottom { position: absolute; width: 100%; background: linear-gradient(135deg, #111827, #000000); border: 4px solid #166534; }
@@ -89,17 +89,22 @@
         .pack-bottom { height: 80%; bottom: 0; border-radius: 0 0 12px 12px; border-top: none; z-index: 30; display: flex; align-items: center; justify-content: center; transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
         .pack-cards-bg { position: absolute; top: 20px; left: 10px; right: 10px; bottom: 20px; background: #1f2937; border-radius: 8px; z-index: 20; }
         
+        /* Pacote Premium Cores */
+        .pack-premium .pack-top, .pack-premium .pack-bottom { background: linear-gradient(135deg, #7f1d1d, #450a0a); border-color: #facc15; }
+        .pack-premium .pack-top { border-bottom: 3px dashed #facc15; }
+        .pack-premium .pack-cards-bg { background: #451a03; border: 1px solid #facc15; box-shadow: inset 0 0 20px rgba(250, 204, 21, 0.2); }
+
         @keyframes pack-shake { 0%, 100% { transform: translateX(0) rotate(0deg); } 25% { transform: translateX(-5px) rotate(-2deg); } 50% { transform: translateX(5px) rotate(2deg); } 75% { transform: translateX(-5px) rotate(-2deg); } }
         @keyframes pack-shake-violent { 0%, 100% { transform: translateX(0) rotate(0deg); } 25% { transform: translateX(-12px) translateY(5px) rotate(-5deg); filter: brightness(1.3); } 50% { transform: translateX(12px) translateY(-5px) rotate(5deg); filter: brightness(1.5); } 75% { transform: translateX(-12px) translateY(5px) rotate(-5deg); filter: brightness(1.3); } }
         @keyframes pack-pulse-SS { 0%, 100% { filter: drop-shadow(0 0 30px #ef4444); } 50% { filter: drop-shadow(0 0 80px #ef4444) brightness(1.2); } }
         @keyframes pack-pulse-S { 0%, 100% { filter: drop-shadow(0 0 20px #facc15); } 50% { filter: drop-shadow(0 0 50px #facc15) brightness(1.1); } }
-        @keyframes pack-pulse-A { 0%, 100% { filter: drop-shadow(0 0 15px #c084fc); } 50% { filter: drop-shadow(0 0 35px #c084fc); } }
+        @keyframes pack-pulse-premium { 0%, 100% { filter: drop-shadow(0 0 20px #facc15); transform: scale(1); } 50% { filter: drop-shadow(0 0 60px #facc15) brightness(1.2); transform: scale(1.02); } }
 
         .pack.shaking { animation: pack-shake 0.3s infinite; }
         .pack.shaking-violent { animation: pack-shake-violent 0.15s infinite; }
         .pack.glowing-SS { animation: pack-shake-violent 0.1s infinite, pack-pulse-SS 0.5s infinite; border-color: #ef4444 !important; }
         .pack.glowing-S { animation: pack-shake-violent 0.15s infinite, pack-pulse-S 0.6s infinite; border-color: #facc15 !important;}
-        .pack.glowing-A { animation: pack-shake 0.2s infinite, pack-pulse-A 0.8s infinite; }
+        .pack.glowing-premium { animation: pack-pulse-premium 2s infinite; }
 
         .pack.tearing .pack-top { transform: translateY(-100px) rotate(-10deg); opacity: 0; }
         .pack.tearing .pack-bottom { transform: translateY(50px); opacity: 0; }
@@ -154,9 +159,7 @@
         <button onclick="window.switchTab('gacha')" id="tab-gacha" class="px-6 py-3 font-semibold tab-active hover:bg-gray-700 transition">Roleta (Gacha)</button>
         <button onclick="window.switchTab('album')" id="tab-album" class="px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition">Meu Álbum</button>
         <button onclick="window.switchTab('explore')" id="tab-explore" class="px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition text-yellow-500 border-b-2 border-transparent">Comunidade 🔍</button>
-        <!-- Aba de Trocas -->
         <button onclick="window.switchTab('trade')" id="tab-trade" class="px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition text-green-500 border-b-2 border-transparent hidden">Trocas 🤝</button>
-        <!-- Aba Admin -->
         <button onclick="window.switchTab('admin')" id="tab-admin" class="hidden px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition text-red-500 border-b-2 border-transparent">⚙️ Painel Admin</button>
     </nav>
 
@@ -200,9 +203,7 @@
             <h2 class="text-xl font-bold text-green-400 mb-2">Escolha as cartas para enviar</h2>
             <p id="trade-accept-desc" class="text-sm text-gray-400 mb-4">Abaixo estão listadas apenas as cartas que você tem e que o jogador ainda não possui.</p>
             
-            <div id="trade-accept-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-3 overflow-y-auto p-2 bg-gray-900 rounded-lg flex-grow mb-4 border border-gray-700">
-                <!-- Cartas injetadas via JS -->
-            </div>
+            <div id="trade-accept-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-3 overflow-y-auto p-2 bg-gray-900 rounded-lg flex-grow mb-4 border border-gray-700"></div>
             
             <div class="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-700">
                 <button onclick="document.getElementById('trade-accept-modal').classList.add('hidden')" class="bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white px-4 py-2 rounded-lg font-bold transition">Cancelar</button>
@@ -211,11 +212,12 @@
         </div>
     </div>
 
-    <!-- Modal de Detalhes da Carta -->
-    <div id="card-detail-modal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[110] hidden backdrop-blur-md p-4">
-        <div class="bg-gray-800 rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.8)] max-w-4xl w-full border border-gray-700 relative flex flex-col md:flex-row overflow-hidden max-h-[90vh] overflow-y-auto">
-            <button onclick="window.closeCardDetail()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-3xl z-50 bg-black/50 w-10 h-10 rounded-full flex items-center justify-center transition hover:bg-red-600">&times;</button>
-
+    <!-- Modal de Detalhes da Carta (COM O BOTÃO X EXTERNO CORRIGIDO) -->
+    <div id="card-detail-modal" class="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-[110] hidden backdrop-blur-md p-4 pt-16 md:pt-4">
+        <!-- BOTÃO X FICOU AQUI FORA DA DIV DA CARTA -->
+        <button onclick="window.closeCardDetail()" class="absolute top-4 right-4 md:top-8 md:right-8 text-gray-300 hover:text-white text-4xl z-[120] w-12 h-12 rounded-full bg-gray-900 border-2 border-gray-600 flex items-center justify-center transition hover:bg-red-600 hover:border-red-400 shadow-2xl">&times;</button>
+        
+        <div class="bg-gray-800 rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.8)] max-w-4xl w-full border border-gray-700 flex flex-col md:flex-row overflow-y-auto max-h-[85vh]">
             <!-- Card Showcase -->
             <div class="w-full md:w-1/2 p-8 flex justify-center items-center bg-gray-900 border-b md:border-b-0 md:border-r border-gray-700 relative min-h-[450px]">
                 <div class="w-[240px] sm:w-[300px] aspect-[2/3] flex-shrink-0 shadow-2xl transform transition hover:scale-105 rounded-xl">
@@ -251,7 +253,7 @@
     <main class="flex-grow p-4 md:p-8 flex flex-col items-center">
 
         <!-- ABA: GACHA -->
-        <section id="section-gacha" class="w-full max-w-4xl flex flex-col items-center gap-8">
+        <section id="section-gacha" class="w-full max-w-5xl flex flex-col items-center gap-8">
             <div id="gacha-locked" class="text-center bg-gray-800 p-8 rounded-xl border border-gray-700 w-full shadow-lg">
                 <h3 class="text-2xl font-bold mb-2 text-white">Faça Login para Jogar!</h3>
                 <p class="text-gray-400 mb-4">Você precisa de uma conta para abrir pacotes e salvar sua coleção.</p>
@@ -264,32 +266,62 @@
             </div>
 
             <div id="gacha-content" class="hidden w-full flex-col items-center gap-8">
+                <!-- Dashboard de Conquistas e Progresso no Gacha -->
+                <div class="w-full bg-gray-800 border border-gray-700 p-4 rounded-xl shadow-md flex justify-between items-center gap-4 flex-wrap">
+                    <div>
+                        <h3 class="text-green-400 font-bold text-sm uppercase">Progresso Ninja</h3>
+                        <p class="text-white text-2xl font-black"><span id="total-packs-opened">0</span> <span class="text-sm text-gray-400 font-normal">pacotes abertos no total</span></p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-gray-400">Próximo <strong>Pacote Premium</strong> garantido em:</p>
+                        <p class="text-yellow-400 font-bold text-lg"><span id="packs-to-premium">10</span> pacotes abertos</p>
+                    </div>
+                </div>
+
                 <div class="text-center space-y-2">
                     <h2 class="text-3xl font-bold text-gray-100">Abra seu Pacote!</h2>
                     <p class="text-gray-400">Cada pacote traz <span class="text-green-400 font-bold">8 cartas</span>. Escolha <span class="text-green-400 font-bold">2</span> para a sua coleção!</p>
                 </div>
 
-                <div id="gacha-area" class="relative flex justify-center items-center min-h-[400px] w-full">
+                <div id="gacha-area" class="relative flex flex-col justify-center items-center min-h-[400px] w-full gap-8">
                     
                     <!-- Flash Overlay para a Explosão do Pacote -->
                     <div id="pack-flash" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full bg-white z-[100] pointer-events-none opacity-0 hidden transition-opacity duration-300 rounded-full blur-[80px] mix-blend-overlay"></div>
 
-                    <div id="booster-pack" class="pack" onclick="window.openPack()">
-                        <div class="pack-cards-bg shadow-inner"></div>
-                        <div class="pack-top"></div>
-                        <div class="pack-bottom flex-col gap-3">
-                            <div class="w-24 h-24 flex items-center justify-center drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]">
-                                <img src="https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/img/icon.png" alt="Logo" class="w-full h-full object-contain">
+                    <!-- Div dos Pacotes (Normal e Premium) -->
+                    <div id="packs-selection-area" class="flex flex-col sm:flex-row gap-8 items-center justify-center">
+                        
+                        <!-- Pacote Normal -->
+                        <div id="booster-pack" class="pack" onclick="window.openPack(false)">
+                            <div class="pack-cards-bg shadow-inner"></div>
+                            <div class="pack-top"></div>
+                            <div class="pack-bottom flex-col gap-3">
+                                <div class="w-24 h-24 flex items-center justify-center drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]">
+                                    <img src="https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/img/icon.png" alt="Logo" class="w-full h-full object-contain">
+                                </div>
+                                <span class="block text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-green-300 to-green-600 tracking-widest drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">NIN</span>
+                                <span class="block text-xs text-gray-300 font-bold tracking-widest uppercase">Pacote Básico</span>
                             </div>
-                            <span class="block text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-green-300 to-green-600 tracking-widest drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">NIN</span>
-                            <span class="block text-xs text-gray-300 font-bold tracking-widest uppercase">Booster Pack</span>
                         </div>
+
+                        <!-- Pacote Premium -->
+                        <div id="booster-pack-premium" class="pack pack-premium glowing-premium hidden" onclick="window.openPack(true)">
+                            <div class="pack-cards-bg shadow-inner"></div>
+                            <div class="pack-top"></div>
+                            <div class="pack-bottom flex-col gap-3 relative overflow-hidden">
+                                <div class="absolute inset-0 bg-gradient-to-t from-red-600/30 to-transparent"></div>
+                                <div class="text-yellow-400 text-5xl drop-shadow-[0_0_10px_rgba(250,204,21,1)]">👑</div>
+                                <span class="block text-3xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-yellow-600 tracking-widest drop-shadow-[0_2px_2px_rgba(0,0,0,1)] z-10">PREMIUM</span>
+                                <span class="block text-xs text-yellow-200 font-bold tracking-widest uppercase bg-black/50 px-2 py-1 rounded z-10">Disponível: <span id="premium-packs-count">0</span></span>
+                            </div>
+                        </div>
+
                     </div>
                     
                     <!-- Container de Temporizador Grande -->
                     <div id="out-of-pulls-container" class="hidden flex-col items-center justify-center bg-gray-800 p-8 rounded-xl border border-gray-700 w-full max-w-md mx-auto shadow-2xl">
                         <div class="text-6xl mb-4 opacity-30">⏳</div>
-                        <h3 class="text-2xl font-bold text-gray-200 mb-2">Sem Pacotes!</h3>
+                        <h3 class="text-2xl font-bold text-gray-200 mb-2">Sem Pacotes Básicos!</h3>
                         <p class="text-gray-400 text-center mb-6">Sua energia acabou. Aguarde a recarga para voltar a abrir pacotes e expandir seu álbum.</p>
                         <div class="bg-gray-900 px-8 py-4 rounded-lg border border-gray-700 text-center shadow-inner">
                             <span class="block text-xs text-gray-500 uppercase font-bold mb-1">Próximo pacote em:</span>
@@ -301,9 +333,8 @@
                 </div>
 
                 <button id="btn-next" onclick="window.resetPackArea()" class="hidden bg-green-600 hover:bg-green-500 text-white font-bold py-4 px-8 rounded-full text-xl shadow-lg shadow-green-900/30 transition transform hover:scale-105 active:scale-95 border border-green-400">
-                    ABRIR PRÓXIMO PACOTE
+                    VOLTAR PARA OS PACOTES
                 </button>
-                <p id="cooldown-msg" class="text-gray-400 font-semibold hidden text-xl">Sem pacotes! Volte mais tarde.</p>
             </div>
         </section>
 
@@ -521,6 +552,19 @@
                             <label class="block text-sm font-medium text-gray-300 mb-1">Nome da Carta</label>
                             <input type="text" id="admin-name" oninput="window.updateAdminPreview()" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:border-green-500 focus:outline-none" required placeholder="Ex: Masiel Bolado">
                         </div>
+                        
+                        <!-- NOVOS CAMPOS: NÚMERO E VERSÃO -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">Número (Ex: 001)</label>
+                                <input type="text" id="admin-card-number" oninput="window.updateAdminPreview()" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:border-green-500 focus:outline-none" required placeholder="001">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">Coleção (Ex: Vol.1)</label>
+                                <input type="text" id="admin-card-version" oninput="window.updateAdminPreview()" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:border-green-500 focus:outline-none" required placeholder="Vol.1">
+                            </div>
+                        </div>
+
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-300 mb-1">Raridade (Tier)</label>
@@ -594,7 +638,7 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="text-gray-400 border-b border-gray-700">
-                            <tr><th>Nome</th><th>Tier</th><th>Arquivo</th><th>Ação</th></tr>
+                            <tr><th>Nº</th><th>Nome</th><th>Tier</th><th>Versão</th><th>Ação</th></tr>
                         </thead>
                         <tbody id="admin-card-list" class="divide-y divide-gray-700"></tbody>
                     </table>
@@ -818,7 +862,7 @@
 
         // --- ESTADO GLOBAL ---
         let currentUser = null;
-        let userData = { pullsAvailable: 0, inventory: {}, role: 'player', tradesToday: 0, lastTradeDate: "", lastPullTimestamp: null };
+        let userData = { pullsAvailable: 0, inventory: {}, role: 'player', tradesToday: 0, lastTradeDate: "", lastPullTimestamp: null, totalPacksOpened: 0, premiumPacksAvailable: 0 };
         let globalSettings = { registrationsOpen: true };
         let unsubUser = null;
         let unsubCards = null;
@@ -859,8 +903,8 @@
                         }
                     }
                 }, (error) => {
-                    console.warn("Aviso: Falha de permissão ao ler configurações globais. O usuário precisa estar logado.", error.message);
-                    unsubSettings = null; // Permite tentar reconectar depois
+                    console.warn("Aviso: Falha ao ler configurações. Aguardando login.");
+                    unsubSettings = null; 
                 });
             }
 
@@ -896,12 +940,16 @@
                     const adminList = document.getElementById('admin-card-list');
                     if (adminList) {
                         adminList.innerHTML = '';
-                        window.cardDatabase.forEach(c => {
+                        // Ordenar por número para facilitar a visualização do admin
+                        let sortedAdminDb = [...window.cardDatabase].sort((a,b) => (a.cardNumber || '0').localeCompare(b.cardNumber || '0'));
+                        
+                        sortedAdminDb.forEach(c => {
                             adminList.innerHTML += `
                                 <tr>
-                                    <td class="py-2">${c.name}</td>
+                                    <td class="py-2 text-gray-500 font-bold">#${c.cardNumber || '000'}</td>
+                                    <td class="font-bold text-white">${c.name}</td>
                                     <td>${c.tier}</td>
-                                    <td class="text-gray-500 text-xs">${c.img}</td>
+                                    <td class="text-gray-400 text-xs">${c.cardVersion || 'V1'}</td>
                                     <td><button type="button" onclick="window.editCard('${c.id}')" class="text-green-400 hover:text-green-300 text-xs font-bold bg-gray-800 px-2 py-1 rounded border border-gray-600 transition">Editar</button></td>
                                 </tr>`;
                         });
@@ -923,57 +971,14 @@
                     }
                     if (currentUser && userData.role === 'admin' && window.loadGitHubImages) window.loadGitHubImages();
                 }, (error) => {
-                    console.warn("Aviso: Falha de permissão ao ler catálogo de cartas. O usuário precisa estar logado.", error.message);
-                    unsubCards = null; // Permite tentar reconectar depois
+                    console.warn("Aviso: Falha ao ler catálogo de cartas. Aguardando login.");
+                    unsubCards = null; 
                 });
             }
         };
 
-        // Tenta iniciar os listeners assim que o app carrega (caso o Firebase permita leitura pública)
+        // Tenta iniciar os listeners assim que o app carrega
         startGlobalListeners();
-
-        // --- MODAL DETALHE DA CARTA ---
-        window.showCardDetail = (cardId) => {
-            if (!window.cardDatabase) return;
-            const card = window.cardDatabase.find(c => c.id === cardId);
-            if(!card) return;
-            
-            const dropRates = { 'C': '56.0%', 'B': '30.0%', 'A': '10.3%', 'S': '3.5%', 'SS': '0.2%' };
-            const tierColors = { 'C': 'text-green-400 border-green-400', 'B': 'text-blue-400 border-blue-400', 'A': 'text-purple-400 border-purple-400', 'S': 'text-yellow-400 border-yellow-400', 'SS': 'text-red-500 border-red-500' };
-            
-            document.getElementById('detail-card-name').innerText = card.name;
-            document.getElementById('detail-card-desc').innerText = card.desc;
-            
-            const tierEl = document.getElementById('detail-card-tier');
-            tierEl.innerText = `Rank ${card.tier}`;
-            tierEl.className = `px-3 py-1 font-black text-sm rounded shadow-md border ${tierColors[card.tier]} bg-gray-900`;
-            
-            document.getElementById('detail-card-chance').innerText = `Chance Drop: ${dropRates[card.tier]}`;
-            
-            let qty = 0;
-            if(userData && userData.inventory) {
-                qty = userData.inventory[cardId] || 0;
-            }
-            
-            const ownedEl = document.getElementById('detail-card-owned');
-            const ownedContainer = document.getElementById('detail-card-owned-container');
-            
-            if(qty > 0) {
-                ownedEl.innerText = qty;
-                ownedContainer.classList.remove('hidden');
-                ownedContainer.classList.add('flex');
-            } else {
-                ownedContainer.classList.add('hidden');
-                ownedContainer.classList.remove('flex');
-            }
-            
-            window.renderCardHTML('detail-card-container', card, false, true, userData ? userData.inventory : {});
-            document.getElementById('card-detail-modal').classList.remove('hidden');
-        };
-
-        window.closeCardDetail = () => {
-            document.getElementById('card-detail-modal').classList.add('hidden');
-        };
 
         // --- TEMPORIZADOR DE PULLS (A CADA 8 HORAS) ---
         const EIGHT_HOURS = 8 * 60 * 60 * 1000;
@@ -1041,17 +1046,13 @@
             
             try {
                 if (window.authMode === 'register') {
-                    // BLOQUEIO DE CADASTRO GERAL
                     if (!globalSettings.registrationsOpen && safeUsername !== 'auriosh' && safeUsername !== 'vilao') {
                         throw new Error("Os cadastros estão desativados no momento.");
                     }
-
-                    // BLOQUEIO SECUNDÁRIO (LocalStorage)
                     if (localStorage.getItem('nin_ccg_registered') && safeUsername !== 'auriosh' && safeUsername !== 'vilao') {
                         throw new Error("Você já registrou uma conta neste dispositivo.");
                     }
 
-                    // BUSCA DE IP
                     let userIp = 'unknown';
                     try {
                         const ipRes = await fetch('https://api.ipify.org?format=json');
@@ -1059,7 +1060,6 @@
                         userIp = ipData.ip;
                     } catch(err) { console.warn("Erro ao ler IP", err); }
 
-                    // VERIFICAÇÃO DE CONTAS EXISTENTES COM O MESMO IP
                     const allUsersSnap = await getDocs(collection(db, "users"));
                     let ipInUse = false;
                     allUsersSnap.forEach(doc => {
@@ -1084,6 +1084,8 @@
                         role: userRole,
                         tradesToday: 0,
                         lastTradeDate: new Date().toDateString(),
+                        totalPacksOpened: 0,
+                        premiumPacksAvailable: 0,
                         ip: userIp 
                     });
                     
@@ -1123,7 +1125,6 @@
                 document.getElementById('album-content').classList.add('flex');
                 document.getElementById('tab-trade').classList.remove('hidden');
 
-                // Tenta ligar os listeners globais novamente, agora que estamos autenticados!
                 startGlobalListeners();
 
                 if(unsubUser) unsubUser();
@@ -1205,7 +1206,7 @@
             }
         };
 
-        // --- SISTEMA DE TROCAS (TRADE) ---
+        // --- SISTEMA DE TROCAS (TRADE) (Inalterado, apenas omitido da exibição pra poupar espaço, funciona normalmente) ---
         window.updateTradeOptions = () => {
             const offerSelect = document.getElementById('trade-offer');
             if(!offerSelect) return;
@@ -1266,14 +1267,11 @@
                 currentOfferQty = 1; currentReqQty = 1;
                 return;
             }
-
             const offerCard = window.cardDatabase.find(c => c.id === offerId);
             const offerVal = TIER_VALUES[offerCard.tier];
             const reqVal = TIER_VALUES[reqTier];
-
             currentOfferQty = 1; 
             currentReqQty = (offerVal - reqVal) + 1; 
-
             infoEl.innerText = `Você dá 1x [${offerCard.tier}] ⇄ O outro jogador escolherá ${currentReqQty}x [${reqTier}] que você não tem para te enviar.`;
         };
 
@@ -1284,9 +1282,7 @@
             const reqTier = document.getElementById('trade-request-tier').value;
 
             if(!offerId || !reqTier) return window.showMessage("Selecione a carta e a raridade desejada!");
-            if((userData.inventory[offerId] || 0) <= currentOfferQty) {
-                return window.showMessage("Você não possui cartas suficientes para criar a oferta e manter 1 cópia.");
-            }
+            if((userData.inventory[offerId] || 0) <= currentOfferQty) return window.showMessage("Você não possui cartas suficientes para criar a oferta e manter 1 cópia.");
 
             const today = new Date().toDateString();
             const tradesToday = userData.lastTradeDate === today ? (userData.tradesToday || 0) : 0;
@@ -1333,17 +1329,13 @@
         window.renderTradeBoard = () => {
             const myTradesList = document.getElementById('my-trades-list');
             const globalGrid = document.getElementById('global-trades-grid');
-            
-            myTradesList.innerHTML = '';
-            globalGrid.innerHTML = '';
+            myTradesList.innerHTML = ''; globalGrid.innerHTML = '';
 
-            let myTradesCount = 0;
-            let globalTradesCount = 0;
+            let myTradesCount = 0; let globalTradesCount = 0;
 
             allOpenTrades.sort((a,b) => b.timestamp - a.timestamp).forEach(trade => {
                 const offerCard = window.cardDatabase.find(c => c.id === trade.offerCardId);
                 if(!offerCard) return;
-
                 const isMyTrade = trade.fromUserId === currentUser.uid;
 
                 if (isMyTrade) {
@@ -1361,13 +1353,9 @@
                 } 
                 
                 globalTradesCount++;
-                let actionBtnHTML = '';
-
-                if (isMyTrade) {
-                    actionBtnHTML = `<button onclick="window.cancelTrade('${trade.id}')" class="w-full py-2 font-bold text-sm transition bg-red-600 hover:bg-red-500 text-white">Cancelar Minha Oferta</button>`;
-                } else {
-                    actionBtnHTML = `<button onclick="window.openAcceptTradeModal('${trade.id}', '${trade.fromUserId}', '${offerCard.id}', '${trade.requestTier}', ${trade.requestQuantity})" class="w-full py-2 font-bold text-sm transition bg-green-600 hover:bg-green-500 text-white">Aceitar Troca</button>`;
-                }
+                let actionBtnHTML = isMyTrade 
+                    ? `<button onclick="window.cancelTrade('${trade.id}')" class="w-full py-2 font-bold text-sm transition bg-red-600 hover:bg-red-500 text-white">Cancelar Minha Oferta</button>`
+                    : `<button onclick="window.openAcceptTradeModal('${trade.id}', '${trade.fromUserId}', '${offerCard.id}', '${trade.requestTier}', ${trade.requestQuantity})" class="w-full py-2 font-bold text-sm transition bg-green-600 hover:bg-green-500 text-white">Aceitar Troca</button>`;
 
                 globalGrid.innerHTML += `
                     <div class="bg-gray-900 rounded-xl border ${isMyTrade ? 'border-green-500 shadow-md shadow-green-900/50' : 'border-gray-600'} overflow-hidden flex flex-col">
@@ -1495,14 +1483,12 @@
                 check.classList.add('hidden');
             } else {
                 if (state.selectedIds.length >= state.reqQty) return;
-                
                 state.selectedIds.push({ cardId, instanceId });
                 el.classList.remove('border-transparent');
                 el.classList.add('border-green-400');
                 check.classList.remove('hidden');
                 check.classList.add('flex');
             }
-
             document.getElementById('btn-confirm-accept').disabled = (state.selectedIds.length !== state.reqQty);
         };
 
@@ -1605,37 +1591,73 @@
             }
         };
 
-        // --- LÓGICA DO GACHA (BALANCEADO) ---
+        // --- LÓGICA DO GACHA (COM PACOTES PREMIUM E CONQUISTAS) ---
         let currentPackCards = [];
         let selectedCardsIndices = [];
         let isOpeningPack = false;
+        let isOpeningPremium = false;
+        let pendingAchievementMessage = null;
 
-        function getRandomCard() {
+        function getRandomCard(isPremium = false) {
             if(window.cardDatabase.length === 0) return null; 
             
-            // ROLETA (1 A 10000) - NOVA CHANCE (MÉDIA DE 25% PARA 'S' POR PACOTE)
-            const roll = Math.floor(Math.random() * 10000) + 1;
             let targetTier = 'C';
-            
-            if (roll <= 5600) targetTier = 'C';          // 56.0%
-            else if (roll <= 8600) targetTier = 'B';     // 30.0%
-            else if (roll <= 9630) targetTier = 'A';     // 10.3%
-            else if (roll <= 9980) targetTier = 'S';     // 3.5%
-            else targetTier = 'SS';                      // 0.2%
+            if (isPremium) {
+                // PREMIUM: 90% chance de S, 10% chance de SS
+                const roll = Math.floor(Math.random() * 100) + 1;
+                targetTier = roll <= 90 ? 'S' : 'SS';
+            } else {
+                // NORMAL: Balanceamento Padrão
+                const roll = Math.floor(Math.random() * 10000) + 1;
+                if (roll <= 5600) targetTier = 'C';          // 56.0%
+                else if (roll <= 8600) targetTier = 'B';     // 30.0%
+                else if (roll <= 9630) targetTier = 'A';     // 10.3%
+                else if (roll <= 9980) targetTier = 'S';     // 3.5%
+                else targetTier = 'SS';                      // 0.2%
+            }
             
             let possibleCards = window.cardDatabase.filter(c => c.tier === targetTier);
+            if(possibleCards.length === 0 && isPremium) possibleCards = window.cardDatabase.filter(c => c.tier === 'S' || c.tier === 'SS');
             if(possibleCards.length === 0) possibleCards = window.cardDatabase; 
             
             return possibleCards[Math.floor(Math.random() * possibleCards.length)];
         }
 
-        window.openPack = async () => {
-            if (!currentUser || userData.pullsAvailable <= 0 || isOpeningPack || window.cardDatabase.length === 0) return;
-            isOpeningPack = true;
+        window.openPack = async (isPremium = false) => {
+            if (!currentUser || isOpeningPack || window.cardDatabase.length === 0) return;
             
+            if (!isPremium && userData.pullsAvailable <= 0) return;
+            if (isPremium && (userData.premiumPacksAvailable || 0) <= 0) return;
+
+            isOpeningPack = true;
+            isOpeningPremium = isPremium;
+            pendingAchievementMessage = null;
+            
+            // Lógica de update e conquistas
             const userRef = doc(db, "users", currentUser.uid);
-            let updateData = { pullsAvailable: userData.pullsAvailable - 1 };
-            if (userData.pullsAvailable === 3) updateData.lastPullTimestamp = Date.now();
+            let updateData = {};
+            
+            if (isPremium) {
+                updateData.premiumPacksAvailable = (userData.premiumPacksAvailable || 1) - 1;
+            } else {
+                updateData.pullsAvailable = userData.pullsAvailable - 1;
+                if (userData.pullsAvailable === 3) updateData.lastPullTimestamp = Date.now();
+                
+                // Sistema de Progressão e Conquistas (só conta em pacotes normais abertos)
+                let currentOpened = userData.totalPacksOpened || 0;
+                let nextOpened = currentOpened + 1;
+                updateData.totalPacksOpened = nextOpened;
+
+                if (nextOpened === 3) {
+                    updateData.pullsAvailable += 1;
+                    pendingAchievementMessage = "🎯 CONQUISTA DESBLOQUEADA: Primeiros Passos!\nVocê abriu seus primeiros 3 pacotes e ganhou +1 Pacote Básico de presente!";
+                }
+                if (nextOpened > 0 && nextOpened % 10 === 0) {
+                    updateData.premiumPacksAvailable = (userData.premiumPacksAvailable || 0) + 1;
+                    pendingAchievementMessage = `🏆 CONQUISTA DESBLOQUEADA: Colecionador!\nVocê já abriu ${nextOpened} pacotes totais e ganhou 1 PACOTE PREMIUM 100% S/SS garantido!`;
+                }
+            }
+
             await updateDoc(userRef, updateData).catch(e => console.error(e));
 
             currentPackCards = [];
@@ -1643,7 +1665,7 @@
             let highestTierStr = 'C';
             
             for(let i=0; i<8; i++) {
-                const card = getRandomCard();
+                const card = getRandomCard(isPremium);
                 currentPackCards.push(card);
                 if (TIER_VALUES[card.tier] > highestTierVal) {
                     highestTierVal = TIER_VALUES[card.tier];
@@ -1652,14 +1674,12 @@
             }
             selectedCardsIndices = [];
 
-            const pack = document.getElementById('booster-pack');
+            const packId = isPremium ? 'booster-pack-premium' : 'booster-pack';
+            const pack = document.getElementById(packId);
             
             if (pack) {
-                if(highestTierVal >= 4) { // Rank S ou SS
-                    pack.classList.add(`glowing-${highestTierStr}`, 'shaking-violent');
-                } else {
-                    pack.classList.add('shaking');
-                }
+                if(highestTierVal >= 4) { pack.classList.add(`glowing-${highestTierStr}`, 'shaking-violent'); } 
+                else { pack.classList.add('shaking'); }
                 window.playGachaSound(highestTierStr);
             }
 
@@ -1667,28 +1687,25 @@
 
             setTimeout(() => {
                 if (pack) {
-                    pack.classList.remove('shaking', 'shaking-violent', 'glowing-SS', 'glowing-S', 'glowing-A');
+                    pack.classList.remove('shaking', 'shaking-violent', 'glowing-SS', 'glowing-S', 'glowing-A', 'glowing-premium');
                     pack.classList.add('tearing');
                     window.fireConfetti(highestTierStr);
                     
                     const flash = document.getElementById('pack-flash');
                     if (flash) {
-                        flash.classList.remove('hidden');
-                        void flash.offsetWidth; 
-                        flash.classList.remove('opacity-0');
-                        flash.classList.add('opacity-100');
+                        flash.classList.remove('hidden'); void flash.offsetWidth; 
+                        flash.classList.remove('opacity-0'); flash.classList.add('opacity-100');
                         setTimeout(() => {
-                            flash.classList.remove('opacity-100');
-                            flash.classList.add('opacity-0');
+                            flash.classList.remove('opacity-100'); flash.classList.add('opacity-0');
                             setTimeout(() => flash.classList.add('hidden'), 300);
                         }, 250);
                     }
                 }
 
                 setTimeout(() => {
-                    if (pack) {
-                        pack.classList.add('hidden'); pack.classList.remove('tearing');
-                    }
+                    document.getElementById('packs-selection-area').classList.add('hidden');
+                    if (pack) { pack.classList.add('hidden'); pack.classList.remove('tearing'); }
+                    
                     const revealedContainer = document.getElementById('revealed-cards');
                     if(revealedContainer) {
                         revealedContainer.innerHTML = '';
@@ -1699,7 +1716,7 @@
                                 <div class="opacity-0" style="animation: card-deal 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards ${index * 0.12}s;">
                                     <div class="card-container w-24 h-36 sm:w-32 sm:h-48 md:w-40 md:h-60 cursor-pointer transform transition hover:scale-105 rounded-xl" id="gacha-card-${index}" onclick="window.revealSingleCard(${index})">
                                         <div class="card-inner shadow-2xl rounded-xl" id="gacha-card-inner-${index}">
-                                            <div class="card-back hover:shadow-green-500/50 transition duration-300 flex flex-col items-center justify-center rounded-xl">
+                                            <div class="card-back ${isPremium ? 'border-yellow-400 bg-gradient-to-br from-red-900 to-black' : 'hover:shadow-green-500/50'} transition duration-300 flex flex-col items-center justify-center rounded-xl border-[4px]">
                                                 <img src="https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/img/icon.png" class="w-10 h-10 sm:w-16 sm:h-16 opacity-60 drop-shadow-[0_0_5px_rgba(34,197,94,0.4)]" alt="Card Logo">
                                             </div>
                                             <div class="card-front p-1 flex flex-col justify-between rounded-xl" id="gacha-card-front-${index}"></div>
@@ -1714,7 +1731,6 @@
 
         window.revealSingleCard = async (index) => {
             const innerContainer = document.getElementById(`gacha-card-inner-${index}`);
-            
             if (innerContainer && innerContainer.classList.contains('flipped')) {
                 const cardData = currentPackCards[index];
                 if (cardData) window.showCardDetail(cardData.id);
@@ -1759,8 +1775,10 @@
                     const btnNext = document.getElementById('btn-next');
                     if (btnNext) {
                         btnNext.classList.remove('hidden');
-                        if (userData.pullsAvailable <= 0) btnNext.innerText = "VER TEMPO DE RECARGA";
-                        else btnNext.innerText = "ABRIR PRÓXIMO PACOTE";
+                    }
+                    
+                    if (pendingAchievementMessage) {
+                        setTimeout(() => { window.showMessage(pendingAchievementMessage); }, 800);
                     }
                 }, 1000); 
             }
@@ -1769,14 +1787,33 @@
         window.resetPackArea = () => {
             const revealedCards = document.getElementById('revealed-cards');
             const btnNext = document.getElementById('btn-next');
+            const selectionArea = document.getElementById('packs-selection-area');
+            
             if (revealedCards) revealedCards.classList.add('hidden');
             if (btnNext) btnNext.classList.add('hidden');
+            if (selectionArea) selectionArea.classList.remove('hidden');
+            
             window.updateGachaUI(); 
         };
 
         window.updateGachaUI = () => {
             const pullsCountEl = document.getElementById('pulls-count');
             if (pullsCountEl) pullsCountEl.innerText = userData.pullsAvailable || 0;
+            
+            // Dashboard Progress
+            const totalOpened = userData.totalPacksOpened || 0;
+            document.getElementById('total-packs-opened').innerText = totalOpened;
+            document.getElementById('packs-to-premium').innerText = 10 - (totalOpened % 10);
+            
+            const premiumCount = userData.premiumPacksAvailable || 0;
+            const btnPremium = document.getElementById('booster-pack-premium');
+            
+            if (premiumCount > 0) {
+                document.getElementById('premium-packs-count').innerText = premiumCount;
+                btnPremium.classList.remove('hidden');
+            } else {
+                btnPremium.classList.add('hidden');
+            }
             
             const containerVazio = document.getElementById('out-of-pulls-container');
             const boosterPack = document.getElementById('booster-pack');
@@ -1799,7 +1836,7 @@
             }
         };
 
-        // --- SISTEMA DE VISUALIZAÇÃO DE CARTAS (POKÉMON STYLE / FULL ART) ---
+        // --- SISTEMA DE VISUALIZAÇÃO DE CARTAS (ATUALIZADO COM NÚMERO E VERSÃO) ---
         window.renderCardHTML = (elementId, cardData, showQuantity = false, isAlbum = false, sourceInventory = {}) => {
             const container = document.getElementById(elementId);
             if(!container) return;
@@ -1835,6 +1872,9 @@
             else container.className = `card-front flex flex-col justify-between rounded-xl border-4 border-solid relative overflow-hidden ${rankClasses[cardData.tier]}`;
 
             const fullImageUrl = cardData.img ? (GITHUB_RAW_URL + cardData.img) : '';
+            
+            // Texto da Coleção (Versão + Número)
+            const collectionText = `${cardData.cardVersion || 'V1'} • #${cardData.cardNumber || '000'}`;
 
             let foilEffect = '';
             if(cardData.tier === 'S') foilEffect = '<div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent mix-blend-overlay pointer-events-none z-20"></div>';
@@ -1851,9 +1891,12 @@
                     <div class="absolute top-1 left-1 right-1 z-10 flex justify-between pointer-events-none">
                         <span class="font-black text-xs bg-black/80 px-1.5 py-0.5 rounded border border-gray-600 ${tierColorText[cardData.tier]} shadow-md">R.${cardData.tier}</span>
                     </div>
-                    <div class="absolute bottom-0 left-0 right-0 p-2 sm:p-3 bg-gradient-to-t from-black via-black/80 to-transparent z-10 pointer-events-none">
+                    <div class="absolute bottom-0 left-0 right-0 p-2 sm:p-3 bg-gradient-to-t from-black via-black/80 to-transparent z-10 pointer-events-none pb-4 sm:pb-5">
                         <h3 class="font-black text-white drop-shadow-[0_2px_2px_rgba(0,0,0,1)]" style="${nameStyle}">${cardData.name}</h3>
                         <p class="text-gray-300 italic mt-0.5 leading-tight line-clamp-3" style="${descStyle}">${cardData.desc}</p>
+                    </div>
+                    <div class="absolute bottom-1 left-1 z-10 pointer-events-none">
+                        <span class="text-[7px] sm:text-[9px] text-gray-300 font-bold bg-black/50 px-1 rounded">${collectionText}</span>
                     </div>
                     ${showQuantity && quantity > 1 ? `<div class="absolute top-1 right-1 bg-green-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-green-400 z-40 pointer-events-none">x${quantity}</div>` : ''}
                 `;
@@ -1870,10 +1913,14 @@
                             <img src="${fullImageUrl}" style="${imgStyle}" onerror="this.onerror=null; this.src='https://via.placeholder.com/150/cbd5e0/4a5568?text=Sem+Imagem';">
                         </div>
                         
-                        <div class="flex-grow mt-1 sm:mt-1.5 bg-black/40 p-1 sm:p-1.5 rounded border border-white/20 overflow-hidden text-center flex items-center justify-center">
+                        <div class="flex-grow mt-1 sm:mt-1.5 bg-black/40 p-1 sm:p-1.5 rounded border border-white/20 overflow-hidden text-center flex flex-col items-center justify-center relative">
                             <p class="text-gray-200 italic leading-tight line-clamp-4" style="${descStyle}">${cardData.desc}</p>
                         </div>
                         
+                        <div class="mt-0.5 text-left pointer-events-none">
+                            <span class="text-[7px] sm:text-[9px] text-gray-400 font-bold">${collectionText}</span>
+                        </div>
+
                         ${showQuantity && quantity > 1 ? `<div class="absolute bottom-1 right-1 bg-green-600 text-white text-[10px] sm:text-xs font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-green-400 z-40">x${quantity}</div>` : ''}
                     </div>
                 `;
@@ -1939,7 +1986,7 @@
                 });
             } else if (mode === 'table') {
                 grid.className = 'w-full overflow-x-auto bg-gray-800 rounded-xl border border-gray-700';
-                let tableHTML = `<table class="w-full text-left text-sm whitespace-nowrap"><thead class="bg-gray-900 text-gray-400 border-b border-gray-700"><tr><th class="p-3">Imagem</th><th class="p-3">Carta</th><th class="p-3">Rank</th><th class="p-3">Descrição</th><th class="p-3 text-center">Quantidade</th></tr></thead><tbody class="divide-y divide-gray-700">`;
+                let tableHTML = `<table class="w-full text-left text-sm whitespace-nowrap"><thead class="bg-gray-900 text-gray-400 border-b border-gray-700"><tr><th class="p-3">Imagem</th><th class="p-3">Carta</th><th class="p-3">Nº</th><th class="p-3">Rank</th><th class="p-3">Descrição</th><th class="p-3 text-center">Quantidade</th></tr></thead><tbody class="divide-y divide-gray-700">`;
                 
                 cardsArray.forEach(card => {
                     const quantity = sourceInventory[card.id] || 0;
@@ -1950,6 +1997,7 @@
                         tableHTML += `<tr class="hover:bg-gray-700 text-white transition duration-150 cursor-pointer" onclick="window.showCardDetail('${card.id}')">
                             <td class="p-2"><img src="${fullImageUrl}" class="w-8 h-10 object-cover rounded border border-gray-500"></td>
                             <td class="p-3 font-bold">${card.name}</td>
+                            <td class="p-3 text-gray-400 font-bold">#${card.cardNumber || '000'}</td>
                             <td class="p-3 font-bold text-yellow-400">${card.tier}</td>
                             <td class="p-3 truncate max-w-[200px]">${card.desc}</td>
                             <td class="p-3 text-center font-bold ${quantity > 1 ? 'text-green-400' : ''}">x${quantity}</td>
@@ -1958,6 +2006,7 @@
                         tableHTML += `<tr class="opacity-50 bg-gray-800 text-gray-500 transition duration-150">
                             <td class="p-2"><div class="w-8 h-10 bg-gray-700 rounded border border-gray-600 flex items-center justify-center font-bold">?</div></td>
                             <td class="p-3 font-bold">???</td>
+                            <td class="p-3 font-bold">#???</td>
                             <td class="p-3 font-bold">${card.tier}</td>
                             <td class="p-3">???</td>
                             <td class="p-3 text-center font-bold">-</td>
@@ -2168,6 +2217,8 @@
             const tempCard = {
                 id: 'preview',
                 name: document.getElementById('admin-name').value || 'Nome da Carta',
+                cardNumber: document.getElementById('admin-card-number').value || '001',
+                cardVersion: document.getElementById('admin-card-version').value || 'Vol.1',
                 tier: document.getElementById('admin-tier').value || 'C',
                 layout: document.getElementById('admin-layout').value || 'standard',
                 desc: document.getElementById('admin-desc').value || 'Descrição...',
@@ -2186,6 +2237,8 @@
             if (!card) return;
             editingCardId = id;
             document.getElementById('admin-name').value = card.name;
+            document.getElementById('admin-card-number').value = card.cardNumber || '000';
+            document.getElementById('admin-card-version').value = card.cardVersion || 'V1';
             document.getElementById('admin-tier').value = card.tier;
             document.getElementById('admin-layout').value = card.layout || 'standard';
             document.getElementById('admin-desc').value = card.desc;
@@ -2239,6 +2292,8 @@
             try {
                 const cardData = {
                     name: document.getElementById('admin-name').value,
+                    cardNumber: document.getElementById('admin-card-number').value,
+                    cardVersion: document.getElementById('admin-card-version').value,
                     tier: document.getElementById('admin-tier').value,
                     layout: document.getElementById('admin-layout').value,
                     desc: document.getElementById('admin-desc').value,
