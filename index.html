@@ -216,8 +216,12 @@
     <!-- Modal de Detalhes da Carta (COM O BOTÃO X EXTERNO CORRIGIDO NA VIEWPORT) -->
     <div id="card-detail-modal" class="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-[110] hidden backdrop-blur-md p-4 pt-16 md:pt-4">
         
-        <!-- O BOTÃO X AGORA ESTÁ FIXADO NA TELA (VIEWPORT) -->
-        <button onclick="window.closeCardDetail()" class="fixed top-4 right-4 md:top-8 md:right-8 text-gray-300 hover:text-white text-4xl z-[120] w-12 h-12 rounded-full bg-gray-900 border-2 border-gray-600 flex items-center justify-center transition hover:bg-red-600 hover:border-red-400 shadow-2xl">&times;</button>
+        <!-- O BOTÃO X AGORA ESTÁ FIXADO NA TELA (VIEWPORT) E ALINHADO PERFEITAMENTE COM SVG -->
+        <button onclick="window.closeCardDetail()" class="fixed top-4 right-4 md:top-8 md:right-8 text-gray-300 hover:text-white z-[120] w-12 h-12 rounded-full bg-gray-900 border-2 border-gray-600 flex items-center justify-center transition hover:bg-red-600 hover:border-red-400 shadow-2xl">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
         
         <div class="bg-gray-800 rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.8)] max-w-4xl w-full border border-gray-700 flex flex-col md:flex-row overflow-y-auto max-h-[85vh] relative mt-10 md:mt-0">
             <!-- Card Showcase -->
@@ -569,6 +573,24 @@
                 </div>
             </div>
 
+            <!-- Log de Jogadores -->
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-white">Log de Jogadores</h3>
+                    <button onclick="window.loadAdminPlayersLog()" class="bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/30 text-white font-bold py-1 px-4 rounded transition text-sm">Atualizar Log</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                        <thead class="text-gray-400 border-b border-gray-700">
+                            <tr><th>Nick</th><th>Cargo</th><th>Packs Disp.</th><th>Abertos (Total)</th><th>Última Troca</th><th>IP</th></tr>
+                        </thead>
+                        <tbody id="admin-players-list" class="divide-y divide-gray-700">
+                            <tr><td colspan="6" class="p-4 text-center text-gray-500">Clique em Atualizar Log para carregar.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="bg-gray-800 p-8 rounded-xl border border-red-900/50 shadow-2xl">
                 <h3 class="text-xl font-bold mb-4 text-white">Criar ou Editar Carta</h3>
                 <div class="flex flex-col md:flex-row gap-8">
@@ -730,8 +752,9 @@
                     if(t === 'achievements') btn.classList.add('text-blue-400', 'border-blue-400');
 
                     if (t === 'explore' && window.loadAllPlayers) window.loadAllPlayers(); 
-                    if (t === 'admin' && window.loadGitHubImages) {
-                        window.loadGitHubImages(); window.updateAdminPreview(); 
+                    if (t === 'admin') {
+                        if (window.loadGitHubImages) { window.loadGitHubImages(); window.updateAdminPreview(); }
+                        if (window.loadAdminPlayersLog) window.loadAdminPlayersLog();
                     }
                     if (t === 'achievements' && window.renderAchievements) window.renderAchievements();
                 } else {
@@ -820,48 +843,48 @@
 
         window.playGachaSound = (tier) => {
             if(audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-
             const now = audioCtx.currentTime;
-            
-            if(tier === 'SS') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(300, now);
-                osc.frequency.exponentialRampToValueAtTime(800, now + 0.5);
-                gainNode.gain.setValueAtTime(0, now);
-                gainNode.gain.linearRampToValueAtTime(0.3, now + 0.1);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 1.5);
-                osc.start(now); osc.stop(now + 1.5);
 
-                const osc2 = audioCtx.createOscillator();
-                osc2.type = 'square';
-                osc2.frequency.setValueAtTime(450, now);
-                osc2.frequency.exponentialRampToValueAtTime(1200, now + 0.5);
-                osc2.connect(gainNode);
-                osc2.start(now); osc2.stop(now + 1.5);
+            const createOsc = (type, freq, time, duration, vol, rampToFreq = null) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, time);
+                if(rampToFreq) osc.frequency.exponentialRampToValueAtTime(rampToFreq, time + duration);
+                gain.gain.setValueAtTime(0, time);
+                gain.gain.linearRampToValueAtTime(vol, time + duration * 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(time);
+                osc.stop(time + duration);
+                return { osc, gain };
+            };
+
+            if(tier === 'SS') {
+                createOsc('sine', 150, now, 2.0, 0.6, 30); // Bass bomb
+                createOsc('sawtooth', 300, now, 1.0, 0.3, 1500); // Riser
+                createOsc('square', 800, now + 0.8, 1.5, 0.2, 2500); // Epic sparkle
+                [400, 500, 600, 800, 1000, 1200, 1500].forEach((f, i) => {
+                    createOsc('sine', f, now + 0.1 * i, 0.6, 0.3); // Arp
+                });
             } else if(tier === 'S') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(400, now);
-                osc.frequency.exponentialRampToValueAtTime(800, now + 0.3);
-                gainNode.gain.setValueAtTime(0, now);
-                gainNode.gain.linearRampToValueAtTime(0.3, now + 0.1);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 1);
-                osc.start(now); osc.stop(now + 1);
-            } else if(tier === 'A' || tier === 'B') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(400, now);
-                gainNode.gain.setValueAtTime(0.2, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-                osc.start(now); osc.stop(now + 0.5);
+                createOsc('sine', 200, now, 1.5, 0.5, 50); 
+                createOsc('triangle', 400, now, 1.0, 0.3, 1000);
+                [500, 650, 800, 1000].forEach((f, i) => {
+                    createOsc('sine', f, now + 0.15 * i, 0.5, 0.2);
+                });
+            } else if(tier === 'A') {
+                createOsc('triangle', 300, now, 0.8, 0.3, 800);
+                createOsc('sine', 600, now + 0.1, 0.6, 0.2, 1200);
+            } else if(tier === 'B') {
+                createOsc('triangle', 400, now, 0.5, 0.2, 600);
+                createOsc('sine', 800, now, 0.4, 0.1);
             } else {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(200, now);
-                gainNode.gain.setValueAtTime(0.1, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                osc.start(now); osc.stop(now + 0.3);
+                // C - Gostosinho de ouvir (Satisfying pop & soft chime)
+                createOsc('square', 250, now, 0.15, 0.1, 50); // Thump/tear
+                createOsc('sine', 700, now + 0.05, 0.4, 0.2); // Ding
+                createOsc('sine', 1050, now + 0.15, 0.5, 0.15); // Ding (higher)
             }
         };
 
@@ -2389,6 +2412,7 @@
                 await updateDoc(doc(db, "users", targetDoc.id), { pullsAvailable: newPulls });
                 window.showMessage(`Sucesso! O jogador ${targetDoc.data().displayName} agora tem ${newPulls} pacotes.`);
                 document.getElementById('admin-target-user').value = ''; document.getElementById('admin-target-amount').value = '';
+                if(window.loadAdminPlayersLog) window.loadAdminPlayersLog(); // Atualiza log após alteração
             } catch (err) {
                 window.showMessage(err.message);
             } finally {
@@ -2397,6 +2421,37 @@
         };
 
         // --- LÓGICA DE ADMINISTRADOR ---
+        window.loadAdminPlayersLog = async () => {
+            const list = document.getElementById('admin-players-list');
+            if(!list) return;
+            list.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">Carregando log...</td></tr>';
+            
+            try {
+                const querySnapshot = await getDocs(collection(db, "users"));
+                const players = [];
+                querySnapshot.forEach(doc => players.push({ uid: doc.id, ...doc.data() }));
+                
+                players.sort((a, b) => (b.totalPacksOpened || 0) - (a.totalPacksOpened || 0));
+                
+                list.innerHTML = '';
+                players.forEach(p => {
+                    const roleColor = p.role === 'admin' ? 'text-red-400' : 'text-gray-400';
+                    list.innerHTML += `
+                        <tr class="hover:bg-gray-700">
+                            <td class="p-2 font-bold text-white">${p.displayName || 'Desconhecido'}</td>
+                            <td class="p-2 ${roleColor} font-bold">${p.role === 'admin' ? 'Admin' : 'Jogador'}</td>
+                            <td class="p-2 text-green-400 font-bold">${p.pullsAvailable || 0}</td>
+                            <td class="p-2 text-blue-400 font-bold">${p.totalPacksOpened || 0}</td>
+                            <td class="p-2 text-gray-400 text-xs">${p.lastTradeDate || 'Nunca'}</td>
+                            <td class="p-2 text-gray-500 text-xs">${p.ip || 'Oculto'}</td>
+                        </tr>
+                    `;
+                });
+            } catch (e) {
+                list.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-400">Erro: ${e.message}</td></tr>`;
+            }
+        };
+
         let isFetchingImages = false; 
         
         window.loadGitHubImages = async () => {
