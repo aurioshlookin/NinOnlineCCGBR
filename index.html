@@ -546,7 +546,7 @@
             <!-- Dashboard de Balanceamento -->
             <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-md">
                 <h3 class="text-xl font-bold mb-2 text-white">Balanceamento de Cartas (Atual vs Ideal)</h3>
-                <p class="text-xs text-gray-400 mb-6">A quantidade "Ideal" é calculada dinamicamente com base no total de cartas, mantendo as proporções saudáveis: C(50%), B(30%), A(12%), S(6%), SS(2%).</p>
+                <p class="text-xs text-gray-400 mb-6">A quantidade "Ideal" agora é calculada dinamicamente com base na sua quantidade de cartas <strong>SS (Míticas)</strong>. Para cada 1 carta SS, o ideal é ter: 3 S, 6 A, 15 B e 25 C.</p>
                 <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
                     <div class="bg-gray-900 p-3 rounded-lg border border-green-500/50 shadow-inner">
                         <div class="text-green-400 font-bold text-sm mb-1">Rank C</div>
@@ -589,6 +589,7 @@
                 </div>
             </div>
 
+            <!-- Formulário de Criação/Edição de Cartas (RESTAURADO) -->
             <div class="bg-gray-800 p-8 rounded-xl border border-red-900/50 shadow-2xl">
                 <h3 class="text-xl font-bold mb-4 text-white">Criar ou Editar Carta</h3>
                 <div class="flex flex-col md:flex-row gap-8">
@@ -685,9 +686,24 @@
                     </div>
                 </div>
             </div>
-            
+
+            <!-- Cartas no Sistema (Lista e Renumerador) -->
             <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-md">
-                <h3 class="text-xl font-bold mb-4 text-gray-200">Cartas no Sistema (<span id="admin-card-count" class="text-green-400">0</span>)</h3>
+                <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center mb-4 border-b border-gray-700 pb-4 gap-4">
+                    <h3 class="text-xl font-bold text-gray-200">Cartas no Sistema (<span id="admin-card-count" class="text-green-400">0</span>)</h3>
+                    <div class="flex items-center gap-2">
+                        <select id="admin-renum-version" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-blue-500">
+                            <option value="Vol. 1">Vol. 1</option>
+                            <option value="Vol. 2">Vol. 2</option>
+                            <option value="Vol. 3">Vol. 3</option>
+                            <option value="Vol. 4">Vol. 4</option>
+                            <option value="Vol. 5">Vol. 5</option>
+                            <option value="Especial">Especial</option>
+                            <option value="Promo">Promo</option>
+                        </select>
+                        <button onclick="window.renumerateCollection()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1 px-3 rounded transition text-sm shadow">Renumerar Coleção</button>
+                    </div>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm border-collapse">
                         <thead class="text-gray-400 border-b border-gray-700 bg-gray-900">
@@ -721,30 +737,40 @@
         
         window.showModal = (mode) => {
             window.authMode = mode;
-            document.getElementById('auth-modal').classList.remove('hidden');
-            document.getElementById('auth-error').classList.add('hidden');
-            document.getElementById('auth-password').value = '';
-            document.getElementById('modal-title').innerText = mode === 'register' ? 'Criar Conta' : 'Entrar';
-            document.getElementById('auth-submit-btn').innerText = mode === 'register' ? 'Cadastrar' : 'Login';
+            const authModal = document.getElementById('auth-modal');
+            const authError = document.getElementById('auth-error');
+            const authPassword = document.getElementById('auth-password');
+            const modalTitle = document.getElementById('modal-title');
+            const authSubmitBtn = document.getElementById('auth-submit-btn');
+
+            if (authModal) authModal.classList.remove('hidden');
+            if (authError) authError.classList.add('hidden');
+            if (authPassword) authPassword.value = '';
+            if (modalTitle) modalTitle.innerText = mode === 'register' ? 'Criar Conta' : 'Entrar';
+            if (authSubmitBtn) authSubmitBtn.innerText = mode === 'register' ? 'Cadastrar' : 'Login';
         };
 
-        window.closeModal = () => document.getElementById('auth-modal').classList.add('hidden');
+        window.closeModal = () => {
+            const authModal = document.getElementById('auth-modal');
+            if (authModal) authModal.classList.add('hidden');
+        };
 
         window.showMessage = (msg, isConfirm = false, onConfirm = null) => {
-            document.getElementById('msg-modal-text').innerText = msg;
+            const msgModalText = document.getElementById('msg-modal-text');
             const modal = document.getElementById('msg-modal');
             const btnCancel = document.getElementById('msg-modal-cancel');
             const btnOk = document.getElementById('msg-modal-ok');
             
-            modal.classList.remove('hidden');
+            if (msgModalText) msgModalText.innerText = msg;
+            if (modal) modal.classList.remove('hidden');
             
             if (isConfirm) {
-                btnCancel.classList.remove('hidden');
-                btnOk.onclick = () => { modal.classList.add('hidden'); if(onConfirm) onConfirm(); };
-                btnCancel.onclick = () => { modal.classList.add('hidden'); };
+                if (btnCancel) btnCancel.classList.remove('hidden');
+                if (btnOk) btnOk.onclick = () => { if(modal) modal.classList.add('hidden'); if(onConfirm) onConfirm(); };
+                if (btnCancel) btnCancel.onclick = () => { if(modal) modal.classList.add('hidden'); };
             } else {
-                btnCancel.classList.add('hidden');
-                btnOk.onclick = () => { modal.classList.add('hidden'); };
+                if (btnCancel) btnCancel.classList.add('hidden');
+                if (btnOk) btnOk.onclick = () => { if(modal) modal.classList.add('hidden'); };
             }
         };
 
@@ -812,10 +838,10 @@
 
         const handleDragStart = (e) => {
             const container = document.getElementById('admin-preview-container');
-            if(container && container.parentElement.contains(e.target)) {
+            if(container && container.parentElement && container.parentElement.contains(e.target)) {
                 isDraggingPreview = true;
-                dragStartX = e.clientX || e.touches[0].clientX;
-                dragStartY = e.clientY || e.touches[0].clientY;
+                dragStartX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+                dragStartY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
                 if(e.type === 'mousedown') e.preventDefault();
             }
         };
@@ -824,13 +850,14 @@
             if(!isDraggingPreview) return;
             if(e.type === 'touchmove') e.preventDefault();
             
-            const clientX = e.clientX || e.touches[0].clientX;
-            const clientY = e.clientY || e.touches[0].clientY;
+            const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+            const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
             
             const dx = clientX - dragStartX;
             const dy = clientY - dragStartY;
             
-            const currentZoom = parseFloat(document.getElementById('admin-zoom').value) || 1;
+            const zoomEl = document.getElementById('admin-zoom');
+            const currentZoom = (zoomEl && parseFloat(zoomEl.value)) ? parseFloat(zoomEl.value) : 1;
             
             window.adminCardState.transX += dx / currentZoom; 
             window.adminCardState.transY += dy / currentZoom;
@@ -949,7 +976,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, onSnapshot, collection, query, where, getDocs, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, onSnapshot, collection, query, where, getDocs, serverTimestamp, runTransaction, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAWcdJV6INuUeo6-STW5J_VYZ7aUzO51KI",
@@ -1035,10 +1062,16 @@
                     });
                     
                     const total = window.cardDatabase.length;
+                    
+                    // Cálculo ideal baseado na quantidade de cartas SS
+                    let baseTotalForIdeal = count['SS'] > 0 ? count['SS'] * 50 : (total > 0 ? total : 50);
+                    
                     const ideal = {
-                        C: Math.round(total * 0.50), B: Math.round(total * 0.30),
-                        A: Math.round(total * 0.12), S: Math.round(total * 0.06),
-                        SS: Math.round(total * 0.02)
+                        C: Math.round(baseTotalForIdeal * 0.50), 
+                        B: Math.round(baseTotalForIdeal * 0.30),
+                        A: Math.round(baseTotalForIdeal * 0.12), 
+                        S: Math.round(baseTotalForIdeal * 0.06),
+                        SS: count['SS'] > 0 ? count['SS'] : Math.round(baseTotalForIdeal * 0.02)
                     };
 
                     ['C', 'B', 'A', 'S', 'SS'].forEach(tier => {
@@ -1046,8 +1079,10 @@
                         if(el) el.innerHTML = `${count[tier]} <span class="text-sm font-normal text-gray-500">/ ${ideal[tier]}</span>`;
                     });
 
-                    document.getElementById('total-cards-count').innerText = total;
-                    document.getElementById('admin-card-count').innerText = total;
+                    const totalCardsEl = document.getElementById('total-cards-count');
+                    const adminCountEl = document.getElementById('admin-card-count');
+                    if(totalCardsEl) totalCardsEl.innerText = total;
+                    if(adminCountEl) adminCountEl.innerText = total;
                     
                     // RENDERIZAÇÃO DA TABELA DO ADMIN ORDENADA E SEPARADA POR RARIDADE
                     const adminList = document.getElementById('admin-card-list');
@@ -1075,7 +1110,10 @@
                                             <td class="px-4 py-3 font-bold text-white whitespace-nowrap">${c.name}</td>
                                             <td class="px-4 py-3 font-bold ${tierColorText[c.tier]}">${c.tier}</td>
                                             <td class="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">${c.cardVersion || 'Vol. 1'}</td>
-                                            <td class="px-4 py-3"><button type="button" onclick="window.editCard('${c.id}')" class="text-green-400 hover:text-green-300 text-xs font-bold bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded border border-gray-600 transition shadow">Editar</button></td>
+                                            <td class="px-4 py-3 flex gap-2">
+                                                <button type="button" onclick="window.editCard('${c.id}')" class="text-green-400 hover:text-green-300 text-xs font-bold bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded border border-gray-600 transition shadow">Editar</button>
+                                                <button type="button" onclick="window.deleteCard('${c.id}', '${c.name.replace(/'/g, "\\'")}')" class="text-red-400 hover:text-red-300 text-xs font-bold bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded border border-gray-600 transition shadow">Excluir</button>
+                                            </td>
                                         </tr>`;
                                 });
                             }
@@ -1083,14 +1121,15 @@
                         adminList.innerHTML = html;
                     }
 
+                    const gachaContent = document.getElementById('gacha-content');
+                    const gachaEmpty = document.getElementById('gacha-empty-db');
+
                     if (total === 0) {
-                        document.getElementById('gacha-content').classList.add('hidden');
-                        document.getElementById('gacha-content').classList.remove('flex');
-                        if(currentUser) document.getElementById('gacha-empty-db').classList.remove('hidden');
+                        if(gachaContent) { gachaContent.classList.add('hidden'); gachaContent.classList.remove('flex'); }
+                        if(currentUser && gachaEmpty) gachaEmpty.classList.remove('hidden');
                     } else {
-                        document.getElementById('gacha-content').classList.remove('hidden');
-                        document.getElementById('gacha-content').classList.add('flex');
-                        document.getElementById('gacha-empty-db').classList.add('hidden');
+                        if(gachaContent) { gachaContent.classList.remove('hidden'); gachaContent.classList.add('flex'); }
+                        if(gachaEmpty) gachaEmpty.classList.add('hidden');
                     }
 
                     if (currentUser) {
@@ -1153,83 +1192,118 @@
             }
         }, 1000);
 
-        // --- AUTENTICAÇÃO E VERIFICAÇÃO DE IP ---
-        document.getElementById('auth-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = document.getElementById('auth-username').value.trim();
-            const pass = document.getElementById('auth-password').value;
-            const errorEl = document.getElementById('auth-error');
-            const submitBtn = document.getElementById('auth-submit-btn');
-            
-            const safeUsername = username.toLowerCase().replace(/[^a-z0-9]/g, '');
-            if(safeUsername.length < 3) {
-                errorEl.innerText = "Seu usuário deve ter pelo menos 3 letras.";
-                errorEl.classList.remove('hidden'); return;
-            }
-            const fakeEmail = `${safeUsername}@nincard.com`;
-            
-            submitBtn.disabled = true; submitBtn.innerText = "Aguarde...";
-            
-            try {
-                if (window.authMode === 'register') {
-                    if (!globalSettings.registrationsOpen && safeUsername !== 'auriosh' && safeUsername !== 'vilao') throw new Error("Os cadastros estão desativados no momento.");
-                    if (localStorage.getItem('nin_ccg_registered') && safeUsername !== 'auriosh' && safeUsername !== 'vilao') throw new Error("Você já registrou uma conta neste dispositivo.");
+        // --- AUTENTICAÇÃO EVENTOS FIXOS (BLINDAGEM CONTRA NULL) ---
+        const authFormEl = document.getElementById('auth-form');
+        if (authFormEl) {
+            authFormEl.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const authUsernameEl = document.getElementById('auth-username');
+                const authPasswordEl = document.getElementById('auth-password');
+                const errorEl = document.getElementById('auth-error');
+                const submitBtn = document.getElementById('auth-submit-btn');
+                
+                if(!authUsernameEl || !authPasswordEl || !errorEl || !submitBtn) return;
 
-                    let userIp = 'unknown';
-                    try { const ipRes = await fetch('https://api.ipify.org?format=json'); const ipData = await ipRes.json(); userIp = ipData.ip; } catch(err) { }
-
-                    const allUsersSnap = await getDocs(collection(db, "users"));
-                    let ipInUse = false;
-                    allUsersSnap.forEach(doc => { if (doc.data().ip === userIp && userIp !== 'unknown') ipInUse = true; });
-
-                    if (ipInUse && safeUsername !== 'auriosh' && safeUsername !== 'vilao') throw new Error("Limite atingido: Já existe uma conta registrada na sua rede/IP.");
-
-                    const userCredential = await createUserWithEmailAndPassword(auth, fakeEmail, pass);
-                    await updateProfile(userCredential.user, { displayName: username });
-                    
-                    const userRole = (safeUsername === 'auriosh' || safeUsername === 'vilao') ? 'admin' : 'player';
-
-                    await setDoc(doc(db, "users", userCredential.user.uid), {
-                        displayName: username, displayNameLower: username.toLowerCase(),
-                        pullsAvailable: 3, lastPullTimestamp: null, inventory: {}, role: userRole,
-                        tradesToday: 0, lastTradeDate: new Date().toDateString(), totalPacksOpened: 0, 
-                        claimedAchievements: {}, ip: userIp 
-                    });
-                    
-                    localStorage.setItem('nin_ccg_registered', 'true'); 
-                } else {
-                    await signInWithEmailAndPassword(auth, fakeEmail, pass);
+                const username = authUsernameEl.value.trim();
+                const pass = authPasswordEl.value;
+                
+                const safeUsername = username.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if(safeUsername.length < 3) {
+                    errorEl.innerText = "Seu usuário deve ter pelo menos 3 letras.";
+                    errorEl.classList.remove('hidden'); return;
                 }
-                window.closeModal();
-            } catch (error) {
-                let errorMsg = error.message.replace('Firebase: ', '');
-                if (error.code === 'auth/email-already-in-use') errorMsg = "Este usuário já está em uso!";
-                if (error.code === 'auth/invalid-credential') errorMsg = "Usuário ou senha incorretos!";
-                errorEl.innerText = errorMsg; errorEl.classList.remove('hidden');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerText = window.authMode === 'register' ? 'Cadastrar' : 'Entrar';
-            }
-        });
+                const fakeEmail = `${safeUsername}@nincard.com`;
+                
+                submitBtn.disabled = true; submitBtn.innerText = "Aguarde...";
+                
+                try {
+                    if (window.authMode === 'register') {
+                        if (!globalSettings.registrationsOpen && safeUsername !== 'auriosh' && safeUsername !== 'vilao') throw new Error("Os cadastros estão desativados no momento.");
+                        if (localStorage.getItem('nin_ccg_registered') && safeUsername !== 'auriosh' && safeUsername !== 'vilao') throw new Error("Você já registrou uma conta neste dispositivo.");
 
-        document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
+                        let userIp = 'unknown';
+                        try { const ipRes = await fetch('https://api.ipify.org?format=json'); const ipData = await ipRes.json(); userIp = ipData.ip; } catch(err) { }
+
+                        const allUsersSnap = await getDocs(collection(db, "users"));
+                        let ipInUse = false;
+                        allUsersSnap.forEach(doc => { if (doc.data().ip === userIp && userIp !== 'unknown') ipInUse = true; });
+
+                        if (ipInUse && safeUsername !== 'auriosh' && safeUsername !== 'vilao') throw new Error("Limite atingido: Já existe uma conta registrada na sua rede/IP.");
+
+                        const userCredential = await createUserWithEmailAndPassword(auth, fakeEmail, pass);
+                        await updateProfile(userCredential.user, { displayName: username });
+                        
+                        const userRole = (safeUsername === 'auriosh' || safeUsername === 'vilao') ? 'admin' : 'player';
+
+                        await setDoc(doc(db, "users", userCredential.user.uid), {
+                            displayName: username, displayNameLower: username.toLowerCase(),
+                            pullsAvailable: 3, lastPullTimestamp: null, inventory: {}, role: userRole,
+                            tradesToday: 0, lastTradeDate: new Date().toDateString(), totalPacksOpened: 0, 
+                            claimedAchievements: {}, ip: userIp 
+                        });
+                        
+                        localStorage.setItem('nin_ccg_registered', 'true'); 
+                    } else {
+                        await signInWithEmailAndPassword(auth, fakeEmail, pass);
+                    }
+                    window.closeModal();
+                } catch (error) {
+                    let errorMsg = error.message.replace('Firebase: ', '');
+                    if (error.code === 'auth/email-already-in-use') errorMsg = "Este usuário já está em uso!";
+                    if (error.code === 'auth/invalid-credential') errorMsg = "Usuário ou senha incorretos!";
+                    errorEl.innerText = errorMsg; errorEl.classList.remove('hidden');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = window.authMode === 'register' ? 'Cadastrar' : 'Entrar';
+                }
+            });
+        }
+
+        const btnLogoutEl = document.getElementById('btn-logout');
+        if (btnLogoutEl) {
+            btnLogoutEl.addEventListener('click', () => signOut(auth));
+        }
+
+        const tradeOfferEl = document.getElementById('trade-offer');
+        if (tradeOfferEl) {
+            tradeOfferEl.addEventListener('change', () => {
+                if (window.updateRequestTierOptions) window.updateRequestTierOptions();
+            });
+        }
+
+        const tradeReqTierEl = document.getElementById('trade-request-tier');
+        if (tradeReqTierEl) {
+            tradeReqTierEl.addEventListener('change', () => {
+                if (window.updateTradeRatio) window.updateTradeRatio();
+            });
+        }
 
         // --- OBSERVAR ESTADO DO USUÁRIO ---
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
             if (user) {
-                document.getElementById('logged-out-view').classList.add('hidden');
-                document.getElementById('logged-in-view').classList.remove('hidden');
-                document.getElementById('logged-in-view').classList.add('flex');
-                document.getElementById('user-display-name').innerText = user.displayName || 'Ninja';
-                document.getElementById('user-avatar').src = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${user.displayName || user.uid}`;
+                const loggedOutView = document.getElementById('logged-out-view');
+                const loggedInView = document.getElementById('logged-in-view');
+                const userDisplayNameEl = document.getElementById('user-display-name');
+                const userAvatarEl = document.getElementById('user-avatar');
                 
-                document.getElementById('gacha-locked').classList.add('hidden');
-                document.getElementById('album-locked').classList.add('hidden');
-                document.getElementById('album-content').classList.remove('hidden');
-                document.getElementById('album-content').classList.add('flex');
-                document.getElementById('tab-trade').classList.remove('hidden');
-                document.getElementById('tab-achievements').classList.remove('hidden');
+                if (loggedOutView) loggedOutView.classList.add('hidden');
+                if (loggedInView) { loggedInView.classList.remove('hidden'); loggedInView.classList.add('flex'); }
+                if (userDisplayNameEl) userDisplayNameEl.innerText = user.displayName || 'Ninja';
+                if (userAvatarEl) userAvatarEl.src = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${user.displayName || user.uid}`;
+                
+                const gachaLocked = document.getElementById('gacha-locked');
+                const albumLocked = document.getElementById('album-locked');
+                const albumContent = document.getElementById('album-content');
+                const tabTrade = document.getElementById('tab-trade');
+                const tabAchievements = document.getElementById('tab-achievements');
+
+                if (gachaLocked) gachaLocked.classList.add('hidden');
+                if (albumLocked) albumLocked.classList.add('hidden');
+                if (albumContent) { albumContent.classList.remove('hidden'); albumContent.classList.add('flex'); }
+                if (tabTrade) tabTrade.classList.remove('hidden');
+                if (tabAchievements) tabAchievements.classList.remove('hidden');
 
                 startGlobalListeners();
 
@@ -1252,11 +1326,12 @@
                         window.updateTradeLimitsUI(); 
                         window.renderAchievements();
 
+                        const tabAdmin = document.getElementById('tab-admin');
                         if (userData.role === 'admin') {
-                            document.getElementById('tab-admin').classList.remove('hidden');
+                            if (tabAdmin) tabAdmin.classList.remove('hidden');
                             window.suggestNextCardNumber();
                         } else {
-                            document.getElementById('tab-admin').classList.add('hidden');
+                            if (tabAdmin) tabAdmin.classList.add('hidden');
                         }
                     }
                 });
@@ -1269,21 +1344,27 @@
                 });
 
             } else {
-                document.getElementById('logged-out-view').classList.remove('hidden');
-                document.getElementById('logged-in-view').classList.add('hidden');
-                document.getElementById('logged-in-view').classList.remove('flex');
-                document.getElementById('tab-admin').classList.add('hidden');
-                document.getElementById('tab-trade').classList.add('hidden');
-                document.getElementById('tab-achievements').classList.add('hidden');
-                
-                document.getElementById('gacha-locked').classList.remove('hidden');
-                document.getElementById('gacha-content').classList.add('hidden');
-                document.getElementById('gacha-content').classList.remove('flex');
-                document.getElementById('gacha-empty-db').classList.add('hidden');
-                
-                document.getElementById('album-locked').classList.remove('hidden');
-                document.getElementById('album-content').classList.add('hidden');
-                document.getElementById('album-content').classList.remove('flex');
+                const loggedOutView = document.getElementById('logged-out-view');
+                const loggedInView = document.getElementById('logged-in-view');
+                const tabAdmin = document.getElementById('tab-admin');
+                const tabTrade = document.getElementById('tab-trade');
+                const tabAchievements = document.getElementById('tab-achievements');
+                const gachaLocked = document.getElementById('gacha-locked');
+                const gachaContent = document.getElementById('gacha-content');
+                const gachaEmpty = document.getElementById('gacha-empty-db');
+                const albumLocked = document.getElementById('album-locked');
+                const albumContent = document.getElementById('album-content');
+
+                if (loggedOutView) loggedOutView.classList.remove('hidden');
+                if (loggedInView) { loggedInView.classList.add('hidden'); loggedInView.classList.remove('flex'); }
+                if (tabAdmin) tabAdmin.classList.add('hidden');
+                if (tabTrade) tabTrade.classList.add('hidden');
+                if (tabAchievements) tabAchievements.classList.add('hidden');
+                if (gachaLocked) gachaLocked.classList.remove('hidden');
+                if (gachaContent) { gachaContent.classList.add('hidden'); gachaContent.classList.remove('flex'); }
+                if (gachaEmpty) gachaEmpty.classList.add('hidden');
+                if (albumLocked) albumLocked.classList.remove('hidden');
+                if (albumContent) { albumContent.classList.add('hidden'); albumContent.classList.remove('flex'); }
                 
                 if(unsubUser) { unsubUser(); unsubUser = null; }
                 if(unsubTrades) { unsubTrades(); unsubTrades = null; }
@@ -1457,6 +1538,8 @@
                 const iconBasic = document.getElementById('achiev-pack-icon-basic');
                 const label = document.getElementById('achiev-pack-label');
                 const sublabel = document.getElementById('achiev-pack-sublabel');
+                
+                if (!overlay || !pack || !revealed || !btnClose || !bgPremium || !iconPremium || !iconBasic || !label || !sublabel) throw new Error("Erro na UI do pacote.");
 
                 if(type === 'premium') {
                     pack.className = 'pack pack-premium glowing-premium cursor-pointer';
@@ -1477,7 +1560,9 @@
                 pack.classList.remove('hidden', 'tearing');
                 revealed.classList.add('hidden');
                 btnClose.classList.add('hidden');
-                document.getElementById('achiev-overlay-title').innerText = "Abra sua Recompensa!";
+                
+                const overlayTitle = document.getElementById('achiev-overlay-title');
+                if (overlayTitle) overlayTitle.innerText = "Abra sua Recompensa!";
 
                 overlay.classList.remove('hidden');
                 overlay.classList.add('flex');
@@ -1492,10 +1577,13 @@
 
         window.triggerAchievPackOpening = () => {
             const pack = document.getElementById('achiev-booster-pack');
-            if(pack.classList.contains('tearing')) return;
+            if (!pack || pack.classList.contains('tearing')) return;
 
-            document.getElementById('achiev-overlay-title').innerText = "Escolha 2 Cartas!";
-            document.getElementById('achiev-overlay-title').classList.remove('animate-pulse');
+            const overlayTitle = document.getElementById('achiev-overlay-title');
+            if (overlayTitle) {
+                overlayTitle.innerText = "Escolha 2 Cartas!";
+                overlayTitle.classList.remove('animate-pulse');
+            }
 
             let highestTierStr = currentAchievType === 'premium' ? 'SS' : 'A';
             window.playGachaSound(highestTierStr);
@@ -1516,21 +1604,23 @@
             setTimeout(() => {
                 pack.classList.add('hidden');
                 const revealedContainer = document.getElementById('achiev-revealed-cards');
-                revealedContainer.innerHTML = '';
-                revealedContainer.classList.remove('hidden');
+                if (revealedContainer) {
+                    revealedContainer.innerHTML = '';
+                    revealedContainer.classList.remove('hidden');
 
-                for(let index=0; index<8; index++) {
-                    revealedContainer.innerHTML += `
-                        <div class="opacity-0" style="animation: card-deal 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards ${index * 0.12}s;">
-                            <div class="card-container w-24 h-36 sm:w-32 sm:h-48 md:w-40 md:h-60 cursor-pointer transform transition hover:scale-105 rounded-xl" id="achiev-card-${index}" onclick="window.revealAchievCard(${index})">
-                                <div class="card-inner shadow-2xl rounded-xl" id="achiev-card-inner-${index}">
-                                    <div class="card-back ${currentAchievType === 'premium' ? 'border-yellow-400 bg-gradient-to-br from-red-900 to-black' : 'hover:shadow-green-500/50'} transition duration-300 flex flex-col items-center justify-center rounded-xl border-[4px]">
-                                        <img src="https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/img/icon.png" class="w-10 h-10 sm:w-16 sm:h-16 opacity-60 drop-shadow-[0_0_5px_rgba(34,197,94,0.4)]" alt="Card Logo">
+                    for(let index=0; index<8; index++) {
+                        revealedContainer.innerHTML += `
+                            <div class="opacity-0" style="animation: card-deal 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards ${index * 0.12}s;">
+                                <div class="card-container w-24 h-36 sm:w-32 sm:h-48 md:w-40 md:h-60 cursor-pointer transform transition hover:scale-105 rounded-xl" id="achiev-card-${index}" onclick="window.revealAchievCard(${index})">
+                                    <div class="card-inner shadow-2xl rounded-xl" id="achiev-card-inner-${index}">
+                                        <div class="card-back ${currentAchievType === 'premium' ? 'border-yellow-400 bg-gradient-to-br from-red-900 to-black' : 'hover:shadow-green-500/50'} transition duration-300 flex flex-col items-center justify-center rounded-xl border-[4px]">
+                                            <img src="https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/img/icon.png" class="w-10 h-10 sm:w-16 sm:h-16 opacity-60 drop-shadow-[0_0_5px_rgba(34,197,94,0.4)]" alt="Card Logo">
+                                        </div>
+                                        <div class="card-front p-1 flex flex-col justify-between rounded-xl" id="achiev-card-front-${index}"></div>
                                     </div>
-                                    <div class="card-front p-1 flex flex-col justify-between rounded-xl" id="achiev-card-front-${index}"></div>
                                 </div>
-                            </div>
-                        </div>`;
+                            </div>`;
+                    }
                 }
             }, 500);
         };
@@ -1558,10 +1648,11 @@
             innerContainer.classList.add('flipped');
             
             const cardContainer = document.getElementById(`achiev-card-${index}`);
-            if (cardContainer) cardContainer.classList.remove('hover:scale-105');
-            
-            const ringColors = { 'C': 'ring-green-400', 'B': 'ring-blue-400', 'A': 'ring-purple-400', 'S': 'ring-yellow-400', 'SS': 'ring-red-500' };
-            if (cardContainer) cardContainer.classList.add(`reveal-${cardData.tier}`, 'ring-4', ringColors[cardData.tier]);
+            if (cardContainer) {
+                cardContainer.classList.remove('hover:scale-105');
+                const ringColors = { 'C': 'ring-green-400', 'B': 'ring-blue-400', 'A': 'ring-purple-400', 'S': 'ring-yellow-400', 'SS': 'ring-red-500' };
+                cardContainer.classList.add(`reveal-${cardData.tier}`, 'ring-4', ringColors[cardData.tier]);
+            }
             
             if (achievSelectedIndices.length === 2) {
                 setTimeout(() => {
@@ -1579,14 +1670,18 @@
                             }
                         }
                     }
-                    document.getElementById('btn-achiev-close').classList.remove('hidden');
+                    const btnClose = document.getElementById('btn-achiev-close');
+                    if(btnClose) btnClose.classList.remove('hidden');
                 }, 1000); 
             }
         };
 
         window.closeAchievOverlay = () => {
-            document.getElementById('achiev-pack-overlay').classList.add('hidden');
-            document.getElementById('achiev-pack-overlay').classList.remove('flex');
+            const overlay = document.getElementById('achiev-pack-overlay');
+            if (overlay) {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+            }
             isOpeningAchiev = false;
         };
 
@@ -1715,10 +1810,11 @@
             innerContainer.classList.add('flipped');
             
             const cardContainer = document.getElementById(`gacha-card-${index}`);
-            if (cardContainer) cardContainer.classList.remove('hover:scale-105');
-            
-            const ringColors = { 'C': 'ring-green-400', 'B': 'ring-blue-400', 'A': 'ring-purple-400', 'S': 'ring-yellow-400', 'SS': 'ring-red-500' };
-            if (cardContainer) cardContainer.classList.add(`reveal-${cardData.tier}`, 'ring-4', ringColors[cardData.tier]);
+            if (cardContainer) {
+                cardContainer.classList.remove('hover:scale-105');
+                const ringColors = { 'C': 'ring-green-400', 'B': 'ring-blue-400', 'A': 'ring-purple-400', 'S': 'ring-yellow-400', 'SS': 'ring-red-500' };
+                cardContainer.classList.add(`reveal-${cardData.tier}`, 'ring-4', ringColors[cardData.tier]);
+            }
             
             if (selectedCardsIndices.length === 2) {
                 setTimeout(() => {
@@ -1737,7 +1833,8 @@
                         }
                     }
                     isOpeningPack = false;
-                    document.getElementById('btn-next').classList.remove('hidden');
+                    const btnNext = document.getElementById('btn-next');
+                    if(btnNext) btnNext.classList.remove('hidden');
                 }, 1000); 
             }
         };
@@ -1754,7 +1851,8 @@
             const pullsCountEl = document.getElementById('pulls-count');
             if (pullsCountEl) pullsCountEl.innerText = userData.pullsAvailable || 0;
             
-            document.getElementById('gacha-total-packs-opened').innerText = userData.totalPacksOpened || 0;
+            const totalOpenedEl = document.getElementById('gacha-total-packs-opened');
+            if(totalOpenedEl) totalOpenedEl.innerText = userData.totalPacksOpened || 0;
             
             const containerVazio = document.getElementById('out-of-pulls-container');
             const boosterPack = document.getElementById('booster-pack');
@@ -1868,14 +1966,19 @@
             const dropRates = { 'C': '56.0%', 'B': '30.0%', 'A': '10.3%', 'S': '3.5%', 'SS': '0.2%' };
             const tierColors = { 'C': 'text-green-400 border-green-400', 'B': 'text-blue-400 border-blue-400', 'A': 'text-purple-400 border-purple-400', 'S': 'text-yellow-400 border-yellow-400', 'SS': 'text-red-500 border-red-500' };
             
-            document.getElementById('detail-card-name').innerText = card.name;
-            document.getElementById('detail-card-desc').innerText = card.desc;
-            
+            const detailName = document.getElementById('detail-card-name');
+            const detailDesc = document.getElementById('detail-card-desc');
             const tierEl = document.getElementById('detail-card-tier');
-            tierEl.innerText = `Rank ${card.tier}`;
-            tierEl.className = `px-3 py-1 font-black text-sm rounded shadow-md border ${tierColors[card.tier]} bg-gray-900`;
+            const chanceEl = document.getElementById('detail-card-chance');
             
-            document.getElementById('detail-card-chance').innerText = `Chance Drop: ${dropRates[card.tier]}`;
+            if (detailName) detailName.innerText = card.name;
+            if (detailDesc) detailDesc.innerText = card.desc;
+            
+            if (tierEl) {
+                tierEl.innerText = `Rank ${card.tier}`;
+                tierEl.className = `px-3 py-1 font-black text-sm rounded shadow-md border ${tierColors[card.tier]} bg-gray-900`;
+            }
+            if (chanceEl) chanceEl.innerText = `Chance Drop: ${dropRates[card.tier]}`;
             
             let qty = 0;
             if(userData && userData.inventory) { qty = userData.inventory[cardId] || 0; }
@@ -1883,21 +1986,29 @@
             const ownedEl = document.getElementById('detail-card-owned');
             const ownedContainer = document.getElementById('detail-card-owned-container');
             
-            if(qty > 0) {
-                ownedEl.innerText = qty;
-                ownedContainer.classList.remove('hidden'); ownedContainer.classList.add('flex');
-            } else {
-                ownedContainer.classList.add('hidden'); ownedContainer.classList.remove('flex');
+            if (ownedEl && ownedContainer) {
+                if(qty > 0) {
+                    ownedEl.innerText = qty;
+                    ownedContainer.classList.remove('hidden'); ownedContainer.classList.add('flex');
+                } else {
+                    ownedContainer.classList.add('hidden'); ownedContainer.classList.remove('flex');
+                }
             }
             
             window.renderCardHTML('detail-card-container', card, false, true, userData ? userData.inventory : {});
-            document.getElementById('card-detail-modal').classList.remove('hidden');
-            document.getElementById('card-detail-modal').classList.add('flex');
+            const modal = document.getElementById('card-detail-modal');
+            if(modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
         };
 
         window.closeCardDetail = () => {
-            document.getElementById('card-detail-modal').classList.add('hidden');
-            document.getElementById('card-detail-modal').classList.remove('flex');
+            const modal = document.getElementById('card-detail-modal');
+            if(modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
         };
 
         window.refreshAlbum = () => { window.renderAlbumHTML('album-grid', userData.inventory); };
@@ -1907,7 +2018,6 @@
             if(!grid) return;
             
             const isMyAlbum = gridId === 'album-grid';
-            // MUDANÇA: Se não for meu álbum (Comunidade), FORÇA o modo 'ranked' (separado por raridade com X/X)
             const mode = isMyAlbum ? window.currentAlbumView : 'ranked';
             const sort = isMyAlbum ? window.currentAlbumSort : 'tier-desc';
 
@@ -2042,9 +2152,9 @@
             const loadingEl = document.getElementById('loading-players');
             const tbody = document.getElementById('players-table-body');
             
-            errorEl.classList.add('hidden');
-            tbody.innerHTML = '';
-            loadingEl.classList.remove('hidden');
+            if(errorEl) errorEl.classList.add('hidden');
+            if(tbody) tbody.innerHTML = '';
+            if(loadingEl) loadingEl.classList.remove('hidden');
 
             try {
                 const querySnapshot = await getDocs(collection(db, "users"));
@@ -2058,16 +2168,20 @@
                 });
                 window.renderPlayersTable(allPlayersCache);
             } catch (err) {
-                errorEl.innerText = "Erro de permissão ou falha ao carregar ranking.";
-                errorEl.classList.remove('hidden');
+                if(errorEl) {
+                    errorEl.innerText = "Erro de permissão ou falha ao carregar ranking.";
+                    errorEl.classList.remove('hidden');
+                }
                 console.warn(err);
             } finally {
-                loadingEl.classList.add('hidden');
+                if(loadingEl) loadingEl.classList.add('hidden');
             }
         };
 
         window.renderPlayersTable = (players) => {
             const tbody = document.getElementById('players-table-body');
+            if(!tbody) return;
+            
             tbody.innerHTML = '';
             if (players.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-gray-500">Nenhum ninja encontrado.</td></tr>`; return; }
 
@@ -2098,7 +2212,9 @@
         };
 
         window.filterPlayers = () => {
-            const searchVal = document.getElementById('search-input').value.trim().toLowerCase();
+            const inputEl = document.getElementById('search-input');
+            if(!inputEl) return;
+            const searchVal = inputEl.value.trim().toLowerCase();
             if (!searchVal) return window.renderPlayersTable(allPlayersCache);
             window.renderPlayersTable(allPlayersCache.filter(p => p.displayNameLower && p.displayNameLower.includes(searchVal)));
         };
@@ -2106,21 +2222,35 @@
         window.viewPlayerAlbum = (uid) => {
             const player = allPlayersCache.find(p => p.uid === uid);
             if (!player) return;
-            document.getElementById('explore-table-container').classList.add('hidden');
-            document.getElementById('explore-name').innerText = player.displayName;
-            document.getElementById('explore-avatar').src = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.displayName || player.uid}`;
+            
+            const container = document.getElementById('explore-table-container');
+            const exploreName = document.getElementById('explore-name');
+            const exploreAvatar = document.getElementById('explore-avatar');
+            const exploreResults = document.getElementById('explore-results');
+            
+            if (container) container.classList.add('hidden');
+            if (exploreName) exploreName.innerText = player.displayName;
+            if (exploreAvatar) exploreAvatar.src = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.displayName || player.uid}`;
+            
             window.renderAlbumHTML('explore-grid', player.inventory);
-            document.getElementById('explore-results').classList.remove('hidden');
-            document.getElementById('explore-results').classList.add('flex');
+            
+            if (exploreResults) {
+                exploreResults.classList.remove('hidden');
+                exploreResults.classList.add('flex');
+            }
         };
 
         window.closePlayerAlbum = () => {
-            document.getElementById('explore-results').classList.add('hidden');
-            document.getElementById('explore-results').classList.remove('flex');
-            document.getElementById('explore-table-container').classList.remove('hidden');
+            const exploreResults = document.getElementById('explore-results');
+            const exploreTable = document.getElementById('explore-table-container');
+            if (exploreResults) {
+                exploreResults.classList.add('hidden');
+                exploreResults.classList.remove('flex');
+            }
+            if (exploreTable) exploreTable.classList.remove('hidden');
         };
 
-        // --- TROCAS (TRADE) COM LIMITES CORRIGIDOS ---
+        // --- TROCAS (TRADE) ---
         window.updateTradeLimitsUI = () => {
             if(!currentUser || !userData) return;
             const today = new Date().toDateString();
@@ -2160,14 +2290,17 @@
                 }
             });
             offerSelect.value = currentOffer;
-            window.updateRequestTierOptions(); 
+            if(window.updateRequestTierOptions) window.updateRequestTierOptions(); 
         };
 
         window.updateRequestTierOptions = () => {
-            const offerId = document.getElementById('trade-offer').value;
+            const offerSelect = document.getElementById('trade-offer');
             const reqTierSelect = document.getElementById('trade-request-tier');
             const offerPreview = document.getElementById('trade-offer-preview');
             
+            if(!reqTierSelect || !offerPreview || !offerSelect) return;
+            const offerId = offerSelect.value;
+
             if (offerId) {
                 const offerCard = window.cardDatabase.find(c => c.id === offerId);
                 offerPreview.src = GITHUB_RAW_URL + offerCard.img;
@@ -2190,16 +2323,18 @@
                 reqTierSelect.innerHTML = '<option value="">Primeiro selecione o que vai oferecer...</option>';
                 reqTierSelect.disabled = true;
             }
-            window.updateTradeRatio(); 
+            if(window.updateTradeRatio) window.updateTradeRatio(); 
         };
 
-        document.getElementById('trade-offer').addEventListener('change', window.updateRequestTierOptions);
-        document.getElementById('trade-request-tier').addEventListener('change', () => window.updateTradeRatio());
-
         window.updateTradeRatio = () => {
-            const offerId = document.getElementById('trade-offer').value;
-            const reqTier = document.getElementById('trade-request-tier').value;
+            const offerSelect = document.getElementById('trade-offer');
+            const reqTierSelect = document.getElementById('trade-request-tier');
             const infoEl = document.getElementById('trade-ratio-info');
+
+            if(!infoEl || !offerSelect || !reqTierSelect) return;
+            
+            const offerId = offerSelect.value;
+            const reqTier = reqTierSelect.value;
 
             if(!offerId || !reqTier) {
                 infoEl.innerText = "";
@@ -2214,60 +2349,64 @@
             infoEl.innerText = `Você dá 1x [${offerCard.tier}] ⇄ O outro jogador escolherá ${currentReqQty}x [${reqTier}] que você não tem para te enviar.`;
         };
 
-        document.getElementById('trade-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('btn-create-trade');
-            const offerId = document.getElementById('trade-offer').value;
-            const reqTier = document.getElementById('trade-request-tier').value;
+        const tradeFormEl = document.getElementById('trade-form');
+        if (tradeFormEl) {
+            tradeFormEl.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('btn-create-trade');
+                const offerId = document.getElementById('trade-offer')?.value;
+                const reqTier = document.getElementById('trade-request-tier')?.value;
 
-            if(!offerId || !reqTier) return window.showMessage("Selecione a carta e a raridade desejada!");
-            if((userData.inventory[offerId] || 0) <= currentOfferQty) return window.showMessage("Você não possui cartas suficientes para criar a oferta e manter 1 cópia.");
+                if(!offerId || !reqTier) return window.showMessage("Selecione a carta e a raridade desejada!");
+                if((userData.inventory[offerId] || 0) <= currentOfferQty) return window.showMessage("Você não possui cartas suficientes para criar a oferta e manter 1 cópia.");
 
-            const today = new Date().toDateString();
-            const tradesToday = userData.lastTradeDate === today ? (userData.tradesToday || 0) : 0;
-            if (tradesToday >= 1) return window.showMessage("Você já concluiu sua troca diária.");
+                const today = new Date().toDateString();
+                const tradesToday = userData.lastTradeDate === today ? (userData.tradesToday || 0) : 0;
+                if (tradesToday >= 1) return window.showMessage("Você já concluiu sua troca diária.");
 
-            btn.disabled = true;
-            btn.innerText = "Publicando...";
+                if(btn) { btn.disabled = true; btn.innerText = "Publicando..."; }
 
-            try {
-                await runTransaction(db, async (transaction) => {
-                    const userRef = doc(db, "users", currentUser.uid);
-                    const userSnap = await transaction.get(userRef);
-                    let inv = userSnap.data().inventory || {};
+                try {
+                    await runTransaction(db, async (transaction) => {
+                        const userRef = doc(db, "users", currentUser.uid);
+                        const userSnap = await transaction.get(userRef);
+                        let inv = userSnap.data().inventory || {};
 
-                    if((inv[offerId] || 0) <= currentOfferQty) throw "Cartas insuficientes no inventário.";
+                        if((inv[offerId] || 0) <= currentOfferQty) throw "Cartas insuficientes no inventário.";
 
-                    inv[offerId] -= currentOfferQty; 
-                    transaction.update(userRef, { inventory: inv });
+                        inv[offerId] -= currentOfferQty; 
+                        transaction.update(userRef, { inventory: inv });
 
-                    const newTradeRef = doc(collection(db, "trades"));
-                    transaction.set(newTradeRef, {
-                        fromUserId: currentUser.uid,
-                        fromUserName: currentUser.displayName,
-                        offerCardId: offerId,
-                        offerQuantity: currentOfferQty,
-                        requestTier: reqTier,
-                        requestQuantity: currentReqQty,
-                        status: 'open',
-                        timestamp: serverTimestamp()
+                        const newTradeRef = doc(collection(db, "trades"));
+                        transaction.set(newTradeRef, {
+                            fromUserId: currentUser.uid,
+                            fromUserName: currentUser.displayName,
+                            offerCardId: offerId,
+                            offerQuantity: currentOfferQty,
+                            requestTier: reqTier,
+                            requestQuantity: currentReqQty,
+                            status: 'open',
+                            timestamp: serverTimestamp()
+                        });
                     });
-                });
 
-                window.showMessage("Sua oferta foi para o Mural! Suas cartas foram separadas com sucesso.");
-                document.getElementById('trade-offer').value = "";
-                window.updateRequestTierOptions();
-            } catch (err) {
-                window.showMessage("Erro ao publicar: " + err);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Publicar Oferta no Mural";
-            }
-        });
+                    window.showMessage("Sua oferta foi para o Mural! Suas cartas foram separadas com sucesso.");
+                    const offerInput = document.getElementById('trade-offer');
+                    if(offerInput) offerInput.value = "";
+                    if(window.updateRequestTierOptions) window.updateRequestTierOptions();
+                } catch (err) {
+                    window.showMessage("Erro ao publicar: " + err);
+                } finally {
+                    if(btn) { btn.disabled = false; btn.innerText = "Publicar Oferta no Mural"; }
+                }
+            });
+        }
 
         window.renderTradeBoard = () => {
             const myTradesList = document.getElementById('my-trades-list');
             const globalGrid = document.getElementById('global-trades-grid');
+            if (!myTradesList || !globalGrid) return;
+
             myTradesList.innerHTML = ''; globalGrid.innerHTML = '';
 
             let myTradesCount = 0; let globalTradesCount = 0;
@@ -2380,6 +2519,7 @@
                 window.currentTradeAccept = { tradeId, fromUserId, offerId, reqTier, reqQty, selectedIds: [] };
                 
                 const grid = document.getElementById('trade-accept-grid');
+                if(!grid) return;
                 grid.innerHTML = '';
                 
                 validCardsForB.forEach(c => {
@@ -2397,9 +2537,13 @@
                     }
                 });
 
-                document.getElementById('btn-confirm-accept').disabled = true;
-                document.getElementById('btn-confirm-accept').onclick = () => window.confirmAcceptTrade();
-                document.getElementById('trade-accept-modal').classList.remove('hidden');
+                const confirmBtn = document.getElementById('btn-confirm-accept');
+                if (confirmBtn) {
+                    confirmBtn.disabled = true;
+                    confirmBtn.onclick = () => window.confirmAcceptTrade();
+                }
+                const modal = document.getElementById('trade-accept-modal');
+                if(modal) modal.classList.remove('hidden');
 
             } catch (e) {
                 window.showMessage("Erro ao preparar troca: " + e);
@@ -2408,9 +2552,12 @@
 
         window.toggleAcceptCard = (cardId, instanceId) => {
             const state = window.currentTradeAccept;
+            if(!state) return;
             const el = document.getElementById(`accept-card-${instanceId}`);
             const check = document.getElementById(`check-${instanceId}`);
             
+            if(!el || !check) return;
+
             const selectedIndex = state.selectedIds.findIndex(item => item.instanceId === instanceId);
 
             if (selectedIndex > -1) {
@@ -2423,7 +2570,8 @@
                 el.classList.remove('border-transparent'); el.classList.add('border-green-400');
                 check.classList.remove('hidden'); check.classList.add('flex');
             }
-            document.getElementById('btn-confirm-accept').disabled = (state.selectedIds.length !== state.reqQty);
+            const confirmBtn = document.getElementById('btn-confirm-accept');
+            if(confirmBtn) confirmBtn.disabled = (state.selectedIds.length !== state.reqQty);
         };
 
         window.confirmAcceptTrade = async () => {
@@ -2431,7 +2579,7 @@
             const finalCardsToSend = state.selectedIds.map(item => item.cardId);
 
             const btn = document.getElementById('btn-confirm-accept');
-            btn.disabled = true; btn.innerText = "Processando Troca...";
+            if(btn) { btn.disabled = true; btn.innerText = "Processando Troca..."; }
 
             try {
                 await runTransaction(db, async (transaction) => {
@@ -2467,12 +2615,13 @@
                     transaction.update(tradeRef, { status: 'completed', acceptedBy: currentUser.uid });
                 });
 
-                document.getElementById('trade-accept-modal').classList.add('hidden');
+                const modal = document.getElementById('trade-accept-modal');
+                if(modal) modal.classList.add('hidden');
                 window.showMessage("MUITO BEM! A troca foi realizada com sucesso.");
             } catch (e) {
                 window.showMessage("Falha na transação. Você atualizou as Regras do Firebase conforme o tutorial?");
             } finally {
-                btn.disabled = false; btn.innerText = "Confirmar Envio";
+                if(btn) { btn.disabled = false; btn.innerText = "Confirmar Envio"; }
             }
         };
 
@@ -2493,12 +2642,17 @@
             if (!currentUser || userData.role !== 'admin') return;
             
             const btn = document.getElementById('btn-manage-packs');
-            const targetNick = document.getElementById('admin-target-user').value.trim().toLowerCase();
-            const amount = parseInt(document.getElementById('admin-target-amount').value);
+            const userEl = document.getElementById('admin-target-user');
+            const amountEl = document.getElementById('admin-target-amount');
+            
+            if(!userEl || !amountEl) return;
+
+            const targetNick = userEl.value.trim().toLowerCase();
+            const amount = parseInt(amountEl.value);
             
             if(!targetNick || isNaN(amount)) return window.showMessage("Preencha os dados corretamente.");
             
-            btn.disabled = true;
+            if(btn) btn.disabled = true;
             try {
                 const q = query(collection(db, "users"), where("displayNameLower", "==", targetNick));
                 const snap = await getDocs(q);
@@ -2511,13 +2665,61 @@
                 
                 await updateDoc(doc(db, "users", targetDoc.id), { pullsAvailable: newPulls });
                 window.showMessage(`Sucesso! O jogador ${targetDoc.data().displayName} agora tem ${newPulls} pacotes.`);
-                document.getElementById('admin-target-user').value = ''; document.getElementById('admin-target-amount').value = '';
-                if(window.loadAdminPlayersLog) window.loadAdminPlayersLog(); // Atualiza log após alteração
+                userEl.value = ''; amountEl.value = '';
+                if(window.loadAdminPlayersLog) window.loadAdminPlayersLog();
             } catch (err) {
                 window.showMessage(err.message);
             } finally {
-                btn.disabled = false;
+                if(btn) btn.disabled = false;
             }
+        };
+
+        // --- EXCLUIR CARTA E RENUMERAR COLEÇÃO ---
+        window.deleteCard = (id, name) => {
+            window.showMessage(`Tem certeza que deseja EXCLUIR permanentemente a carta "${name}"?`, true, async () => {
+                try {
+                    await deleteDoc(doc(db, "cards", id));
+                    window.showMessage("Carta excluída com sucesso.");
+                } catch (err) {
+                    window.showMessage("Erro ao excluir carta: " + err.message);
+                }
+            });
+        };
+
+        window.renumerateCollection = async () => {
+            const versionEl = document.getElementById('admin-renum-version');
+            if(!versionEl) return;
+            const version = versionEl.value;
+            const cardsToUpdate = window.cardDatabase.filter(c => c.cardVersion === version);
+            
+            if(cardsToUpdate.length === 0) {
+                return window.showMessage(`Nenhuma carta encontrada para a coleção ${version}.`);
+            }
+
+            window.showMessage(`Isso vai re-numerar e ordenar (por Rank e Nome) as ${cardsToUpdate.length} cartas da coleção "${version}" automaticamente. Tem certeza?`, true, async () => {
+                try {
+                    cardsToUpdate.sort((a, b) => {
+                        if (TIER_VALUES[b.tier] !== TIER_VALUES[a.tier]) {
+                            return TIER_VALUES[b.tier] - TIER_VALUES[a.tier];
+                        }
+                        return a.name.localeCompare(b.name);
+                    });
+
+                    const batch = writeBatch(db);
+                    let count = 1;
+                    cardsToUpdate.forEach(c => {
+                        const newNumStr = String(count).padStart(3, '0');
+                        const cardRef = doc(db, "cards", c.id);
+                        batch.update(cardRef, { cardNumber: newNumStr });
+                        count++;
+                    });
+
+                    await batch.commit();
+                    window.showMessage(`Numeração da coleção "${version}" aplicada com sucesso!`);
+                } catch (err) {
+                    window.showMessage("Erro ao renumerar: " + err.message);
+                }
+            });
         };
 
         // --- LÓGICA DE ADMINISTRADOR ---
@@ -2562,6 +2764,11 @@
             const grid = document.getElementById('github-images-grid');
             const emptyMsg = document.getElementById('github-images-empty');
 
+            if (!loading || !grid || !emptyMsg) {
+                isFetchingImages = false;
+                return;
+            }
+
             loading.classList.remove('hidden'); emptyMsg.classList.add('hidden');
             if (!editingCardId) selectedAdminImage = "";
 
@@ -2605,30 +2812,49 @@
         window.selectAdminImage = (fileName, element) => {
             selectedAdminImage = fileName;
             const grid = document.getElementById('github-images-grid');
-            Array.from(grid.children).forEach(child => {
-                child.classList.remove('border-green-500', 'ring-2', 'ring-green-400', 'border-transparent');
-                child.classList.add('border-transparent');
-            });
-            element.classList.remove('border-transparent');
-            element.classList.add('border-green-500', 'ring-2', 'ring-green-400');
-            window.updateAdminPreview(); 
+            if(grid) {
+                Array.from(grid.children).forEach(child => {
+                    child.classList.remove('border-green-500', 'ring-2', 'ring-green-400', 'border-transparent');
+                    child.classList.add('border-transparent');
+                });
+            }
+            if(element) {
+                element.classList.remove('border-transparent');
+                element.classList.add('border-green-500', 'ring-2', 'ring-green-400');
+            }
+            if(window.updateAdminPreview) window.updateAdminPreview(); 
         };
 
         window.updateAdminPreview = () => {
+            const previewContainer = document.getElementById('admin-preview-container');
+            if(!previewContainer) return;
+
+            const adminNameEl = document.getElementById('admin-name');
+            const adminCardNumEl = document.getElementById('admin-card-number');
+            const adminCardVersionEl = document.getElementById('admin-card-version');
+            const adminTierEl = document.getElementById('admin-tier');
+            const adminLayoutEl = document.getElementById('admin-layout');
+            const adminDescEl = document.getElementById('admin-desc');
+            const adminZoomEl = document.getElementById('admin-zoom');
+            const adminNameSizeEl = document.getElementById('admin-name-size');
+            const adminDescSizeEl = document.getElementById('admin-desc-size');
+
+            const layoutVal = adminLayoutEl ? adminLayoutEl.value : 'standard';
+
             const tempCard = {
                 id: 'preview',
-                name: document.getElementById('admin-name').value || 'Nome da Carta',
-                cardNumber: document.getElementById('admin-card-number').value || '001',
-                cardVersion: document.getElementById('admin-card-version').value || 'Vol.1',
-                tier: document.getElementById('admin-tier').value || 'C',
-                layout: document.getElementById('admin-layout').value || 'standard',
-                desc: document.getElementById('admin-desc').value || 'Descrição...',
+                name: adminNameEl ? adminNameEl.value : 'Nome da Carta',
+                cardNumber: adminCardNumEl ? adminCardNumEl.value : '001',
+                cardVersion: adminCardVersionEl ? adminCardVersionEl.value : 'Vol. 1',
+                tier: adminTierEl ? adminTierEl.value : 'C',
+                layout: layoutVal,
+                desc: adminDescEl ? adminDescEl.value : 'Descrição...',
                 img: selectedAdminImage || '',
-                imageZoom: parseFloat(document.getElementById('admin-zoom').value) || 1,
-                imageTransX: window.adminCardState.transX,
-                imageTransY: window.adminCardState.transY,
-                nameFontSize: parseInt(document.getElementById('admin-name-size').value),
-                descFontSize: parseInt(document.getElementById('admin-desc-size').value)
+                imageZoom: adminZoomEl ? (parseFloat(adminZoomEl.value) || 1) : 1,
+                imageTransX: window.adminCardState ? window.adminCardState.transX : 0,
+                imageTransY: window.adminCardState ? window.adminCardState.transY : 0,
+                nameFontSize: adminNameSizeEl ? (parseInt(adminNameSizeEl.value) || (layoutVal === 'full-art' ? 14 : 12)) : (layoutVal === 'full-art' ? 14 : 12),
+                descFontSize: adminDescSizeEl ? (parseInt(adminDescSizeEl.value) || (layoutVal === 'full-art' ? 10 : 9)) : (layoutVal === 'full-art' ? 10 : 9)
             };
             window.renderCardHTML('admin-preview-container', tempCard, false, true, {});
         };
@@ -2637,109 +2863,171 @@
             const card = window.cardDatabase.find(c => c.id === id);
             if (!card) return;
             editingCardId = id;
-            document.getElementById('admin-name').value = card.name;
-            document.getElementById('admin-card-number').value = card.cardNumber || '000';
             
-            // Garantir que a versão exista no select
+            const adminNameEl = document.getElementById('admin-name');
+            if (adminNameEl) adminNameEl.value = card.name;
+            
+            const adminCardNumEl = document.getElementById('admin-card-number');
+            if (adminCardNumEl) adminCardNumEl.value = card.cardNumber || '000';
+            
             const versionSelect = document.getElementById('admin-card-version');
-            const exists = Array.from(versionSelect.options).some(opt => opt.value === card.cardVersion);
-            if (!exists && card.cardVersion) {
-                const newOption = new Option(card.cardVersion, card.cardVersion);
-                versionSelect.add(newOption);
+            if (versionSelect) {
+                const exists = Array.from(versionSelect.options).some(opt => opt.value === card.cardVersion);
+                if (!exists && card.cardVersion) {
+                    const newOption = new Option(card.cardVersion, card.cardVersion);
+                    versionSelect.add(newOption);
+                }
+                versionSelect.value = card.cardVersion || 'Vol. 1';
             }
-            versionSelect.value = card.cardVersion || 'Vol. 1';
             
-            document.getElementById('admin-tier').value = card.tier;
-            document.getElementById('admin-layout').value = card.layout || 'standard';
-            document.getElementById('admin-desc').value = card.desc;
+            const tierEl = document.getElementById('admin-tier');
+            if (tierEl) tierEl.value = card.tier;
             
-            document.getElementById('admin-zoom').value = card.imageZoom || 1;
-            document.getElementById('admin-name-size').value = card.nameFontSize || (card.layout === 'full-art' ? 14 : 12);
-            document.getElementById('admin-desc-size').value = card.descFontSize || (card.layout === 'full-art' ? 10 : 9);
+            const layoutEl = document.getElementById('admin-layout');
+            if (layoutEl) layoutEl.value = card.layout || 'standard';
+            
+            const descEl = document.getElementById('admin-desc');
+            if (descEl) descEl.value = card.desc;
+            
+            const zoomEl = document.getElementById('admin-zoom');
+            if (zoomEl) zoomEl.value = card.imageZoom || 1;
+            
+            const nameSizeEl = document.getElementById('admin-name-size');
+            if (nameSizeEl) nameSizeEl.value = card.nameFontSize || (card.layout === 'full-art' ? 14 : 12);
+            
+            const descSizeEl = document.getElementById('admin-desc-size');
+            if (descSizeEl) descSizeEl.value = card.descFontSize || (card.layout === 'full-art' ? 10 : 9);
+            
             window.adminCardState = { transX: card.imageTransX ?? 0, transY: card.imageTransY ?? 0 };
-            
             selectedAdminImage = card.img; 
             
-            document.getElementById('admin-submit').innerText = "SALVAR ALTERAÇÕES";
-            document.getElementById('admin-cancel-btn').classList.remove('hidden');
-            window.updateAdminPreview(); window.loadGitHubImages(); window.scrollTo({ top: 0, behavior: 'smooth' });
+            const submitBtn = document.getElementById('admin-submit');
+            if (submitBtn) submitBtn.innerText = "SALVAR ALTERAÇÕES";
+            
+            const cancelBtn = document.getElementById('admin-cancel-btn');
+            if (cancelBtn) cancelBtn.classList.remove('hidden');
+            
+            if(window.updateAdminPreview) window.updateAdminPreview(); 
+            if(window.loadGitHubImages) window.loadGitHubImages(); 
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
         window.cancelEdit = () => {
             editingCardId = null; 
-            document.getElementById('admin-form').reset(); 
+            const adminForm = document.getElementById('admin-form');
+            if(adminForm) adminForm.reset(); 
             selectedAdminImage = "";
-            document.getElementById('admin-zoom').value = 1; document.getElementById('admin-name-size').value = 12; document.getElementById('admin-desc-size').value = 9;
-            window.adminCardState = { transX: 0, transY: 0 };
-            document.getElementById('admin-submit').innerText = "CRIAR CARTA E ADICIONAR AO JOGO";
-            document.getElementById('admin-cancel-btn').classList.add('hidden');
             
-            // Sugere o próximo número disponível pois voltamos ao modo de "Criação"
-            window.suggestNextCardNumber();
-            window.updateAdminPreview(); window.loadGitHubImages();
+            const zoomEl = document.getElementById('admin-zoom');
+            if (zoomEl) zoomEl.value = 1;
+            
+            const nameSizeEl = document.getElementById('admin-name-size');
+            if (nameSizeEl) nameSizeEl.value = 12;
+            
+            const descSizeEl = document.getElementById('admin-desc-size');
+            if (descSizeEl) descSizeEl.value = 9;
+            
+            window.adminCardState = { transX: 0, transY: 0 };
+            
+            const submitBtn = document.getElementById('admin-submit');
+            if (submitBtn) submitBtn.innerText = "CRIAR CARTA E ADICIONAR AO JOGO";
+            
+            const cancelBtn = document.getElementById('admin-cancel-btn');
+            if (cancelBtn) cancelBtn.classList.add('hidden');
+            
+            if(window.suggestNextCardNumber) window.suggestNextCardNumber();
+            if(window.updateAdminPreview) window.updateAdminPreview(); 
+            if(window.loadGitHubImages) window.loadGitHubImages();
         };
 
-        document.getElementById('admin-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('admin-submit');
-            const msg = document.getElementById('admin-msg');
-            
-            if (!selectedAdminImage) {
-                msg.innerText = "Erro: Selecione a imagem acima clicando nela!";
-                msg.className = "text-center font-bold text-sm mt-2 text-red-400";
-                msg.classList.remove('hidden'); setTimeout(() => msg.classList.add('hidden'), 3000); return;
-            }
+        const adminFormGlobal = document.getElementById('admin-form');
+        if (adminFormGlobal) {
+            adminFormGlobal.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('admin-submit');
+                const msg = document.getElementById('admin-msg');
+                
+                if(!btn || !msg) return;
 
-            btn.disabled = true; btn.innerText = "Processando...";
-
-            try {
-                const cardData = {
-                    name: document.getElementById('admin-name').value,
-                    cardNumber: document.getElementById('admin-card-number').value,
-                    cardVersion: document.getElementById('admin-card-version').value,
-                    tier: document.getElementById('admin-tier').value,
-                    layout: document.getElementById('admin-layout').value,
-                    desc: document.getElementById('admin-desc').value,
-                    img: selectedAdminImage,
-                    imageZoom: parseFloat(document.getElementById('admin-zoom').value) || 1,
-                    imageTransX: window.adminCardState.transX, imageTransY: window.adminCardState.transY,
-                    nameFontSize: parseInt(document.getElementById('admin-name-size').value) || (document.getElementById('admin-layout').value === 'full-art' ? 14 : 12),
-                    descFontSize: parseInt(document.getElementById('admin-desc-size').value) || (document.getElementById('admin-layout').value === 'full-art' ? 10 : 9)
-                };
-
-                if (editingCardId) {
-                    await updateDoc(doc(db, "cards", editingCardId), cardData);
-                    msg.innerText = "Carta atualizada com sucesso!";
-                    editingCardId = null;
-                    document.getElementById('admin-submit').innerText = "CRIAR CARTA E ADICIONAR AO JOGO";
-                    document.getElementById('admin-cancel-btn').classList.add('hidden');
-                } else {
-                    cardData.createdAt = serverTimestamp();
-                    await addDoc(collection(db, "cards"), cardData);
-                    msg.innerText = "Carta criada!";
+                if (!selectedAdminImage) {
+                    msg.innerText = "Erro: Selecione a imagem acima clicando nela!";
+                    msg.className = "text-center font-bold text-sm mt-2 text-red-400";
+                    msg.classList.remove('hidden'); setTimeout(() => msg.classList.add('hidden'), 3000); return;
                 }
-                
-                msg.className = "text-center font-bold text-sm mt-2 text-green-400";
-                msg.classList.remove('hidden'); document.getElementById('admin-form').reset();
-                selectedAdminImage = ""; document.getElementById('admin-zoom').value = 1;
-                document.getElementById('admin-name-size').value = 12; document.getElementById('admin-desc-size').value = 9;
-                window.adminCardState = { transX: 0, transY: 0 };
-                
-                window.updateAdminPreview(); window.loadGitHubImages(); 
-                
-                // Sugere o próximo número disponível automaticamente após salvar
-                window.suggestNextCardNumber();
 
-            } catch (err) {
-                msg.innerText = "Erro: " + err.message;
-                msg.className = "text-center font-bold text-sm mt-2 text-red-400";
-                msg.classList.remove('hidden');
-            } finally {
-                btn.disabled = false;
-                if(!editingCardId) btn.innerText = "CRIAR CARTA E ADICIONAR AO JOGO";
-                setTimeout(() => msg.classList.add('hidden'), 5000);
-            }
-        });
+                btn.disabled = true; btn.innerText = "Processando...";
+
+                try {
+                    const adminNameEl = document.getElementById('admin-name');
+                    const adminCardNumEl = document.getElementById('admin-card-number');
+                    const adminCardVersionEl = document.getElementById('admin-card-version');
+                    const adminTierEl = document.getElementById('admin-tier');
+                    const adminLayoutEl = document.getElementById('admin-layout');
+                    const adminDescEl = document.getElementById('admin-desc');
+                    const adminZoomEl = document.getElementById('admin-zoom');
+                    const adminNameSizeEl = document.getElementById('admin-name-size');
+                    const adminDescSizeEl = document.getElementById('admin-desc-size');
+
+                    const layoutVal = adminLayoutEl ? adminLayoutEl.value : 'standard';
+
+                    const cardData = {
+                        name: adminNameEl ? adminNameEl.value : 'Nome da Carta',
+                        cardNumber: adminCardNumEl ? adminCardNumEl.value : '000',
+                        cardVersion: adminCardVersionEl ? adminCardVersionEl.value : 'Vol.1',
+                        tier: adminTierEl ? adminTierEl.value : 'C',
+                        layout: layoutVal,
+                        desc: adminDescEl ? adminDescEl.value : '',
+                        img: selectedAdminImage,
+                        imageZoom: adminZoomEl ? (parseFloat(adminZoomEl.value) || 1) : 1,
+                        imageTransX: window.adminCardState ? window.adminCardState.transX : 0, 
+                        imageTransY: window.adminCardState ? window.adminCardState.transY : 0,
+                        nameFontSize: adminNameSizeEl ? (parseInt(adminNameSizeEl.value) || (layoutVal === 'full-art' ? 14 : 12)) : (layoutVal === 'full-art' ? 14 : 12),
+                        descFontSize: adminDescSizeEl ? (parseInt(adminDescSizeEl.value) || (layoutVal === 'full-art' ? 10 : 9)) : (layoutVal === 'full-art' ? 10 : 9)
+                    };
+
+                    if (editingCardId) {
+                        await updateDoc(doc(db, "cards", editingCardId), cardData);
+                        msg.innerText = "Carta atualizada com sucesso!";
+                        editingCardId = null;
+                        if(btn) btn.innerText = "CRIAR CARTA E ADICIONAR AO JOGO";
+                        const cancelBtn = document.getElementById('admin-cancel-btn');
+                        if(cancelBtn) cancelBtn.classList.add('hidden');
+                    } else {
+                        cardData.createdAt = serverTimestamp();
+                        await addDoc(collection(db, "cards"), cardData);
+                        msg.innerText = "Carta criada!";
+                    }
+                    
+                    msg.className = "text-center font-bold text-sm mt-2 text-green-400";
+                    msg.classList.remove('hidden'); 
+                    
+                    const adminForm = document.getElementById('admin-form');
+                    if(adminForm) adminForm.reset();
+                    
+                    selectedAdminImage = ""; 
+                    if(adminZoomEl) adminZoomEl.value = 1;
+                    if(adminNameSizeEl) adminNameSizeEl.value = 12;
+                    if(adminDescSizeEl) adminDescSizeEl.value = 9;
+                    
+                    window.adminCardState = { transX: 0, transY: 0 };
+                    
+                    if(window.updateAdminPreview) window.updateAdminPreview(); 
+                    if(window.loadGitHubImages) window.loadGitHubImages(); 
+                    if(window.suggestNextCardNumber) window.suggestNextCardNumber();
+
+                } catch (err) {
+                    msg.innerText = "Erro: " + err.message;
+                    msg.className = "text-center font-bold text-sm mt-2 text-red-400";
+                    msg.classList.remove('hidden');
+                } finally {
+                    if(btn) {
+                        btn.disabled = false;
+                        if(!editingCardId) btn.innerText = "CRIAR CARTA E ADICIONAR AO JOGO";
+                    }
+                    setTimeout(() => { if(msg) msg.classList.add('hidden'); }, 5000);
+                }
+            });
+        }
     </script>
 </body>
 </html>
