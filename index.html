@@ -221,11 +221,11 @@
 
     <!-- Modal de Aceitar Troca -->
     <div id="trade-accept-modal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[90] hidden backdrop-blur-sm p-4" onclick="if(event.target === this) this.classList.add('hidden')">
-        <div class="bg-gray-800 p-6 rounded-xl shadow-2xl max-w-lg w-full border border-green-500/50 flex flex-col max-h-[90vh]">
-            <h2 class="text-xl font-bold text-green-400 mb-2">Escolha as cartas para enviar</h2>
-            <p id="trade-accept-desc" class="text-sm text-gray-400 mb-4">Abaixo estão listadas apenas as cartas que você tem e que o jogador ainda não possui.</p>
+        <div class="bg-gray-800 p-6 rounded-xl shadow-2xl max-w-5xl w-full border border-green-500/50 flex flex-col max-h-[90vh]">
+            <h2 class="text-2xl font-bold text-green-400 mb-2">Escolha as cartas para enviar</h2>
+            <p id="trade-accept-desc" class="text-sm text-gray-400 mb-4">Abaixo estão listadas apenas as cartas repetidas que você possui e que o jogador ainda não tem.</p>
             
-            <div id="trade-accept-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-3 overflow-y-auto p-2 bg-gray-900 rounded-lg flex-grow mb-4 border border-gray-700"></div>
+            <div id="trade-accept-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 overflow-y-auto p-4 bg-gray-900 rounded-lg flex-grow mb-4 border border-gray-700"></div>
             
             <div class="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-700">
                 <button onclick="document.getElementById('trade-accept-modal').classList.add('hidden')" class="bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white px-4 py-2 rounded-lg font-bold transition">Cancelar</button>
@@ -2611,9 +2611,17 @@
                 } 
                 
                 globalTradesCount++;
-                let actionBtnHTML = isMyTrade 
-                    ? `<button onclick="window.cancelTrade('${trade.id}')" class="w-full py-2 font-bold text-sm transition bg-red-600 hover:bg-red-500 text-white">Cancelar Minha Oferta</button>`
-                    : `<button onclick="window.openAcceptTradeModal('${trade.id}', '${trade.fromUserId}', '${offerCard.id}', '${trade.requestTier}', ${trade.requestQuantity})" class="w-full py-2 font-bold text-sm transition bg-green-600 hover:bg-green-500 text-white">Aceitar Troca</button>`;
+                const myInv = userData.inventory || {};
+                const alreadyHaveOffered = (myInv[offerCard.id] || 0) > 0;
+
+                let actionBtnHTML = '';
+                if (isMyTrade) {
+                    actionBtnHTML = `<button onclick="window.cancelTrade('${trade.id}')" class="w-full py-2 font-bold text-sm transition bg-red-600 hover:bg-red-500 text-white">Cancelar Minha Oferta</button>`;
+                } else if (alreadyHaveOffered) {
+                    actionBtnHTML = `<button disabled class="w-full py-2 font-bold text-[11px] uppercase transition bg-gray-700 text-gray-400 cursor-not-allowed">Você já tem esta carta</button>`;
+                } else {
+                    actionBtnHTML = `<button onclick="window.openAcceptTradeModal('${trade.id}', '${trade.fromUserId}', '${offerCard.id}', '${trade.requestTier}', ${trade.requestQuantity})" class="w-full py-2 font-bold text-sm transition bg-green-600 hover:bg-green-500 text-white shadow-[0_0_10px_rgba(34,197,94,0.3)]">Aceitar Troca</button>`;
+                }
 
                 globalGrid.innerHTML += `
                     <div class="bg-gray-900 rounded-xl border ${isMyTrade ? 'border-green-500 shadow-md shadow-green-900/50' : 'border-gray-600'} overflow-hidden flex flex-col">
@@ -2686,9 +2694,10 @@
                 window.cardDatabase.forEach(c => {
                     if (c.tier === reqTier && (invA[c.id] || 0) === 0) {
                         const myQty = myInv[c.id] || 0;
-                        if (myQty > 0) {
-                            validCardsForB.push({ ...c, myQty });
-                            totalSupplyable += myQty;
+                        if (myQty > 1) { // Só permite enviar se tiver repetida (mantém 1 cópia)
+                            const tradableQty = myQty - 1;
+                            validCardsForB.push({ ...c, myQty: tradableQty });
+                            totalSupplyable += tradableQty;
                         }
                     }
                 });
