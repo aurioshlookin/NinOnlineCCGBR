@@ -123,6 +123,14 @@
 </head>
 <body class="min-h-screen flex flex-col relative bg-gray-900">
 
+    <!-- OVERLAY DE MANUTENÇÃO (TELA INTEIRA) -->
+    <div id="maintenance-overlay" class="fixed inset-0 bg-gray-900/95 backdrop-blur-md z-[9999] hidden flex-col items-center justify-center p-4">
+        <div class="text-8xl mb-6 animate-pulse">🚧</div>
+        <h1 class="text-4xl sm:text-6xl font-black text-yellow-500 mb-4 text-center drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]">EM MANUTENÇÃO</h1>
+        <p class="text-gray-300 text-center max-w-lg mb-8 text-lg">Os admins estão a fazer ajustes e atualizações no servidor. Por favor, volte mais tarde!</p>
+        <button onclick="window.showModal('login')" class="text-gray-500 hover:text-gray-300 text-xs underline transition">Login Admin</button>
+    </div>
+
     <!-- Navbar -->
     <header class="bg-gray-800 p-4 shadow-md flex justify-between items-center z-10 sticky top-0 border-b border-gray-700">
         <div class="flex items-center gap-3">
@@ -277,23 +285,20 @@
         </div>
     </div>
 
-    <!-- OVERLAY GERAL DE ABERTURA DE PACOTE (USADO PARA CONQUISTAS E INVENTÁRIO) -->
+    <!-- OVERLAY GERAL DE ABERTURA DE PACOTE -->
     <div id="achiev-pack-overlay" class="fixed inset-0 bg-black/95 z-[200] hidden flex-col items-center justify-center p-4 backdrop-blur-md">
         <h2 id="achiev-overlay-title" class="text-3xl font-bold text-white mb-8 drop-shadow-md animate-pulse">Abra a sua Recompensa!</h2>
         <div id="achiev-pack-flash" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full bg-white z-[250] pointer-events-none opacity-0 hidden transition-opacity duration-300 rounded-full blur-[80px] mix-blend-overlay"></div>
         
-        <!-- O Pacote que será clicado -->
         <div id="achiev-booster-pack" class="pack cursor-pointer" onclick="window.triggerAchievPackOpening()">
             <div class="pack-cards-bg shadow-inner"></div>
             <div class="pack-top"></div>
             <div class="pack-bottom flex-col gap-3 overflow-hidden">
                 <div id="achiev-pack-bg" class="absolute inset-0 bg-gradient-to-t from-red-600/30 to-transparent hidden"></div>
                 
-                <!-- Ícone Shuriken (Para Premium) -->
                 <svg id="achiev-pack-icon-premium" class="w-16 h-16 text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,1)] hidden z-10" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 0L14.5 9.5L24 12L14.5 14.5L12 24L9.5 14.5L0 12L9.5 9.5Z"/>
                 </svg>
-                <!-- Ícone Logo (Para Básico) -->
                 <div id="achiev-pack-icon-basic" class="w-24 h-24 flex items-center justify-center drop-shadow-[0_0_15px_rgba(34,197,94,0.6)] z-10">
                     <img src="https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/img/icon.png" class="w-full h-full object-contain">
                 </div>
@@ -443,6 +448,15 @@
                                 <option value="name-asc">Nome (A-Z)</option>
                             </select>
                         </div>
+                        
+                        <!-- Toggle de Apenas Obtidas -->
+                        <div class="flex items-center">
+                            <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer hover:text-white transition">
+                                <input type="checkbox" id="toggle-owned-album" onchange="window.toggleShowOwned(this.checked)" class="accent-green-500 w-4 h-4 cursor-pointer">
+                                Apenas Obtidas
+                            </label>
+                        </div>
+
                         <div class="flex items-center gap-1 bg-gray-900 rounded p-1 border border-gray-600">
                             <button onclick="window.setAlbumViewMode('grid')" id="btn-view-grid" class="px-3 py-1 rounded bg-green-600 text-white text-xs font-bold transition">Grade</button>
                             <button onclick="window.setAlbumViewMode('table')" id="btn-view-table" class="px-3 py-1 rounded text-gray-400 hover:bg-gray-700 hover:text-white text-xs font-bold transition">Tabela</button>
@@ -455,7 +469,7 @@
             </div>
         </section>
 
-        <!-- ABA: COMUNIDADE (Otimizada) -->
+        <!-- ABA: COMUNIDADE -->
         <section id="section-explore" class="w-full max-w-6xl hidden flex-col gap-6">
             <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 flex flex-col md:flex-row gap-4 items-center justify-between shadow-md relative overflow-hidden">
                 <div class="absolute right-0 top-0 opacity-5 text-8xl pointer-events-none transform translate-x-4 -translate-y-4">🌍</div>
@@ -464,7 +478,6 @@
                     <p class="text-gray-400 text-sm">Pesquise ninjas e veja as medalhas de quem tem as melhores coleções.</p>
                 </div>
                 
-                <!-- Estatísticas Globais -->
                 <div class="flex gap-4 md:border-l border-gray-700 md:pl-6">
                     <div class="text-center bg-gray-900 px-4 py-2 rounded-lg border border-gray-700">
                         <div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Packs Abertos (Servidor)</div>
@@ -511,17 +524,27 @@
                 </table>
                 <div id="loading-players" class="p-8 text-center text-gray-400 hidden">A carregar lista de ninjas...</div>
             </div>
+            
             <div id="explore-results" class="hidden flex-col gap-6 w-full">
-                <div class="flex items-center justify-between border-b border-gray-700 pb-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 bg-gray-600 rounded-full overflow-hidden border-2 border-green-500">
+                <div class="flex flex-col sm:flex-row items-center justify-between border-b border-gray-700 pb-4 gap-4">
+                    <div class="flex items-center gap-3 w-full sm:w-auto">
+                        <div class="w-12 h-12 bg-gray-600 rounded-full overflow-hidden border-2 border-green-500 flex-shrink-0">
                             <img id="explore-avatar" src="" alt="avatar" class="w-full h-full">
                         </div>
                         <div>
                             <h3 class="text-xl font-bold text-gray-200">Álbum de: <span id="explore-name" class="text-green-400"></span></h3>
                         </div>
                     </div>
-                    <button onclick="window.closePlayerAlbum()" class="bg-gray-700 hover:bg-gray-600 border border-gray-600 px-4 py-2 rounded-lg text-sm font-bold transition text-white">Voltar à Lista</button>
+                    
+                    <div class="flex items-center gap-4 w-full sm:w-auto justify-end">
+                        <!-- Toggle de Apenas Obtidas na Comunidade -->
+                        <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer hover:text-white transition">
+                            <input type="checkbox" id="toggle-owned-explore" onchange="window.toggleShowOwned(this.checked)" class="accent-green-500 w-4 h-4 cursor-pointer">
+                            Apenas Obtidas
+                        </label>
+
+                        <button onclick="window.closePlayerAlbum()" class="bg-gray-700 hover:bg-gray-600 border border-gray-600 px-4 py-2 rounded-lg text-sm font-bold transition text-white">Voltar à Lista</button>
+                    </div>
                 </div>
                 <div class="flex flex-col gap-8 w-full" id="explore-grid"></div>
             </div>
@@ -601,13 +624,21 @@
         <section id="section-admin" class="w-full max-w-5xl hidden flex-col gap-8">
             <h2 class="text-3xl font-bold text-red-500 border-b border-red-900 pb-2 drop-shadow-md">Painel do Administrador</h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <!-- Controle de Cadastros -->
                 <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-md relative overflow-hidden">
                     <div class="absolute top-0 right-0 p-2 opacity-10 text-6xl pointer-events-none">⚙️</div>
                     <h3 class="text-xl font-bold mb-2 text-white">Status do Servidor</h3>
                     <p class="text-sm text-gray-400 mb-4">Novos cadastros: <span id="admin-reg-status" class="text-green-400 font-bold">LIGADO</span></p>
-                    <button onclick="window.toggleRegistration()" class="bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/30 text-white font-bold py-2 px-6 rounded-lg transition w-full border border-blue-400">Ligar/Desligar Cadastros</button>
+                    <button onclick="window.toggleRegistration()" class="bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/30 text-white font-bold py-2 px-4 rounded-lg transition w-full border border-blue-400 text-sm">Ligar/Desligar Cadastros</button>
+                </div>
+
+                <!-- MODO MANUTENÇÃO -->
+                <div class="bg-gray-800 p-6 rounded-xl border border-purple-500/50 shadow-md relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-2 opacity-10 text-6xl pointer-events-none">🚧</div>
+                    <h3 class="text-xl font-bold mb-2 text-white">Modo Manutenção</h3>
+                    <p class="text-sm text-gray-400 mb-4">Bloquear Jogadores: <span id="admin-maint-status" class="text-gray-400 font-bold">DESLIGADO</span></p>
+                    <button onclick="window.toggleMaintenance()" class="bg-purple-600 hover:bg-purple-500 shadow-lg shadow-purple-900/30 text-white font-bold py-2 px-4 rounded-lg transition w-full border border-purple-400 text-sm">Ligar/Desligar Bloqueio</button>
                 </div>
                 
                 <!-- Gerenciar Pacotes (Indivídual) -->
@@ -616,10 +647,10 @@
                     <h3 class="text-xl font-bold mb-2 text-white">Presentear Ninja</h3>
                     <form id="admin-packs-form" class="space-y-3" onsubmit="window.managePacks(event)">
                         <div class="flex gap-2">
-                            <input type="text" id="admin-target-user" placeholder="Nick do Jogador..." class="w-2/3 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-yellow-500" required>
-                            <input type="number" id="admin-target-amount" placeholder="Qtd (+/-)" class="w-1/3 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-yellow-500 text-center" required>
+                            <input type="text" id="admin-target-user" placeholder="Nick..." class="w-2/3 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-yellow-500" required>
+                            <input type="number" id="admin-target-amount" placeholder="Qtd" class="w-1/3 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-yellow-500 text-center" required>
                         </div>
-                        <button type="submit" id="btn-manage-packs" class="bg-yellow-600 hover:bg-yellow-500 shadow-lg shadow-yellow-900/30 text-white font-bold py-2 px-4 rounded-lg transition w-full border border-yellow-400">Aplicar Quantidade</button>
+                        <button type="submit" id="btn-manage-packs" class="bg-yellow-600 hover:bg-yellow-500 shadow-lg shadow-yellow-900/30 text-white font-bold py-2 px-4 rounded-lg transition w-full border border-yellow-400 text-sm">Aplicar Quantidade</button>
                     </form>
                 </div>
 
@@ -629,13 +660,13 @@
                     <h3 class="text-xl font-bold mb-2 text-green-400">Presentear TODOS</h3>
                     <form id="admin-bulk-packs-form" class="space-y-3" onsubmit="window.sendPacksToAll(event)">
                         <div class="flex gap-2">
-                            <select id="admin-bulk-type" class="w-2/3 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-green-500">
+                            <select id="admin-bulk-type" class="w-2/3 bg-gray-700 border border-gray-600 rounded-lg px-2 py-2 text-white focus:outline-none focus:border-green-500 text-sm">
                                 <option value="basic">Pacote Básico</option>
                                 <option value="premium">Pacote Premium</option>
                             </select>
-                            <input type="number" id="admin-bulk-amount" min="1" placeholder="Qtd" class="w-1/3 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-green-500 text-center" required>
+                            <input type="number" id="admin-bulk-amount" min="1" placeholder="Qtd" class="w-1/3 bg-gray-700 border border-gray-600 rounded-lg px-2 py-2 text-white focus:outline-none focus:border-green-500 text-center" required>
                         </div>
-                        <button type="submit" id="btn-bulk-packs" class="bg-green-600 hover:bg-green-500 shadow-lg shadow-green-900/30 text-white font-bold py-2 px-4 rounded-lg transition w-full border border-green-400">Enviar para TODOS</button>
+                        <button type="submit" id="btn-bulk-packs" class="bg-green-600 hover:bg-green-500 shadow-lg shadow-green-900/30 text-white font-bold py-2 px-4 rounded-lg transition w-full border border-green-400 text-sm">Enviar para TODOS</button>
                     </form>
                 </div>
             </div>
@@ -824,7 +855,9 @@
         window.currentAlbumSort = 'tier-desc';
         window.currentAlbumView = 'grid';
         window.adminCardState = { transX: 0, transY: 0 }; 
-        window.allPlayersCache = []; // Declarado globalmente aqui!
+        window.allPlayersCache = []; 
+        window.showOnlyOwned = false; // Novo Estado Global para o Toggle
+        window.currentViewedPlayerInventory = null;
         
         window.showModal = (mode) => {
             window.authMode = mode;
@@ -865,6 +898,26 @@
             }
         };
 
+        // --- SISTEMA DO TOGGLE DE MOSTRAR APENAS OBTIDAS ---
+        window.toggleShowOwned = (isChecked) => {
+            window.showOnlyOwned = isChecked;
+            
+            // Sincroniza visualmente os dois checkboxes
+            const chkAlbum = document.getElementById('toggle-owned-album');
+            const chkExplore = document.getElementById('toggle-owned-explore');
+            if(chkAlbum) chkAlbum.checked = isChecked;
+            if(chkExplore) chkExplore.checked = isChecked;
+            
+            // Recarrega a view atual
+            if (!document.getElementById('section-album').classList.contains('hidden')) {
+                window.refreshAlbum();
+            } else if (!document.getElementById('section-explore').classList.contains('hidden')) {
+                if (window.currentViewedPlayerInventory) {
+                    window.renderAlbumHTML('explore-grid', window.currentViewedPlayerInventory);
+                }
+            }
+        };
+
         window.switchTab = (tabName) => {
             ['gacha', 'album', 'explore', 'trade', 'admin', 'achievements'].forEach(t => {
                 const sec = document.getElementById(`section-${t}`);
@@ -880,7 +933,6 @@
                     if(t === 'admin') btn.classList.add('text-red-500', 'border-red-500');
                     if(t === 'achievements') btn.classList.add('text-blue-400', 'border-blue-400');
 
-                    // MODIFICADO: Não carrega mais a comunidade automaticamente!
                     if (t === 'explore') {
                         if (window.loadGlobalStats) window.loadGlobalStats(); 
                         const searchArea = document.getElementById('explore-search-area');
@@ -1111,9 +1163,8 @@
             lastTradeDate: "", lastPullTimestamp: null, totalPacksOpened: 0, totalTradesCompleted: 0,
             claimedAchievements: {}, notifications: []
         };
-        let globalSettings = { registrationsOpen: true, cardsVersion: 0 };
+        let globalSettings = { registrationsOpen: true, cardsVersion: 0, maintenanceMode: false };
         let unsubUser = null; 
-        // REMOVIDO: unsubTrades (chega de tempo real cobrando o Firebase!)
         let allOpenTrades = [];
         
         window.cardDatabase = [];
@@ -1126,7 +1177,56 @@
         const TIER_ORDER = ['SS', 'S', 'A', 'B', 'C'];
         let currentOfferQty = 1; let currentReqQty = 1;
 
-        // --- SISTEMA DE ESTATÍSTICAS GLOBAIS OTIMIZADO ---
+        // --- SISTEMA DE CONFIGURAÇÕES GLOBAIS (ONSNAPSHOT) ---
+        onSnapshot(doc(db, "settings", "global"), (docSnap) => {
+            if (docSnap.exists()) {
+                globalSettings = docSnap.data();
+                window.applyGlobalSettingsUI();
+            } else {
+                setDoc(doc(db, "settings", "global"), { registrationsOpen: true, cardsVersion: Date.now(), maintenanceMode: false });
+            }
+        });
+
+        window.applyGlobalSettingsUI = () => {
+            // UI de Registos
+            const regBtn = document.getElementById('btn-nav-register');
+            const adminRegStatus = document.getElementById('admin-reg-status');
+            if (globalSettings.registrationsOpen) {
+                if (regBtn) regBtn.classList.remove('hidden');
+                if (adminRegStatus) { adminRegStatus.innerText = "LIGADO"; adminRegStatus.className = "text-green-400 font-bold"; }
+            } else {
+                if (regBtn) regBtn.classList.add('hidden');
+                if (adminRegStatus) { adminRegStatus.innerText = "DESLIGADO"; adminRegStatus.className = "text-red-400 font-bold"; }
+            }
+
+            // UI de Manutenção Admin
+            const adminMaintStatus = document.getElementById('admin-maint-status');
+            if (globalSettings.maintenanceMode) {
+                if (adminMaintStatus) { adminMaintStatus.innerText = "LIGADO"; adminMaintStatus.className = "text-red-400 font-bold"; }
+            } else {
+                if (adminMaintStatus) { adminMaintStatus.innerText = "DESLIGADO"; adminMaintStatus.className = "text-gray-400 font-bold"; }
+            }
+
+            // Tela de Bloqueio de Manutenção
+            const maintOverlay = document.getElementById('maintenance-overlay');
+            if (maintOverlay) {
+                if (globalSettings.maintenanceMode) {
+                    // Se for admin logado, pode ver o site. Se não, tela bloqueia.
+                    if (currentUser && userData && userData.role === 'admin') {
+                        maintOverlay.classList.add('hidden');
+                        maintOverlay.classList.remove('flex');
+                    } else {
+                        maintOverlay.classList.remove('hidden');
+                        maintOverlay.classList.add('flex');
+                    }
+                } else {
+                    maintOverlay.classList.add('hidden');
+                    maintOverlay.classList.remove('flex');
+                }
+            }
+        };
+
+        // --- SISTEMA DE ESTATÍSTICAS GLOBAIS ---
         const logGlobalStat = (type) => {
             const statRef = doc(db, "settings", "globalStats");
             const updateData = type === 'pack' ? { totalPacks: increment(1) } : { totalTrades: increment(1) };
@@ -1146,43 +1246,28 @@
             } catch (err) { console.warn("Erro ao ler status globais", err); }
         };
 
-        // --- CACHE DE CARTAS OTIMIZADO (IDEIA A e C) ---
+        // --- CACHE DE CARTAS OTIMIZADO ---
         window.loadCardsCache = async () => {
             try {
-                // 1. Busca apenas a versão global (1 read)
                 const globalSnap = await getDoc(doc(db, "settings", "global"));
+                let currentVersion = Date.now();
                 if (globalSnap.exists()) {
-                    globalSettings = globalSnap.data();
-                    const regBtn = document.getElementById('btn-nav-register');
-                    const adminRegStatus = document.getElementById('admin-reg-status');
-                    if (globalSettings.registrationsOpen) {
-                        if (regBtn) regBtn.classList.remove('hidden');
-                        if (adminRegStatus) { adminRegStatus.innerText = "LIGADO"; adminRegStatus.className = "text-green-400 font-bold"; }
-                    } else {
-                        if (regBtn) regBtn.classList.add('hidden');
-                        if (adminRegStatus) { adminRegStatus.innerText = "DESLIGADO"; adminRegStatus.className = "text-red-400 font-bold"; }
-                    }
-                } else {
-                    // Se não existe (primeiro uso), cria
-                    await setDoc(doc(db, "settings", "global"), { registrationsOpen: true, cardsVersion: Date.now() });
-                    globalSettings = { registrationsOpen: true, cardsVersion: Date.now() };
+                    currentVersion = globalSnap.data().cardsVersion;
                 }
 
                 const localCards = localStorage.getItem('nin_cards_cache');
                 const localVersion = localStorage.getItem('nin_cards_version');
 
-                // Se o cache é válido e a versão é a mesma
-                if (localCards && localVersion == globalSettings.cardsVersion) {
+                if (localCards && localVersion == currentVersion) {
                     window.cardDatabase = JSON.parse(localCards);
                     window.updateAllCardDependentUI();
                 } else {
-                    // Versão mudou ou é a primeira vez: Baixa tudo e atualiza o Cache
                     const cardsSnap = await getDocs(collection(db, "cards"));
                     window.cardDatabase = [];
                     cardsSnap.forEach(docSnap => window.cardDatabase.push({ id: docSnap.id, ...docSnap.data() }));
                     
                     localStorage.setItem('nin_cards_cache', JSON.stringify(window.cardDatabase));
-                    localStorage.setItem('nin_cards_version', globalSettings.cardsVersion);
+                    localStorage.setItem('nin_cards_version', currentVersion);
                     window.updateAllCardDependentUI();
                 }
             } catch (err) {
@@ -1282,17 +1367,14 @@
                 window.renderAlbumHTML('album-grid', userData.inventory);
                 window.updateTradeOptions();
                 window.renderAchievements();
-                window.renderTradeBoard(); // Renderiza usando o array atual
+                window.renderTradeBoard();
             }
         };
 
-        // Chama o Carregamento ao iniciar
         window.loadCardsCache();
 
-
-        // SUGERIR PRÓXIMO NÚMERO DE CARTA
         window.suggestNextCardNumber = () => {
-            if (editingCardId) return; // Não mudar se estiver editando uma carta existente
+            if (editingCardId) return; 
             let maxNum = 0;
             window.cardDatabase.forEach(c => {
                 const num = parseInt(c.cardNumber, 10);
@@ -1481,7 +1563,7 @@
 
         const btnLogoutEl = document.getElementById('btn-logout');
         if (btnLogoutEl) {
-            btnLogoutEl.addEventListener('click', () => signOut(auth));
+            btnLogoutEl.addEventListener('click', () => { signOut(auth); window.location.reload(); });
         }
 
         const tradeOfferEl = document.getElementById('trade-offer');
@@ -1529,7 +1611,6 @@
                     if (docSnap.exists()) {
                         userData = docSnap.data();
                         
-                        // Defesa contra properties indefinidas e atualizações estruturais
                         userData.inventory = userData.inventory || {};
                         userData.claimedAchievements = userData.claimedAchievements || {};
                         userData.notifications = userData.notifications || [];
@@ -1547,7 +1628,10 @@
                         }
                         if ((user.displayName.toLowerCase() === 'auriosh' || user.displayName.toLowerCase() === 'vilao') && userData.role !== 'admin') {
                             await updateDoc(doc(db, "users", user.uid), { role: 'admin' });
+                            userData.role = 'admin';
                         }
+                        
+                        window.applyGlobalSettingsUI(); // Garante que a tela de manutenção some se for admin
 
                         window.updateGachaUI();
                         window.renderAlbumHTML('album-grid', userData.inventory);
@@ -1590,6 +1674,7 @@
                 if (albumContent) { albumContent.classList.add('hidden'); albumContent.classList.remove('flex'); }
                 
                 if(unsubUser) { unsubUser(); unsubUser = null; }
+                window.applyGlobalSettingsUI(); // Reaplica para mostrar bloqueio caso estivesse oculto
             }
         });
 
@@ -2358,6 +2443,11 @@
             let uniqueCards = 0;
             let cardsArray = [...window.cardDatabase];
 
+            // SE O TOGGLE ESTIVER ATIVO, FILTRA A LISTA PARA MOSTRAR APENAS AS OBTIDAS
+            if (window.showOnlyOwned) {
+                cardsArray = cardsArray.filter(card => (sourceInventory[card.id] || 0) > 0);
+            }
+
             cardsArray.sort((a, b) => {
                 const qtyA = sourceInventory[a.id] || 0;
                 const qtyB = sourceInventory[b.id] || 0;
@@ -2368,7 +2458,8 @@
                 return 0;
             });
 
-            cardsArray.forEach(card => { if((sourceInventory[card.id] || 0) > 0) uniqueCards++; });
+            // Count unique without respecting the toggle, to show total progress
+            window.cardDatabase.forEach(card => { if((sourceInventory[card.id] || 0) > 0) uniqueCards++; });
 
             if (isMyAlbum) {
                 const countEl = document.getElementById('collection-count');
@@ -2446,7 +2537,7 @@
                         <div class="bg-gray-800/50 p-4 rounded-xl border ${tierColorText[tier].split(' ')[1]}">
                             <h3 class="text-xl font-bold border-b border-gray-700 pb-2 mb-4 text-white flex justify-between items-center">
                                 <span class="${tierColorText[tier].split(' ')[0]} uppercase tracking-wider">Rank ${tier}</span>
-                                <span class="text-sm bg-gray-900 border border-gray-700 px-3 py-1 rounded-full text-gray-400 font-bold">${tierOwned} / ${cardsInTier.length}</span>
+                                <span class="text-sm bg-gray-900 border border-gray-700 px-3 py-1 rounded-full text-gray-400 font-bold">${tierOwned} / ${window.cardDatabase.filter(c=>c.tier===tier).length}</span>
                             </h3>
                             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4" id="tier-grid-${gridId}-${tier}"></div>
                         </div>`;
@@ -2476,7 +2567,7 @@
             }
         };
 
-        // --- RANKING GERAL OTIMIZADO (IDEIA B - ATUALIZAÇÃO MANUAL APENAS) ---
+        // --- RANKING GERAL OTIMIZADO ---
         window.loadAllPlayers = async (forceRefresh = false) => {
             const errorEl = document.getElementById('explore-error');
             const loadingEl = document.getElementById('loading-players');
@@ -2491,7 +2582,6 @@
             const now = Date.now();
             const lastFetch = localStorage.getItem('community_fetch_time');
             
-            // CACHE AUMENTADO PARA 4 HORAS!
             if (!forceRefresh && lastFetch && (now - lastFetch < 4 * 60 * 60 * 1000) && window.allPlayersCache.length > 0) {
                 window.renderPlayersTable(window.allPlayersCache);
                 return;
@@ -2589,7 +2679,8 @@
             if (exploreName) exploreName.innerText = player.displayName;
             if (exploreAvatar) exploreAvatar.src = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.displayName || player.uid}`;
             
-            window.renderAlbumHTML('explore-grid', player.inventory || {});
+            window.currentViewedPlayerInventory = player.inventory || {};
+            window.renderAlbumHTML('explore-grid', window.currentViewedPlayerInventory);
             
             if (exploreResults) {
                 exploreResults.classList.remove('hidden');
@@ -2601,6 +2692,9 @@
             const exploreResults = document.getElementById('explore-results');
             const exploreTable = document.getElementById('explore-table-container');
             const searchArea = document.getElementById('explore-search-area');
+            
+            window.currentViewedPlayerInventory = null;
+
             if (exploreResults) {
                 exploreResults.classList.add('hidden');
                 exploreResults.classList.remove('flex');
@@ -2609,7 +2703,7 @@
             if (searchArea) { searchArea.classList.remove('hidden'); searchArea.classList.add('flex'); }
         };
 
-        // --- MURAL DE TROCAS (CARREGAMENTO MANUAL - CORTAMOS O ONSNAPSHOT AQUI) ---
+        // --- MURAL DE TROCAS (CARREGAMENTO MANUAL) ---
         window.loadTradesBoard = async (manualClick = false) => {
             if(manualClick) window.showMessage("A atualizar o mural...", false);
             try {
@@ -2771,7 +2865,6 @@
                     if(offerInput) offerInput.value = "";
                     if(window.updateRequestTierOptions) window.updateRequestTierOptions();
                     
-                    // ATUALIZAR MURAL APÓS CRIAR A TROCA
                     if(window.loadTradesBoard) await window.loadTradesBoard();
                 } catch (err) {
                     window.showMessage("Erro ao publicar: " + err);
@@ -2872,7 +2965,6 @@
                     });
                     window.showMessage("Oferta cancelada e cartas devolvidas ao seu álbum!");
                     
-                    // ATUALIZAR MURAL APÓS CANCELAR
                     if(window.loadTradesBoard) await window.loadTradesBoard();
                 } catch (e) {
                     window.showMessage("Erro ao cancelar: " + e);
@@ -3041,7 +3133,6 @@
                 if(modal) modal.classList.add('hidden');
                 window.showMessage("MUITO BEM! A troca foi realizada com sucesso.");
                 
-                // ATUALIZAR MURAL APÓS CONCLUIR
                 if(window.loadTradesBoard) await window.loadTradesBoard();
             } catch (e) {
                 window.showMessage("Falha na transação. Alguém já pode ter aceitado ou as cartas não estão mais disponíveis.");
@@ -3058,7 +3149,18 @@
                 await setDoc(doc(db, "settings", "global"), { registrationsOpen: newState }, { merge: true });
                 window.showMessage(newState ? "Cadastros LIGADOS com sucesso." : "Cadastros DESLIGADOS com sucesso.");
             } catch (e) {
-                window.showMessage("Erro ao alterar configurações: " + e.message);
+                window.showMessage("Erro ao alterar: " + e.message);
+            }
+        };
+
+        window.toggleMaintenance = async () => {
+            if (!currentUser || userData.role !== 'admin') return;
+            const newState = !globalSettings.maintenanceMode;
+            try {
+                await setDoc(doc(db, "settings", "global"), { maintenanceMode: newState }, { merge: true });
+                window.showMessage(newState ? "Modo Manutenção LIGADO. Os jogadores estão bloqueados." : "Modo Manutenção DESLIGADO.");
+            } catch (e) {
+                window.showMessage("Erro ao alterar: " + e.message);
             }
         };
 
@@ -3099,7 +3201,6 @@
             }
         };
 
-        // SISTEMA DE DISTRIBUIÇÃO EM MASSA (BULK)
         window.sendPacksToAll = async (e) => {
             e.preventDefault();
             if (!currentUser || userData.role !== 'admin') return;
@@ -3128,7 +3229,7 @@
                         currentBatch.update(docSnap.ref, updateObj);
                         count++;
 
-                        if (count === 490) { // Limite de 500 do Firestore
+                        if (count === 490) { 
                             batches.push(currentBatch.commit());
                             currentBatch = writeBatch(db);
                             count = 0;
@@ -3151,12 +3252,11 @@
             });
         };
 
-        // --- EXCLUIR CARTA E RENUMERAR COLEÇÃO ---
         window.deleteCard = (id, name) => {
             window.showMessage(`Tem certeza que deseja EXCLUIR permanentemente a carta "${name}"?`, true, async () => {
                 try {
                     await deleteDoc(doc(db, "cards", id));
-                    await updateDoc(doc(db, "settings", "global"), { cardsVersion: Date.now() }); // Força atualização de cache
+                    await updateDoc(doc(db, "settings", "global"), { cardsVersion: Date.now() }); 
                     window.showMessage("Carta excluída com sucesso.");
                 } catch (err) {
                     window.showMessage("Erro ao excluir carta: " + err.message);
@@ -3193,7 +3293,7 @@
                     });
 
                     await batch.commit();
-                    await updateDoc(doc(db, "settings", "global"), { cardsVersion: Date.now() }); // Força atualização de cache
+                    await updateDoc(doc(db, "settings", "global"), { cardsVersion: Date.now() }); 
                     window.showMessage(`Numeração da coleção "${version}" aplicada com sucesso!`);
                 } catch (err) {
                     window.showMessage("Erro ao renumerar: " + err.message);
@@ -3201,7 +3301,6 @@
             });
         };
 
-        // --- LÓGICA DE ADMINISTRADOR ---
         window.loadAdminPlayersLog = async () => {
             const list = document.getElementById('admin-players-list');
             if(!list) return;
@@ -3466,7 +3565,7 @@
 
                     if (editingCardId) {
                         await updateDoc(doc(db, "cards", editingCardId), cardData);
-                        await updateDoc(doc(db, "settings", "global"), { cardsVersion: Date.now() }); // Força cache a atualizar globalmente
+                        await updateDoc(doc(db, "settings", "global"), { cardsVersion: Date.now() }); 
                         msg.innerText = "Carta atualizada com sucesso!";
                         editingCardId = null;
                         if(btn) btn.innerText = "CRIAR CARTA E ADICIONAR AO JOGO";
@@ -3475,7 +3574,7 @@
                     } else {
                         cardData.createdAt = serverTimestamp();
                         await addDoc(collection(db, "cards"), cardData);
-                        await updateDoc(doc(db, "settings", "global"), { cardsVersion: Date.now() }); // Força cache
+                        await updateDoc(doc(db, "settings", "global"), { cardsVersion: Date.now() }); 
                         msg.innerText = "Carta criada!";
                     }
                     
@@ -3495,7 +3594,7 @@
                     if(window.updateAdminPreview) window.updateAdminPreview(); 
                     if(window.loadGitHubImages) window.loadGitHubImages(); 
                     if(window.suggestNextCardNumber) window.suggestNextCardNumber();
-                    window.loadCardsCache(); // Atualiza na hora para o Admin
+                    window.loadCardsCache(); 
 
                 } catch (err) {
                     msg.innerText = "Erro: " + err.message;
