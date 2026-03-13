@@ -1156,6 +1156,8 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
+    const LOCAL_SESSION_ID = crypto.randomUUID(); // ID Único desta aba/sessão
+
     window.currentUser = null;
     window.userData = { pullsAvailable: 0, premiumPullsAvailable: 0, inventory: {}, role: 'player', tradesToday: 0, lastTradeDate: "", lastPullTimestamp: null, totalPacksOpened: 0, totalTradesCompleted: 0, claimedAchievements: {}, notifications: [] };
     let currentUser = null;
@@ -1617,10 +1619,34 @@
             window.switchTab('gacha');
         }
 
+        // --- SISTEMA DE SESSÃO ÚNICA: Registra esta sessão como a ativa ---
+        updateDoc(doc(db, "users", user.uid), {
+          currentSessionId: LOCAL_SESSION_ID
+        }).catch(e => console.warn("Erro ao registrar sessão:", e));
+
         if(unsubUser) unsubUser();
         unsubUser = onSnapshot(doc(db, "users", user.uid), async (docSnap) => {
           if (docSnap.exists()) {
-            userData = docSnap.data();
+            const data = docSnap.data();
+
+            // --- SISTEMA DE SESSÃO ÚNICA: Verifica se logou em outro lugar ---
+            if (data.currentSessionId && data.currentSessionId !== LOCAL_SESSION_ID) {
+              if(unsubUser) unsubUser();
+              signOut(auth); // Desloga imediatamente
+              
+              // Substitui toda a tela pelo aviso de desconexão
+              document.body.innerHTML = `
+                <div class="fixed inset-0 bg-gray-900 flex flex-col items-center justify-center p-4 z-[9999]">
+                   <div class="text-6xl mb-4 animate-bounce">⚠️</div>
+                   <h1 class="text-3xl sm:text-4xl font-black text-red-500 mb-2 text-center drop-shadow-md">Conexão Encerrada</h1>
+                   <p class="text-gray-300 mb-8 text-center max-w-sm">A sua conta foi conectada em outro dispositivo ou aba. Por segurança, você foi desconectado daqui.</p>
+                   <button onclick="window.location.reload()" class="bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-lg font-bold shadow-[0_0_15px_rgba(34,197,94,0.4)] transition">Recarregar Jogo</button>
+                </div>
+              `;
+              return; // Interrompe a execução do resto do código
+            }
+
+            userData = data;
             window.userData = userData;
             
             userData.inventory = userData.inventory || {};
@@ -1847,7 +1873,8 @@
         const updateObj = { claimedAchievements: newClaimed };
         
         if (achievId === 'first5') {
-          updateObj.pullsAvailable = (userData.pullsAvailable || 0) + 5;
+          // Usa incremento atômico para evitar sobrescrever dados velhos
+          updateObj.pullsAvailable = increment(5); 
         }
         
         await updateDoc(doc(db, "users", currentUser.uid), updateObj);
@@ -3324,12 +3351,11 @@
         if(snap.empty) throw new Error("Jogador não encontrado.");
         
         const targetDoc = snap.docs[0];
-        const currentPulls = targetDoc.data().pullsAvailable || 0;
-        let newPulls = currentPulls + amount;
-        if(newPulls < 0) newPulls = 0;
         
-        await updateDoc(doc(db, "users", targetDoc.id), { pullsAvailable: newPulls });
-        window.showMessage(`Sucesso! O jogador ${targetDoc.data().displayName} agora tem ${newPulls} pacotes.`);
+        // Usa incremento atômico no painel de admin também!
+        await updateDoc(doc(db, "users", targetDoc.id), { pullsAvailable: increment(amount) });
+        window.showMessage(`Sucesso! Foram enviados +${amount} pacotes para o jogador ${targetDoc.data().displayName}.`);
+        
         userEl.value = ''; amountEl.value = '';
         if(window.loadAdminPlayersLog) window.loadAdminPlayersLog();
       } catch (err) {
