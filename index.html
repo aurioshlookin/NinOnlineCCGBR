@@ -123,6 +123,26 @@
     
     details > summary { list-style: none; }
     details > summary::-webkit-details-marker { display: none; }
+
+    /* ESTILO PARA CARTAS NÃO OBTIDAS NA ABA DE RARIDADE */
+    .locked-grayscale {
+      filter: grayscale(1) brightness(0.65);
+      opacity: 0.85;
+      transition: all 0.4s ease;
+    }
+    .locked-grayscale:hover {
+      filter: grayscale(1) brightness(0.75);
+    }
+    .lock-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+      background: rgba(0,0,0,0.1);
+      pointer-events: none;
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col relative bg-gray-900">
@@ -224,6 +244,18 @@
       <div class="flex justify-center gap-4">
         <button id="msg-modal-cancel" class="hidden bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white px-4 py-2 rounded-lg transition font-bold">Cancelar</button>
         <button id="msg-modal-ok" class="bg-green-600 hover:bg-green-500 text-white px-8 py-2 rounded-lg font-bold transition shadow-lg">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmação de Abertura de Pacote -->
+  <div id="pack-confirm-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[150] hidden backdrop-blur-sm p-4">
+    <div class="bg-gray-800 p-6 rounded-xl shadow-2xl max-w-sm w-full border border-yellow-500/50 text-center">
+      <h3 class="text-xl font-bold text-gray-200 mb-2">Abrir Pacote</h3>
+      <p id="pack-confirm-desc" class="text-gray-400 text-sm mb-6">Tem certeza que deseja abrir 1 pacote?</p>
+      <div class="flex justify-center gap-4">
+        <button onclick="document.getElementById('pack-confirm-modal').classList.add('hidden')" class="bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white px-4 py-2 rounded-lg transition font-bold">Cancelar</button>
+        <button id="btn-confirm-open-pack" class="bg-yellow-600 hover:bg-yellow-500 text-white px-8 py-2 rounded-lg font-bold transition shadow-lg">Abrir</button>
       </div>
     </div>
   </div>
@@ -412,7 +444,7 @@
           <div class="absolute top-0 right-0 p-2 opacity-20 text-5xl pointer-events-none">⭐</div>
           <h3 class="text-yellow-400 font-black text-lg mb-1 drop-shadow-md uppercase tracking-wider">Tem Pacotes Premium!</h3>
           <p class="text-gray-300 text-sm mb-4">Adquiridos em eventos ou presentes do Admin.</p>
-          <button onclick="window.openInventoryPremiumPack()" class="bg-yellow-500 hover:bg-yellow-400 text-black font-black py-3 px-8 rounded-full transition shadow-[0_0_15px_rgba(250,204,21,0.5)] transform hover:scale-105">
+          <button onclick="window.promptOpenPack('premium')" class="bg-yellow-500 hover:bg-yellow-400 text-black font-black py-3 px-8 rounded-full transition shadow-[0_0_15px_rgba(250,204,21,0.5)] transform hover:scale-105">
             ABRIR PACOTE PREMIUM (<span id="inventory-premium-count">0</span>)
           </button>
         </div>
@@ -425,7 +457,7 @@
         <div id="gacha-area" class="relative flex flex-col justify-center items-center min-h-[400px] w-full gap-8">
           <div id="pack-flash" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full bg-white z-[100] pointer-events-none opacity-0 hidden transition-opacity duration-300 rounded-full blur-[80px] mix-blend-overlay"></div>
 
-          <div id="booster-pack" class="pack" onclick="window.openPack()">
+          <div id="booster-pack" class="pack" onclick="window.promptOpenPack('basic')">
             <div class="pack-cards-bg shadow-inner"></div>
             <div class="pack-top"></div>
             <div class="pack-bottom flex-col gap-3">
@@ -459,7 +491,7 @@
     <section id="section-rarity" class="w-full max-w-6xl hidden flex-col gap-6">
       <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
         <div class="flex items-center gap-3">
-          <h2 class="text-2xl font-bold text-purple-400">Cartas Mais Raras (Global) 📊</h2>
+          <h2 class="text-2xl font-bold text-purple-400">Estatísticas de Raridade 📊</h2>
           <span class="text-xs bg-gray-900 text-gray-400 px-2 py-1 rounded border border-gray-600">Baseado em <span id="rarity-total-players" class="font-bold text-purple-400">0</span> jogadores</span>
         </div>
         <div>
@@ -811,8 +843,9 @@
     window.currentViewedPlayerInventory = null;
     window.lastSyncDataStr = "";
 
-    // Stub para ser sobrescrito pelo module script
+    // Stubs para serem sobrescritos
     window.syncLeaderboard = () => {};
+    window.loadAllPlayers = async () => {};
 
     window.getTradePeriod = () => {
       const d = new Date();
@@ -1131,6 +1164,8 @@
     const TIER_ORDER = ['SS', 'S', 'A', 'B', 'C'];
     let currentOfferQty = 1; 
     let currentReqQty = 1;
+
+    let isProcessingPackTransaction = false; // Bloqueador Anti-spam Duplo Clique
 
     window.syncLeaderboard = async () => {
       if (!window.currentUser || !window.userData) return;
@@ -1863,16 +1898,47 @@
       }
     };
 
-    window.openInventoryPremiumPack = async () => {
-      if(!currentUser || userData.premiumPullsAvailable <= 0 || isOpeningAchiev) return;
+    window.promptOpenPack = (type) => {
+      if (!currentUser || isOpeningPack || isProcessingPackTransaction) return;
       
-      isOpeningAchiev = true;
+      const modal = document.getElementById('pack-confirm-modal');
+      const desc = document.getElementById('pack-confirm-desc');
+      const btn = document.getElementById('btn-confirm-open-pack');
+      
+      if (type === 'basic') {
+        if (userData.pullsAvailable <= 0) return;
+        desc.innerHTML = `Tem certeza que deseja abrir <strong class="text-green-400">1 Pacote Básico</strong>?<br>Você tem <strong class="text-white">${userData.pullsAvailable}</strong> restantes.`;
+        btn.onclick = () => { modal.classList.add('hidden'); window.openPack(); };
+      } else {
+        if (userData.premiumPullsAvailable <= 0) return;
+        desc.innerHTML = `Tem certeza que deseja abrir <strong class="text-yellow-400">1 Pacote Premium</strong>?<br>Você tem <strong class="text-white">${userData.premiumPullsAvailable}</strong> restantes.`;
+        btn.onclick = () => { modal.classList.add('hidden'); window.openInventoryPremiumPack(); };
+      }
+      
+      modal.classList.remove('hidden');
+    };
+
+    window.openInventoryPremiumPack = async () => {
+      if(!currentUser || isOpeningAchiev || isProcessingPackTransaction) return;
+      
+      isProcessingPackTransaction = true;
       
       try {
-        await updateDoc(doc(db, "users", currentUser.uid), { 
-          premiumPullsAvailable: increment(-1),
-          totalPacksOpened: increment(1)
+        const userRef = doc(db, "users", currentUser.uid);
+        await runTransaction(db, async (transaction) => {
+          const userSnap = await transaction.get(userRef);
+          if(!userSnap.exists()) throw new Error("Usuário não encontrado.");
+          
+          const currentData = userSnap.data();
+          if((currentData.premiumPullsAvailable || 0) <= 0) throw new Error("Sem pacotes premium suficientes.");
+          
+          transaction.update(userRef, { 
+            premiumPullsAvailable: increment(-1),
+            totalPacksOpened: increment(1)
+          });
         });
+
+        isOpeningAchiev = true;
 
         currentAchievType = 'premium';
         achievPackCards = [];
@@ -1912,8 +1978,9 @@
         logGlobalStat('pack');
 
       } catch(e) {
-        window.showMessage("Erro ao abrir pacote premium.");
-        isOpeningAchiev = false;
+        window.showMessage("Erro: " + e.message);
+      } finally {
+        isProcessingPackTransaction = false;
       }
     };
 
@@ -2055,79 +2122,102 @@
     }
 
     window.openPack = async () => {
-      if (!currentUser || isOpeningPack || window.cardDatabase.length === 0 || userData.pullsAvailable <= 0) return;
-      isOpeningPack = true;
+      if (!currentUser || isOpeningPack || isProcessingPackTransaction || window.cardDatabase.length === 0) return;
+      isProcessingPackTransaction = true;
       
-      const userRef = doc(db, "users", currentUser.uid);
-      let updateData = { pullsAvailable: userData.pullsAvailable - 1 };
-      if (userData.pullsAvailable === 5) updateData.lastPullTimestamp = Date.now();
-      updateData.totalPacksOpened = increment(1);
-      
-      await updateDoc(userRef, updateData).catch(e => {});
-
-      currentPackCards = [];
-      let highestTierVal = 0; let highestTierStr = 'C';
-      
-      for(let i=0; i<8; i++) {
-        const card = getRandomCard(false);
-        currentPackCards.push(card);
-        if (TIER_VALUES[card.tier] > highestTierVal) {
-          highestTierVal = TIER_VALUES[card.tier];
-          highestTierStr = card.tier;
-        }
-      }
-      selectedCardsIndices = [];
-
-      const pack = document.getElementById('booster-pack');
-      if (pack) {
-        if(highestTierVal >= 4) { pack.classList.add(`glowing-${highestTierStr}`, 'shaking-violent'); } 
-        else { pack.classList.add('shaking'); }
-        window.playGachaSound(highestTierStr);
-      }
-
-      const suspenseTime = highestTierVal >= 4 ? 1200 : 400;
-
-      setTimeout(() => {
-        if (pack) {
-          pack.classList.remove('shaking', 'shaking-violent', 'glowing-SS', 'glowing-S', 'glowing-A');
-          pack.classList.add('tearing');
-          window.fireConfetti(highestTierStr);
+      try {
+        const userRef = doc(db, "users", currentUser.uid);
+        
+        await runTransaction(db, async (transaction) => {
+          const userSnap = await transaction.get(userRef);
+          if (!userSnap.exists()) throw new Error("Usuário não encontrado.");
           
-          const flash = document.getElementById('pack-flash');
-          if (flash) {
-            flash.classList.remove('hidden'); void flash.offsetWidth; 
-            flash.classList.remove('opacity-0'); flash.classList.add('opacity-100');
-            setTimeout(() => {
-              flash.classList.remove('opacity-100'); flash.classList.add('opacity-0');
-              setTimeout(() => flash.classList.add('hidden'), 300);
-            }, 250);
+          const currentData = userSnap.data();
+          if ((currentData.pullsAvailable || 0) <= 0) {
+            throw new Error("Você não tem pacotes básicos suficientes.");
+          }
+
+          let newPulls = currentData.pullsAvailable - 1;
+          let newTimestamp = currentData.lastPullTimestamp;
+          if (currentData.pullsAvailable === 5) newTimestamp = Date.now();
+
+          transaction.update(userRef, {
+            pullsAvailable: newPulls,
+            lastPullTimestamp: newTimestamp,
+            totalPacksOpened: increment(1)
+          });
+        });
+
+        isOpeningPack = true;
+        
+        currentPackCards = [];
+        let highestTierVal = 0; let highestTierStr = 'C';
+        
+        for(let i=0; i<8; i++) {
+          const card = getRandomCard(false);
+          currentPackCards.push(card);
+          if (TIER_VALUES[card.tier] > highestTierVal) {
+            highestTierVal = TIER_VALUES[card.tier];
+            highestTierStr = card.tier;
           }
         }
+        selectedCardsIndices = [];
+
+        const pack = document.getElementById('booster-pack');
+        if (pack) {
+          if(highestTierVal >= 4) { pack.classList.add(`glowing-${highestTierStr}`, 'shaking-violent'); } 
+          else { pack.classList.add('shaking'); }
+          window.playGachaSound(highestTierStr);
+        }
+
+        const suspenseTime = highestTierVal >= 4 ? 1200 : 400;
 
         setTimeout(() => {
-          if (pack) { pack.classList.add('hidden'); pack.classList.remove('tearing'); }
-          const revealedContainer = document.getElementById('revealed-cards');
-          if(revealedContainer) {
-            revealedContainer.innerHTML = ''; revealedContainer.classList.remove('hidden');
-
-            for(let index=0; index<8; index++) {
-              revealedContainer.innerHTML += `
-                <div class="opacity-0" style="animation: card-deal 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards ${index * 0.12}s;">
-                  <div class="card-container w-24 h-36 sm:w-32 sm:h-48 md:w-40 md:h-60 cursor-pointer transform transition hover:scale-105 rounded-xl" id="gacha-card-${index}" onclick="window.revealSingleCard(${index})">
-                    <div class="card-inner shadow-2xl rounded-xl" id="gacha-card-inner-${index}">
-                      <div class="card-back hover:shadow-green-500/50 transition duration-300 flex flex-col items-center justify-center rounded-xl border-[4px]">
-                        <img src="https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/img/icon.png" class="w-10 h-10 sm:w-16 sm:h-16 opacity-60 drop-shadow-[0_0_5px_rgba(34,197,94,0.4)]" alt="Card Logo">
-                      </div>
-                      <div class="card-front p-1 flex flex-col justify-between rounded-xl" id="gacha-card-front-${index}"></div>
-                    </div>
-                  </div>
-                </div>`;
+          if (pack) {
+            pack.classList.remove('shaking', 'shaking-violent', 'glowing-SS', 'glowing-S', 'glowing-A');
+            pack.classList.add('tearing');
+            window.fireConfetti(highestTierStr);
+            
+            const flash = document.getElementById('pack-flash');
+            if (flash) {
+              flash.classList.remove('hidden'); void flash.offsetWidth; 
+              flash.classList.remove('opacity-0'); flash.classList.add('opacity-100');
+              setTimeout(() => {
+                flash.classList.remove('opacity-100'); flash.classList.add('opacity-0');
+                setTimeout(() => flash.classList.add('hidden'), 300);
+              }, 250);
             }
           }
-        }, 400); 
-      }, suspenseTime);
-      
-      logGlobalStat('pack');
+
+          setTimeout(() => {
+            if (pack) { pack.classList.add('hidden'); pack.classList.remove('tearing'); }
+            const revealedContainer = document.getElementById('revealed-cards');
+            if(revealedContainer) {
+              revealedContainer.innerHTML = ''; revealedContainer.classList.remove('hidden');
+
+              for(let index=0; index<8; index++) {
+                revealedContainer.innerHTML += `
+                  <div class="opacity-0" style="animation: card-deal 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards ${index * 0.12}s;">
+                    <div class="card-container w-24 h-36 sm:w-32 sm:h-48 md:w-40 md:h-60 cursor-pointer transform transition hover:scale-105 rounded-xl" id="gacha-card-${index}" onclick="window.revealSingleCard(${index})">
+                      <div class="card-inner shadow-2xl rounded-xl" id="gacha-card-inner-${index}">
+                        <div class="card-back hover:shadow-green-500/50 transition duration-300 flex flex-col items-center justify-center rounded-xl border-[4px]">
+                          <img src="https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/img/icon.png" class="w-10 h-10 sm:w-16 sm:h-16 opacity-60 drop-shadow-[0_0_5px_rgba(34,197,94,0.4)]" alt="Card Logo">
+                        </div>
+                        <div class="card-front p-1 flex flex-col justify-between rounded-xl" id="gacha-card-front-${index}"></div>
+                      </div>
+                    </div>
+                  </div>`;
+              }
+            }
+          }, 400); 
+        }, suspenseTime);
+        
+        logGlobalStat('pack');
+      } catch (error) {
+        window.showMessage("Erro: " + error.message);
+      } finally {
+        isProcessingPackTransaction = false;
+      }
     };
 
     window.revealSingleCard = async (index) => {
@@ -2736,119 +2826,48 @@
       if (searchArea) { searchArea.classList.remove('hidden'); searchArea.classList.add('flex'); }
     };
 
-    window.refreshRarity = async () => {
-      document.getElementById('rarity-loading').classList.remove('hidden');
-      document.getElementById('rarity-grid').classList.add('hidden');
-      await window.loadAllPlayers(true, true);
-      document.getElementById('rarity-loading').classList.add('hidden');
-      document.getElementById('rarity-grid').classList.remove('hidden');
-      window.renderRarityBoard();
-    };
-
-    window.renderRarityBoard = () => {
-      const grid = document.getElementById('rarity-grid');
-      const countEl = document.getElementById('rarity-total-players');
-      if (!grid) return;
-
-      const totalPlayers = window.allPlayersCache.length;
-      if (countEl) countEl.innerText = totalPlayers;
-
-      if (totalPlayers === 0) {
-        grid.innerHTML = '<p class="text-gray-400 col-span-full text-center">Nenhum dado de jogador encontrado no momento.</p>';
-        return;
-      }
-
-      const ownershipStats = {};
-      window.cardDatabase.forEach(c => ownershipStats[c.id] = 0);
-
-      window.allPlayersCache.forEach(player => {
-        const inv = player.inventory || {};
-        Object.keys(inv).forEach(cardId => {
-          if (inv[cardId] > 0 && ownershipStats[cardId] !== undefined) {
-            ownershipStats[cardId]++;
-          }
-        });
-      });
-
-      const statsArray = window.cardDatabase.map(c => {
-        const ownedCount = ownershipStats[c.id];
-        const percent = ((ownedCount / totalPlayers) * 100).toFixed(1);
-        return { ...c, ownedBy: ownedCount, percent: percent };
-      });
-
-      statsArray.sort((a, b) => b.ownedBy - a.ownedBy);
-
-      grid.innerHTML = '';
-      const myInv = userData.inventory || {};
-
-      statsArray.forEach(stat => {
-        const iOwnIt = (myInv[stat.id] || 0) > 0;
-        const wrapper = document.createElement('div');
-        wrapper.className = "flex flex-col items-center gap-3";
-
-        if (iOwnIt) {
-          wrapper.innerHTML = `
-            <div class="w-full aspect-[2/3] relative rounded-xl transition transform hover:scale-105 shadow-lg cursor-pointer" onclick="window.showCardDetail('${stat.id}')">
-              <div id="rarity-card-${stat.id}" class="w-full h-full"></div>
-            </div>
-            <div class="bg-gray-800 border border-gray-600 rounded-lg p-2 w-full text-center shadow-inner">
-              <span class="text-sm text-gray-200 font-bold block">${stat.ownedBy} <span class="text-[10px] text-gray-500 font-normal">/ ${totalPlayers} jogadores</span></span>
-              <div class="text-xs font-bold text-green-400 mt-1">${stat.percent}% possuem</div>
-            </div>
-          `;
-          grid.appendChild(wrapper);
-          window.renderCardHTML(`rarity-card-${stat.id}`, stat, false, true, myInv);
-        } else {
-          wrapper.innerHTML = `
-            <div class="w-full aspect-[2/3] relative rounded-xl transition shadow-lg bg-gray-800 border-2 border-gray-700 flex flex-col items-center justify-center opacity-70">
-              <span class="text-gray-500 font-bold text-5xl mb-3 drop-shadow-md">?</span>
-              <span class="text-[10px] text-gray-400 font-bold bg-gray-900 px-2 py-1 rounded border border-gray-700 uppercase tracking-widest">Não Descoberta</span>
-            </div>
-            <div class="bg-gray-800 border border-gray-600 rounded-lg p-2 w-full text-center shadow-inner">
-              <span class="text-sm text-gray-200 font-bold block">${stat.ownedBy} <span class="text-[10px] text-gray-500 font-normal">/ ${totalPlayers} jogadores</span></span>
-              <div class="text-xs font-bold text-purple-400 mt-1">${stat.percent}% possuem</div>
-            </div>
-          `;
-          grid.appendChild(wrapper);
-        }
-      });
-    };
-
-    window.loadTradesBoard = async (manualClick = false) => {
-      if(manualClick) window.showMessage("Atualizando mural...", false);
+    window.loadTradesBoard = async () => {
       try {
-        const snap = await getDocs(query(collection(db, "trades"), where("status", "==", "open")));
+        const q = query(collection(db, "trades"), where("status", "==", "open"));
+        const snap = await getDocs(q);
         allOpenTrades = [];
-        snap.forEach(doc => allOpenTrades.push({ id: doc.id, ...doc.data() }));
-        window.renderTradeBoard(); 
+        snap.forEach(doc => {
+          allOpenTrades.push({ id: doc.id, ...doc.data() });
+        });
+        window.renderTradeBoard();
         window.updateTradeLimitsUI();
-        if(manualClick) document.getElementById('msg-modal')?.classList.add('hidden');
       } catch (err) {
-        if(manualClick) window.showMessage("Erro ao atualizar o mural.");
+        console.error("Erro ao carregar trocas:", err);
       }
     };
 
     window.updateTradeLimitsUI = () => {
-      if(!currentUser || !userData) return;
-      const tp = window.getTradePeriod();
-      
-      const tradesToday = userData.lastTradeDate === tp ? (userData.tradesToday || 0) : 0;
-      const hasActiveTrade = allOpenTrades.some(t => t.fromUserId === currentUser.uid);
-      
-      const countEl = document.getElementById('trade-limit-count');
-      if (countEl) countEl.innerText = tradesToday;
-      
+      const limitCount = document.getElementById('trade-limit-count');
       const blocker = document.getElementById('trade-form-blocker');
+      const msg = document.getElementById('trade-form-blocker-msg');
+      
+      const tp = window.getTradePeriod();
+      const tradesToday = userData.lastTradeDate === tp ? (userData.tradesToday || 0) : 0;
+      
+      if (limitCount) limitCount.innerText = tradesToday;
+
       if (blocker) {
-        const msg = document.getElementById('trade-form-blocker-msg');
+        let hasActiveTrade = false;
+        if (allOpenTrades && currentUser) {
+            hasActiveTrade = allOpenTrades.some(t => t.fromUserId === currentUser.uid && t.status === 'open');
+        }
+        
         if (tradesToday >= 2) {
           blocker.classList.remove('hidden');
+          blocker.classList.add('flex');
           if(msg) msg.innerText = "Você já concluiu as suas trocas deste período.";
         } else if (hasActiveTrade) {
           blocker.classList.remove('hidden');
+          blocker.classList.add('flex');
           if(msg) msg.innerText = "Você já tem uma oferta ativa no mural. Cancele-a antes de criar outra.";
         } else {
           blocker.classList.add('hidden');
+          blocker.classList.remove('flex');
         }
       }
     };
@@ -3704,6 +3723,132 @@
       });
     }
 
+    // --- NOVA LÓGICA DO RARITY BOARD (Estatísticas Globais) ---
+    window.renderRarityBoard = () => {
+      const grid = document.getElementById('rarity-grid');
+      const totalPlayersSpan = document.getElementById('rarity-total-players');
+      if (!grid) return;
+
+      const totalPlayers = window.allPlayersCache.length || 0;
+      if (totalPlayersSpan) totalPlayersSpan.innerText = totalPlayers;
+
+      const myInv = (window.userData && window.userData.inventory) ? window.userData.inventory : {};
+
+      // 1. Calcular estatísticas baseadas no cache de jogadores
+      const stats = {};
+      window.cardDatabase.forEach(c => { stats[c.id] = 0; });
+      
+      window.allPlayersCache.forEach(player => {
+         const inv = player.inventory || {};
+         Object.keys(inv).forEach(id => {
+             if (inv[id] > 0 && stats[id] !== undefined) stats[id]++;
+         });
+      });
+
+      // 2. Ordenar cartas da mais comum para a mais rara (baseado na % de jogadores que tem)
+      const sortedCards = [...window.cardDatabase].sort((a, b) => {
+         const aHave = stats[a.id] || 0;
+         const bHave = stats[b.id] || 0;
+         if (bHave !== aHave) return bHave - aHave; // Descrescente
+         return TIER_VALUES[a.tier] - TIER_VALUES[b.tier]; // Fallback para Rank
+      });
+
+      grid.innerHTML = '';
+
+      sortedCards.forEach(card => {
+         const hasCard = (myInv[card.id] || 0) > 0;
+         const ownersCount = stats[card.id] || 0;
+         const notOwnersCount = totalPlayers - ownersCount;
+         const pct = totalPlayers > 0 ? ((ownersCount / totalPlayers) * 100).toFixed(1) : 0;
+
+         const wrapper = document.createElement('div');
+         wrapper.className = "flex flex-col gap-2 bg-gray-800/40 p-2 rounded-xl border border-gray-700 relative";
+
+         // Barra HTML informando estatísticas
+         const statsHtml = `
+            <div class="text-[9px] sm:text-[10px] text-gray-300 flex justify-between items-center bg-gray-900 px-2 py-1.5 rounded border border-gray-600 mb-1">
+               <span><span class="text-green-400 font-bold">${ownersCount}</span> têm (${pct}%)</span>
+               <span><span class="text-red-400 font-bold">${notOwnersCount}</span> n/ têm</span>
+            </div>
+         `;
+
+         if (hasCard) {
+            wrapper.innerHTML = `
+               ${statsHtml}
+               <div class="aspect-[2/3] w-full cursor-pointer hover:scale-105 transition duration-300 shadow-xl" onclick="window.showCardDetail('${card.id}')">
+                  <div id="rarity-item-${card.id}" class="w-full h-full"></div>
+               </div>
+               <p class="text-[10px] text-center font-bold text-green-400 uppercase tracking-tighter mt-1">Desbloqueada</p>
+            `;
+            grid.appendChild(wrapper);
+            window.renderCardHTML(`rarity-item-${card.id}`, card, false, true, myInv);
+         } else {
+            const fullImageUrl = card.img ? (GITHUB_RAW_URL + card.img) : '';
+            const layout = card.layout || 'standard';
+            const isFullArt = layout === 'full-art';
+            const zoom = card.imageZoom || 1;
+            const transX = card.imageTransX ?? 0;
+            const transY = card.imageTransY ?? 0;
+            
+            const imgStyle = `width: 100%; height: 100%; object-fit: contain; transform: translate(${transX}px, ${transY}px) scale(${zoom}); transform-origin: center; filter: grayscale(100%) brightness(35%) blur(1.5px);`;
+            
+            let cardSkeletonHTML = '';
+            
+            if (isFullArt) {
+                cardSkeletonHTML = `
+                   <div class="absolute inset-0 z-0 overflow-hidden flex items-center justify-center bg-black">
+                      <img src="${fullImageUrl}" style="${imgStyle}" onerror="this.onerror=null; this.src='https://via.placeholder.com/150/cbd5e0/4a5568?text=Sem+Imagem';">
+                      <div class="absolute inset-0 flex items-center justify-center">
+                         <div class="bg-black/80 p-3 rounded-full border border-gray-600 backdrop-blur-sm shadow-2xl">
+                            <svg class="w-8 h-8 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8" />
+                            </svg>
+                         </div>
+                      </div>
+                   </div>
+                   <div class="absolute bottom-0 left-0 right-0 p-2 sm:p-3 bg-gradient-to-t from-black to-transparent z-10 opacity-50">
+                      <h3 class="font-black text-gray-400" style="font-size: 14px;">???</h3>
+                   </div>
+                `;
+            } else {
+                cardSkeletonHTML = `
+                   <div class="relative z-10 p-1 sm:p-2 h-full flex flex-col opacity-50">
+                      <div class="flex justify-between items-center mb-1">
+                         <h3 class="font-bold text-gray-400" style="font-size: 12px;">???</h3>
+                      </div>
+                      <div class="w-full aspect-[4/3] bg-black border-2 border-gray-700 overflow-hidden flex items-center justify-center relative">
+                         <img src="${fullImageUrl}" style="${imgStyle}" onerror="this.onerror=null; this.src='https://via.placeholder.com/150/cbd5e0/4a5568?text=Sem+Imagem';">
+                         <div class="absolute inset-0 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8" />
+                            </svg>
+                         </div>
+                      </div>
+                   </div>
+                `;
+            }
+
+            wrapper.innerHTML = `
+               <div class="aspect-[2/3] w-full rounded-xl border-4 border-gray-700 bg-gray-900 shadow-inner relative overflow-hidden">
+                  ${cardSkeletonHTML}
+               </div>
+               <p class="text-[10px] text-center font-bold text-gray-500 uppercase tracking-tighter">Não Obtida</p>
+            `;
+            grid.appendChild(wrapper);
+         }
+      });
+    };
+
+    window.refreshRarity = async () => {
+       const rarityLoading = document.getElementById('rarity-loading');
+       const rarityGrid = document.getElementById('rarity-grid');
+       if (rarityLoading) rarityLoading.classList.remove('hidden');
+       if (rarityGrid) rarityGrid.classList.add('hidden');
+       await window.loadAllPlayers(true, true);
+       if (rarityLoading) rarityLoading.classList.add('hidden');
+       if (rarityGrid) rarityGrid.classList.remove('hidden');
+       window.renderRarityBoard();
+    };
   </script>
 </body>
 </html>
