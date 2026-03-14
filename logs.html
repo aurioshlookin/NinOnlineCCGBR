@@ -20,8 +20,31 @@
 </head>
 <body class="min-h-screen flex flex-col relative">
 
-  <!-- TOASTS DE NOTIFICAÇÃO (Sem Alerts) -->
+  <!-- TOASTS DE NOTIFICAÇÃO -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- MODAL DE INFORMAÇÃO -->
+  <div id="info-modal" class="fixed inset-0 bg-slate-900/80 z-[110] hidden flex-col items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+      <div class="bg-slate-800 border border-slate-600 p-6 rounded-xl shadow-2xl max-w-md w-full">
+          <h3 id="info-modal-title" class="text-xl font-bold text-white mb-4 flex items-center gap-2">Informação</h3>
+          <div id="info-modal-content" class="text-slate-300 mb-6 whitespace-pre-wrap leading-relaxed text-sm"></div>
+          <div class="flex justify-end">
+              <button onclick="document.getElementById('info-modal').classList.add('hidden'); document.getElementById('info-modal').classList.remove('flex');" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-bold transition shadow-lg">Entendi</button>
+          </div>
+      </div>
+  </div>
+
+  <!-- MODAL DE CONFIRMAÇÃO -->
+  <div id="confirm-modal" class="fixed inset-0 bg-slate-900/80 z-[110] hidden flex-col items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+      <div class="bg-slate-800 border border-red-500/50 p-6 rounded-xl shadow-2xl max-w-md w-full">
+          <h3 id="confirm-modal-title" class="text-xl font-bold text-red-500 mb-4 flex items-center gap-2">⚠️ Atenção</h3>
+          <div id="confirm-modal-content" class="text-slate-300 mb-8 whitespace-pre-wrap leading-relaxed text-sm"></div>
+          <div class="flex justify-end gap-3">
+              <button onclick="document.getElementById('confirm-modal').classList.add('hidden'); document.getElementById('confirm-modal').classList.remove('flex');" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-bold transition">Cancelar</button>
+              <button id="confirm-modal-btn" class="bg-red-600 hover:bg-red-500 text-white px-6 py-2 rounded-lg font-bold transition shadow-lg shadow-red-900/30">Confirmar Ação</button>
+          </div>
+      </div>
+  </div>
 
   <!-- TELA DE CARREGAMENTO / PROTEÇÃO -->
   <div id="auth-guard" class="fixed inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center">
@@ -186,10 +209,13 @@
       <!-- Alerta Educativo -->
       <div class="bg-red-900/30 border border-red-500/50 p-6 rounded-xl shadow-md">
           <h2 class="text-xl font-bold text-red-500 mb-2 flex items-center gap-2">
-              <span>🕵️</span> Analisador de Anomalias e Hackers
+              <span>🕵️</span> Analisador de Anomalias e Exploit de Tempo
           </h2>
-          <p class="text-sm text-gray-300">Este sistema compara a <strong>Quantidade de Cartas no Inventário</strong> com o <strong>Total de Pacotes Abertos</strong> e <strong>Trocas Feitas</strong> de cada jogador. Contas que multiplicaram itens ou burlaram o sistema de tempo (exploiters) terão um <span class="text-red-400 font-bold">Risco Alto</span>.</p>
-          <button onclick="window.escanearHackers()" class="mt-4 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-6 rounded-lg transition shadow-lg shadow-red-900/30 border border-red-400 flex items-center gap-2">
+          <p class="text-sm text-gray-300 leading-relaxed">
+              Este sistema analisa o <strong>tempo de criação da conta</strong> do jogador contra a <strong>matemática de pacotes</strong> permitida. <br>
+              Sabendo que um jogador novato só pode abrir <span class="text-yellow-400 font-bold">11 pacotes base</span> (5 iniciais + 5 bônus + 1 premium) e precisa aguardar <span class="text-blue-400 font-bold">3 horas</span> para o próximo, o algoritmo cruza essas datas e sinaliza qualquer conta que esteja multiplicando itens ou usando métodos para burlar o cronômetro.
+          </p>
+          <button onclick="window.escanearHackers()" class="mt-6 bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-6 rounded-lg transition shadow-lg shadow-red-900/30 border border-red-400 flex items-center gap-2">
               <span>🔍</span> Escanear Todo o Servidor Agora
           </button>
       </div>
@@ -200,7 +226,7 @@
           <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-slate-900/80 text-slate-400 uppercase text-xs border-b border-slate-700">
               <tr>
-                <th class="px-4 py-4 font-semibold">Jogador</th>
+                <th class="px-4 py-4 font-semibold">Jogador / Motivos</th>
                 <th class="px-4 py-4 font-semibold text-center">Risco</th>
                 <th class="px-4 py-4 font-semibold text-center">Packs Abertos</th>
                 <th class="px-4 py-4 font-semibold text-center">Total Cartas</th>
@@ -244,6 +270,8 @@
     window.currentPage = 1;
     window.itemsPerPage = 50;
     
+    // Variável para armazenar a lista de auditados e facilitar o acesso ao modal de motivos
+    window.ultimosResultadosScan = [];
     let logsUnsubscribe = null;
 
     // FECHAR JANELA
@@ -254,7 +282,7 @@
         }
     };
 
-    // SISTEMA DE TOAST (Sem Alerts)
+    // SISTEMA DE TOAST
     window.mostrarToast = (mensagem, tipo = 'sucesso') => {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
@@ -274,6 +302,37 @@
             toast.classList.add('translate-x-full', 'opacity-0');
             setTimeout(() => toast.remove(), 300);
         }, 4000);
+    };
+
+    // FUNÇÕES DE MODAIS CUSTOMIZADOS (SUBSTITUTOS DE ALERT E CONFIRM)
+    window.mostrarModalInfo = (titulo, mensagem) => {
+        document.getElementById('info-modal-title').innerHTML = titulo;
+        document.getElementById('info-modal-content').innerText = mensagem;
+        const m = document.getElementById('info-modal');
+        m.classList.remove('hidden'); m.classList.add('flex');
+    };
+
+    window.mostrarModalConfirmacao = (titulo, mensagem, callbackConfirmar) => {
+        document.getElementById('confirm-modal-title').innerHTML = `⚠️ ${titulo}`;
+        document.getElementById('confirm-modal-content').innerText = mensagem;
+        
+        const btnConfirmar = document.getElementById('confirm-modal-btn');
+        // Sobrescreve evento onClick anterior
+        btnConfirmar.onclick = () => {
+            const m = document.getElementById('confirm-modal');
+            m.classList.add('hidden'); m.classList.remove('flex');
+            callbackConfirmar();
+        };
+
+        const m = document.getElementById('confirm-modal');
+        m.classList.remove('hidden'); m.classList.add('flex');
+    };
+
+    // Lida com o clique do botão "Ver Detalhes"
+    window.mostrarMotivos = (index) => {
+        const player = window.ultimosResultadosScan[index];
+        if (!player || player.motivos.length === 0) return;
+        window.mostrarModalInfo('🚨 Detalhamento da Infração', player.motivos.join('\n\n'));
     };
 
     // VERIFICAÇÃO DE AUTENTICAÇÃO
@@ -427,7 +486,6 @@
       paginatedLogs.forEach(log => {
         const dateStr = log.timestamp.toLocaleString('pt-BR');
         
-        // --- HIGHLIGHT INTELIGENTE PARA AS RARIDADES E PACOTES ---
         let formattedAction = log.action;
         
         // Destacar pacotes, boosts e bans
@@ -478,64 +536,67 @@
       btnNext.disabled = window.currentPage === totalPages;
     };
 
-    // --- SISTEMA DE BOOST GLOBAL ---
-    window.darBoostGlobal = async (tipo) => {
-      const btnId = tipo === 'comum' ? 'btn-boost-comum' : 'btn-boost-premium';
-      const btn = document.getElementById(btnId);
-      const textoOriginal = btn.innerHTML;
-      
-      const confirmacao = confirm(`ATENÇÃO: Você está prestes a dar 1 Pacote ${tipo.toUpperCase()} para TODOS os jogadores registrados.\n\nDeseja continuar?`);
-      if (!confirmacao) return;
-
-      btn.disabled = true;
-      btn.innerHTML = `<span class="animate-spin text-xl">⏳</span> Processando ninjas...`;
-
-      try {
-        const usersSnap = await getDocs(collection(db, "users"));
-        if (usersSnap.empty) {
-          throw new Error("Nenhum usuário encontrado no banco de dados.");
-        }
-
-        const batches = [];
-        let currentBatch = writeBatch(db);
-        let count = 0;
-
-        usersSnap.forEach(docSnap => {
-          const atualizacao = tipo === 'comum' 
-            ? { pullsAvailable: increment(1) } 
-            : { premiumPullsAvailable: increment(1) };
+    // --- SISTEMA DE BOOST GLOBAL (COM MODAL) ---
+    window.darBoostGlobal = (tipo) => {
+      window.mostrarModalConfirmacao(
+        "Ação Global no Servidor",
+        `Você está prestes a dar 1 Pacote ${tipo.toUpperCase()} para TODOS os jogadores registrados.\n\nEssa ação afeta o banco de dados inteiro. Deseja continuar?`,
+        async () => {
+          const btnId = tipo === 'comum' ? 'btn-boost-comum' : 'btn-boost-premium';
+          const btn = document.getElementById(btnId);
+          const textoOriginal = btn.innerHTML;
           
-          currentBatch.update(docSnap.ref, atualizacao);
-          count++;
+          btn.disabled = true;
+          btn.innerHTML = `<span class="animate-spin text-xl">⏳</span> Processando ninjas...`;
 
-          if (count === 490) { 
-            batches.push(currentBatch.commit());
-            currentBatch = writeBatch(db);
-            count = 0;
+          try {
+            const usersSnap = await getDocs(collection(db, "users"));
+            if (usersSnap.empty) {
+              throw new Error("Nenhum usuário encontrado no banco de dados.");
+            }
+
+            const batches = [];
+            let currentBatch = writeBatch(db);
+            let count = 0;
+
+            usersSnap.forEach(docSnap => {
+              const atualizacao = tipo === 'comum' 
+                ? { pullsAvailable: increment(1) } 
+                : { premiumPullsAvailable: increment(1) };
+              
+              currentBatch.update(docSnap.ref, atualizacao);
+              count++;
+
+              if (count === 490) { 
+                batches.push(currentBatch.commit());
+                currentBatch = writeBatch(db);
+                count = 0;
+              }
+            });
+
+            if (count > 0) batches.push(currentBatch.commit());
+            await Promise.all(batches);
+
+            await addDoc(collection(db, "system_logs"), {
+              action: `Admin ${auth.currentUser.displayName} enviou um Boost Global de +1 Pacote ${tipo.toUpperCase()} para ${usersSnap.docs.length} jogadores!`,
+              timestamp: new Date()
+            });
+
+            window.mostrarToast(`Sucesso! Pacotes distribuídos para ${usersSnap.docs.length} ninjas.`, "sucesso");
+
+          } catch (error) {
+            console.error("Erro no Boost:", error);
+            window.mostrarToast(`Erro ao enviar: ${error.message}`, "erro");
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
           }
-        });
-
-        if (count > 0) batches.push(currentBatch.commit());
-        await Promise.all(batches);
-
-        await addDoc(collection(db, "system_logs"), {
-          action: `Admin ${auth.currentUser.displayName} enviou um Boost Global de +1 Pacote ${tipo.toUpperCase()} para ${usersSnap.docs.length} jogadores!`,
-          timestamp: new Date()
-        });
-
-        window.mostrarToast(`Sucesso! Pacotes distribuídos para ${usersSnap.docs.length} ninjas.`, "sucesso");
-
-      } catch (error) {
-        console.error("Erro no Boost:", error);
-        window.mostrarToast(`Erro ao enviar: ${error.message}`, "erro");
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = textoOriginal;
-      }
+        }
+      );
     };
 
-    // --- NOVO: SISTEMA DE BANIMENTO DE IP ---
-    window.banirJogadorPorIP = async (nickOverride = null) => {
+    // --- SISTEMA DE BANIMENTO DE IP (COM MODAL) ---
+    window.banirJogadorPorIP = (nickOverride = null) => {
         const input = document.getElementById('ban-nick-input');
         const nick = nickOverride || input.value.trim();
         
@@ -547,77 +608,79 @@
             return window.mostrarToast("Acesso Negado: Você não pode banir os deuses deste mundo.", "erro");
         }
 
-        const confirmacao = confirm(`ATENÇÃO CRÍTICA!\n\nIsso vai EXCLUIR permanentemente a conta do jogador "${nick}" e aplicar um Ban por IP.\n\nDeseja realmente BANIR este jogador?`);
-        if (!confirmacao) return;
+        window.mostrarModalConfirmacao(
+            "Punição Severa (BANIMENTO)",
+            `ATENÇÃO CRÍTICA!\nIsso vai EXCLUIR permanentemente a conta do jogador "${nick}" e aplicar um Bloqueio de IP.\n\nDeseja realmente BANIR este jogador da existência?`,
+            async () => {
+                const btn = document.getElementById('btn-ban-ip');
+                if(btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = `<span class="animate-spin text-xl">⏳</span> Executando...`;
+                }
 
-        const btn = document.getElementById('btn-ban-ip');
-        btn.disabled = true;
-        btn.innerHTML = `<span class="animate-spin text-xl">⏳</span> Executando Punição...`;
+                try {
+                    const usersRef = collection(db, "users");
+                    const q = query(usersRef, where("displayNameLower", "==", nickLower));
+                    const querySnapshot = await getDocs(q);
 
-        try {
-            // 1. Procurar o jogador pelo Nick
-            const usersRef = collection(db, "users");
-            const q = query(usersRef, where("displayNameLower", "==", nickLower));
-            const querySnapshot = await getDocs(q);
+                    if (querySnapshot.empty) {
+                        throw new Error(`Jogador "${nick}" não encontrado no banco de dados. Verifique a ortografia.`);
+                    }
 
-            if (querySnapshot.empty) {
-                throw new Error(`Jogador "${nick}" não encontrado no banco de dados. Verifique a ortografia.`);
+                    const userDoc = querySnapshot.docs[0];
+                    const uid = userDoc.id;
+                    const userData = userDoc.data();
+                    const userIp = userData.ip || 'unknown';
+
+                    // Bloquear IP
+                    if (userIp !== 'unknown') {
+                        await setDoc(doc(db, "banned_ips", userIp), {
+                            timestamp: new Date(),
+                            bannedBy: auth.currentUser.displayName,
+                            bannedNick: userData.displayName,
+                            reason: "Banimento Administrativo Manual via Auditoria"
+                        });
+                    } else {
+                        window.mostrarModalInfo("Aviso", `O IP de "${userData.displayName}" é desconhecido. A conta será apagada, mas ele poderá criar outra conta.`);
+                    }
+
+                    // Deletar Conta
+                    await deleteDoc(doc(db, "users", uid));
+
+                    // Tentar remover do Placar Global
+                    try {
+                        const lbRef = doc(db, "community", "leaderboard");
+                        await updateDoc(lbRef, {
+                            [`players.${uid}`]: deleteField()
+                        });
+                    } catch (err) {
+                        console.warn("Placar não atualizado na hora.", err);
+                    }
+
+                    await addDoc(collection(db, "system_logs"), {
+                        action: `Admin ${auth.currentUser.displayName} BANIU permanentemente o jogador ${userData.displayName} por IP e excluiu sua conta.`,
+                        timestamp: new Date()
+                    });
+
+                    window.mostrarToast(`A justiça foi feita! Conta "${userData.displayName}" apagada e banida.`, "sucesso");
+                    if(input) input.value = ""; 
+                    if(document.getElementById('section-antihack').classList.contains('flex')) window.escanearHackers(); 
+
+                } catch (error) {
+                    console.error("Erro no banimento:", error);
+                    window.mostrarToast(error.message, "erro");
+                } finally {
+                    if(btn) {
+                       btn.disabled = false;
+                       btn.innerHTML = "🔨 Banir IP e Deletar Conta";
+                    }
+                }
             }
-
-            const userDoc = querySnapshot.docs[0];
-            const uid = userDoc.id;
-            const userData = userDoc.data();
-            const userIp = userData.ip || 'unknown';
-
-            // 2. Bloquear o IP
-            if (userIp !== 'unknown') {
-                await setDoc(doc(db, "banned_ips", userIp), {
-                    timestamp: new Date(),
-                    bannedBy: auth.currentUser.displayName,
-                    bannedNick: userData.displayName,
-                    reason: "Banimento Administrativo Manual"
-                });
-            } else {
-                alert(`Aviso: O IP do jogador "${userData.displayName}" é desconhecido. A conta será excluída, mas o banimento de IP pode não ser eficaz.`);
-            }
-
-            // 3. Deletar a Conta
-            await deleteDoc(doc(db, "users", uid));
-
-            // 4. Remover do Placar Global (Leaderboard)
-            try {
-                const lbRef = doc(db, "community", "leaderboard");
-                await updateDoc(lbRef, {
-                    [`players.${uid}`]: deleteField()
-                });
-            } catch (err) {
-                console.warn("Placar não pôde ser atualizado na hora, mas será sobrescrito em breve.", err);
-            }
-
-            // 5. Registrar Ação no Log
-            await addDoc(collection(db, "system_logs"), {
-                action: `Admin ${auth.currentUser.displayName} BANIU permanentemente o jogador ${userData.displayName} por IP e excluiu sua conta.`,
-                timestamp: new Date()
-            });
-
-            window.mostrarToast(`A justiça foi feita! A conta "${userData.displayName}" foi apagada e banida.`, "sucesso");
-            if(input) input.value = ""; // Limpa o input
-            if(window.escanearHackers) window.escanearHackers(); // Atualiza a lista do Anti-Hack se estiver aberta
-
-        } catch (error) {
-            console.error("Erro no banimento:", error);
-            window.mostrarToast(error.message, "erro");
-        } finally {
-            const btn = document.getElementById('btn-ban-ip');
-            if(btn) {
-               btn.disabled = false;
-               btn.innerHTML = "🔨 Banir IP e Deletar Conta";
-            }
-        }
+        );
     };
 
     // ==============================================================
-    // --- SISTEMA ANTI-HACK (ANALISADOR DE INCONSISTÊNCIAS) ---
+    // --- SISTEMA ANTI-HACK (ANALISADOR DE INCONSISTÊNCIAS E TEMPO) ---
     // ==============================================================
     
     window.switchAdminTab = (tabName) => {
@@ -648,12 +711,12 @@
         
         try {
             const usersSnap = await getDocs(collection(db, "users"));
-            let analisados = [];
+            window.ultimosResultadosScan = []; // Reseta array global
 
             usersSnap.forEach(docSnap => {
                 const u = docSnap.data();
                 
-                // Ignora admins de serem flaggados como hackers
+                // Ignora admins de serem flaggados
                 if (u.role === 'admin' || u.displayNameLower === 'auriosh' || u.displayNameLower === 'vilao') return;
 
                 let scoreRisco = 0;
@@ -665,38 +728,62 @@
                     Object.values(u.inventory).forEach(qtd => totalCartas += qtd);
                 }
 
-                // 2. Matemática do Jogo
+                // Dados básicos
                 const packsAbertos = u.totalPacksOpened || 0;
                 const trocasFeitas = u.totalTradesCompleted || 0;
-                
-                // Cada pacote = 2 cartas. Troca pode dar até 3 cartas. 
-                // + 20 de margem de segurança (cartas iniciais, conquistas, etc)
-                const cartasMaximasPermitidas = (packsAbertos * 2) + (trocasFeitas * 3) + 20;
-
-                if (totalCartas > cartasMaximasPermitidas) {
-                    scoreRisco += 70;
-                    motivos.push(`INCONSISTÊNCIA GRAVE: Possui ${totalCartas} cartas, mas só abriu ${packsAbertos} pacotes. O limite matemático seguro era ${cartasMaximasPermitidas}.`);
-                }
-
-                // 3. Acúmulo de Pacotes
                 const pacotesB = u.pullsAvailable || 0;
                 const pacotesP = u.premiumPullsAvailable || 0;
 
+                // 2. MATEMÁTICA DE TEMPO (TIME EXPLOIT)
+                let createdAtMs = null;
+                if (u.createdAt) {
+                    // Trata diferentes formatos (Firestore Timestamp, Epoch Number ou Date String)
+                    if (u.createdAt.toDate) createdAtMs = u.createdAt.toDate().getTime();
+                    else if (typeof u.createdAt === 'number') createdAtMs = u.createdAt;
+                    else if (typeof u.createdAt === 'string') createdAtMs = new Date(u.createdAt).getTime();
+                }
+
+                if (createdAtMs) {
+                    const horasDesdeCriacao = (Date.now() - createdAtMs) / (1000 * 60 * 60);
+                    // 11 base = 5 Iniciais + 5 Bônus Primeira Vez + 1 Premium
+                    const pacotesGeradosPorTempo = Math.floor(horasDesdeCriacao / 3);
+                    
+                    // O máximo matemático que a pessoa poderia ter aberto PELA IDADE da conta
+                    // Adicionamos +10 de margem de segurança para acomodar Boosts Globais dados por Admins
+                    const limitePorTempo = 11 + pacotesGeradosPorTempo + 10; 
+
+                    if (packsAbertos > limitePorTempo) {
+                        scoreRisco += 90;
+                        motivos.push(`⏳ TIME EXPLOIT (Viagem no Tempo):\nA conta foi criada há apenas ${horasDesdeCriacao.toFixed(1)} horas. \nMatematicamente, ela poderia ter aberto no MÁXIMO ~${11 + pacotesGeradosPorTempo} pacotes (mesmo com bônus iniciais), mas os logs registram impressionantes ${packsAbertos} pacotes abertos!`);
+                    }
+                }
+
+                // 3. MATEMÁTICA DE DUPLICAÇÃO DE ITENS
+                // Cada pacote = 2 cartas. Troca pode dar até 3 cartas. 
+                // + 20 de margem de segurança
+                const cartasMaximasPermitidas = (packsAbertos * 2) + (trocasFeitas * 3) + 20;
+
+                if (totalCartas > cartasMaximasPermitidas) {
+                    scoreRisco += 80;
+                    motivos.push(`🃏 DUPLICAÇÃO DE CARTAS (Exploit/Bug):\nO jogador possui ${totalCartas} cartas na conta, mas só abriu ${packsAbertos} pacotes em todo o histórico. O limite natural seguro seria de ${cartasMaximasPermitidas} cartas.`);
+                }
+
+                // 4. Acúmulo de Pacotes (Risco Leve)
                 if (pacotesB > 45) {
-                    scoreRisco += 30;
-                    motivos.push(`ACÚMULO SUSPEITO: Tem ${pacotesB} pacotes básicos sem abrir (Exploit de Tempo?).`);
+                    scoreRisco += 20;
+                    motivos.push(`📦 ACÚMULO SUSPEITO:\nO jogador acumulou ${pacotesB} pacotes básicos fechados.`);
                 }
                 if (pacotesP > 5) {
-                    scoreRisco += 40;
-                    motivos.push(`ACÚMULO PREMIUM: Tem ${pacotesP} pacotes premium guardados.`);
+                    scoreRisco += 20;
+                    motivos.push(`✨ ACÚMULO PREMIUM:\nO jogador possui ${pacotesP} pacotes premium guardados.`);
                 }
 
                 // Definir Status Visual
-                let statusBadge = `<span class="bg-green-900/50 text-green-400 border border-green-500/50 px-2 py-1 rounded text-xs font-bold">SEGURO</span>`;
-                if (scoreRisco >= 30 && scoreRisco < 70) statusBadge = `<span class="bg-yellow-900/50 text-yellow-400 border border-yellow-500/50 px-2 py-1 rounded text-xs font-bold">SUSPEITO</span>`;
-                if (scoreRisco >= 70) statusBadge = `<span class="bg-red-900/50 text-red-500 border border-red-500/50 px-2 py-1 rounded text-xs font-black animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]">RISCO ALTO</span>`;
+                let statusBadge = `<span class="bg-green-900/30 text-green-400 border border-green-500/30 px-2 py-1 rounded text-xs font-bold">SEGURO</span>`;
+                if (scoreRisco >= 20 && scoreRisco < 70) statusBadge = `<span class="bg-yellow-900/50 text-yellow-400 border border-yellow-500/50 px-2 py-1 rounded text-xs font-bold">SUSPEITO</span>`;
+                if (scoreRisco >= 70) statusBadge = `<span class="bg-red-900/50 text-red-500 border border-red-500/50 px-3 py-1.5 rounded text-xs font-black animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]">RISCO ALTO</span>`;
 
-                analisados.push({
+                window.ultimosResultadosScan.push({
                     uid: docSnap.id,
                     nick: u.displayName || 'Desconhecido',
                     totalCartas,
@@ -710,72 +797,77 @@
             });
 
             // Ordena dos mais suspeitos para os mais seguros
-            analisados.sort((a, b) => b.scoreRisco - a.scoreRisco);
+            window.ultimosResultadosScan.sort((a, b) => b.scoreRisco - a.scoreRisco);
 
             tbody.innerHTML = '';
 
-            if (analisados.length === 0) {
+            if (window.ultimosResultadosScan.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-green-500 font-bold">Nenhum jogador para analisar.</td></tr>';
                 return;
             }
 
-            analisados.forEach(p => {
+            window.ultimosResultadosScan.forEach((p, index) => {
                 const corLinha = p.scoreRisco >= 70 ? 'bg-red-900/10 hover:bg-red-900/20' : 'hover:bg-slate-700/50';
                 
-                const motivosAlert = p.motivos.length > 0 
-                  ? `onclick="alert('${p.motivos.join('\\n\\n')}')"`
-                  : `onclick="alert('Nenhuma anomalia detectada nesta conta.')"`;
+                // Botão de Detalhes Dinâmico (Se houver motivos, cria um botão destacado)
+                const areaDetalhes = p.motivos.length > 0 
+                  ? `<button onclick="window.mostrarMotivos(${index})" class="bg-red-900/60 border border-red-500 text-red-200 px-3 py-1.5 rounded-lg text-xs font-bold shadow-md hover:bg-red-800 transition flex items-center gap-1"><span class="text-sm">🔍</span> Ver Relatório</button>`
+                  : `<span class="bg-green-900/30 border border-green-500/30 text-green-400 px-2 py-1 rounded text-xs font-bold flex items-center gap-1">✔️ Tudo OK</span>`;
 
                 tbody.innerHTML += `
                     <tr class="${corLinha} transition border-b border-slate-700/30">
-                        <td class="px-4 py-3 text-slate-200 font-bold flex items-center gap-2">
-                            <span class="cursor-pointer text-lg" title="Ver Motivos" ${motivosAlert}>${p.scoreRisco >= 70 ? '⚠️' : '👤'}</span>
-                            ${p.nick}
+                        <td class="px-4 py-4 text-slate-200 font-bold flex flex-col items-start gap-2">
+                            <span class="text-base">${p.nick}</span>
+                            ${areaDetalhes}
                         </td>
-                        <td class="px-4 py-3 text-center">${p.statusBadge}</td>
-                        <td class="px-4 py-3 text-center font-bold text-gray-400">${p.packsAbertos}</td>
-                        <td class="px-4 py-3 text-center font-bold ${p.scoreRisco >= 70 ? 'text-red-400' : 'text-gray-300'}">${p.totalCartas}</td>
-                        <td class="px-4 py-3 text-center text-xs font-bold">
-                            <span class="text-blue-400 mr-2" title="Pacotes Básicos">${p.pacotesB} Básico</span>
-                            <span class="text-yellow-400" title="Pacotes Premium">${p.pacotesP} Premium</span>
+                        <td class="px-4 py-4 text-center">${p.statusBadge}</td>
+                        <td class="px-4 py-4 text-center font-bold text-gray-400">${p.packsAbertos}</td>
+                        <td class="px-4 py-4 text-center font-bold ${p.scoreRisco >= 70 ? 'text-red-400' : 'text-gray-300'}">${p.totalCartas}</td>
+                        <td class="px-4 py-4 text-center text-xs font-bold">
+                            <span class="text-blue-400 block mb-1" title="Pacotes Básicos">${p.pacotesB} Básico</span>
+                            <span class="text-yellow-400 block" title="Pacotes Premium">${p.pacotesP} Premium</span>
                         </td>
-                        <td class="px-4 py-3 text-center flex justify-center gap-2">
-                            <button onclick="window.zerarRecursos('${p.uid}', '${p.nick}')" class="bg-yellow-600 hover:bg-yellow-500 text-white px-3 py-1 rounded text-xs font-bold transition shadow" title="Remove todos os pacotes (básicos e premium) fechados">Zerar Pacotes</button>
-                            <button onclick="window.banirJogadorPorIP('${p.nick}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-xs font-bold transition shadow">Banir</button>
+                        <td class="px-4 py-4 text-center space-y-2">
+                            <button onclick="window.zerarRecursos('${p.uid}', '${p.nick}')" class="w-full bg-yellow-600 hover:bg-yellow-500 text-white px-3 py-1.5 rounded text-xs font-bold transition shadow" title="Remove todos os pacotes (básicos e premium) fechados">Zerar Pacotes</button>
+                            <button onclick="window.banirJogadorPorIP('${p.nick}')" class="w-full bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded text-xs font-bold transition shadow">Banir IP</button>
                         </td>
                     </tr>
                 `;
             });
 
-            window.mostrarToast("Escaneamento de hackers concluído!", "sucesso");
+            window.mostrarToast("Auditoria do Servidor concluída com sucesso!", "sucesso");
 
         } catch (error) {
             console.error("Erro no scanner:", error);
-            tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-12 text-center text-red-500 font-bold">Erro ao analisar: ${error.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-12 text-center text-red-500 font-bold">Erro crítico ao analisar banco de dados: ${error.message}</td></tr>`;
         }
     };
 
-    window.zerarRecursos = async (uid, nick) => {
-        const confirmacao = confirm(`Isso vai REMOVER TODOS os pacotes Básicos e Premium da conta de "${nick}". As cartas do álbum permanecerão intactas.\n\nDeseja continuar a punição?`);
-        if (!confirmacao) return;
+    // ZERAR PACOTES (COM MODAL)
+    window.zerarRecursos = (uid, nick) => {
+        window.mostrarModalConfirmacao(
+            "Punição: Remoção de Recursos",
+            `Isso vai ZERAR completamente a contagem de pacotes Básicos e Premium da conta de "${nick}".\nAs cartas do álbum permanecerão intactas.\n\nDeseja aplicar a punição agora?`,
+            async () => {
+                try {
+                    await updateDoc(doc(db, "users", uid), {
+                        pullsAvailable: 0,
+                        premiumPullsAvailable: 0
+                    });
 
-        try {
-            await updateDoc(doc(db, "users", uid), {
-                pullsAvailable: 0,
-                premiumPullsAvailable: 0
-            });
+                    await addDoc(collection(db, "system_logs"), {
+                        action: `Admin ${auth.currentUser.displayName} ZEROU OS RECURSOS (Pacotes) do jogador ${nick} por atividade suspeita detectada no Scanner.`,
+                        timestamp: new Date()
+                    });
 
-            await addDoc(collection(db, "system_logs"), {
-                action: `Admin ${auth.currentUser.displayName} ZEROU OS RECURSOS (Pacotes) do jogador ${nick} por atividade suspeita.`,
-                timestamp: new Date()
-            });
+                    window.mostrarToast(`Pacotes da conta ${nick} foram dizimados com sucesso!`, "sucesso");
+                    window.escanearHackers(); 
 
-            window.mostrarToast(`Pacotes de ${nick} foram zerados com sucesso!`, "sucesso");
-            window.escanearHackers(); // Atualiza a tabela na mesma hora
-
-        } catch (error) {
-            window.mostrarToast("Erro ao zerar recursos: " + error.message, "erro");
-        }
+                } catch (error) {
+                    window.mostrarToast("Erro ao zerar recursos: " + error.message, "erro");
+                }
+            }
+        );
     };
 
   </script>
