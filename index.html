@@ -1526,12 +1526,19 @@
         submitBtn.disabled = true; submitBtn.innerText = "Aguarde...";
         
         try {
+          let userIp = 'unknown';
+          try { const ipRes = await fetch('https://api.ipify.org?format=json'); const ipData = await ipRes.json(); userIp = ipData.ip; } catch(err) { }
+
+          if (userIp !== 'unknown') {
+            const bannedSnap = await getDoc(doc(db, "banned_ips", userIp));
+            if (bannedSnap.exists() && safeUsername !== 'auriosh' && safeUsername !== 'vilao') {
+              throw new Error("Acesso Negado: Seu IP está banido do servidor.");
+            }
+          }
+
           if (window.authMode === 'register') {
             if (!globalSettings.registrationsOpen && safeUsername !== 'auriosh' && safeUsername !== 'vilao') throw new Error("Os cadastros estão desativados.");
             if (localStorage.getItem('nin_ccg_registered') && safeUsername !== 'auriosh' && safeUsername !== 'vilao') throw new Error("Você já registrou uma conta neste dispositivo.");
-
-            let userIp = 'unknown';
-            try { const ipRes = await fetch('https://api.ipify.org?format=json'); const ipData = await ipRes.json(); userIp = ipData.ip; } catch(err) { }
 
             const allUsersSnap = await getDocs(collection(db, "users"));
             let ipInUse = false;
@@ -2105,6 +2112,11 @@
       }
       
       if (achievSelectedIndices.length === 2) {
+        const c1 = achievPackCards[achievSelectedIndices[0]];
+        const c2 = achievPackCards[achievSelectedIndices[1]];
+        const pType = currentAchievType === 'premium' ? 'Premium' : 'Básico';
+        window.logSystemAction(`${currentUser.displayName} escolheu e guardou as cartas #${c1.cardNumber || '000'} ${c1.name} (R.${c1.tier}) e #${c2.cardNumber || '000'} ${c2.name} (R.${c2.tier}) do Pacote ${pType} de Conquista.`);
+
         setTimeout(() => {
           for(let idx=0; idx<8; idx++) {
             if (!achievSelectedIndices.includes(idx)) {
@@ -2292,6 +2304,10 @@
       }
       
       if (selectedCardsIndices.length === 2) {
+        const c1 = currentPackCards[selectedCardsIndices[0]];
+        const c2 = currentPackCards[selectedCardsIndices[1]];
+        window.logSystemAction(`${currentUser.displayName} escolheu e guardou as cartas #${c1.cardNumber || '000'} ${c1.name} (R.${c1.tier}) e #${c2.cardNumber || '000'} ${c2.name} (R.${c2.tier}) do Pacote Básico.`);
+
         setTimeout(() => {
           for(let idx=0; idx<8; idx++) {
             if (!selectedCardsIndices.includes(idx)) {
