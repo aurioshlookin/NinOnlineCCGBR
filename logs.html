@@ -18,7 +18,10 @@
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col relative">
+
+  <!-- TOASTS DE NOTIFICAÇÃO (Sem Alerts) -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- TELA DE CARREGAMENTO / PROTEÇÃO -->
   <div id="auth-guard" class="fixed inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center">
@@ -43,41 +46,59 @@
         </div>
         <div>
           <h1 class="text-xl font-bold text-white leading-tight">Logs Avançados</h1>
-          <p class="text-xs text-purple-400 font-semibold">Nin Online CCG - Auditoria</p>
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            <p class="text-xs text-green-400 font-bold uppercase tracking-wider">Tempo Real Ativado</p>
+          </div>
         </div>
       </div>
       
       <div class="flex items-center gap-4">
         <div class="text-sm text-slate-400 hidden sm:block">Logado como: <span id="admin-name" class="text-white font-bold">...</span></div>
-        <button onclick="window.fetchLogs()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition shadow-md flex items-center gap-2">
-          <span>🔄</span> Recarregar Logs
+        <button onclick="window.fecharJanela()" class="bg-red-600 hover:bg-red-500 text-white px-5 py-2 rounded-lg text-sm font-bold transition shadow-lg shadow-red-900/40 flex items-center gap-2 border border-red-400">
+          <span>✖</span> Fechar Logs
         </button>
-        <a href="index.html" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-bold transition border border-slate-600">
-          Voltar
-        </a>
       </div>
     </div>
   </header>
 
   <main class="flex-grow p-4 md:p-6 w-full max-w-7xl mx-auto flex flex-col gap-6">
     
+    <!-- AÇÕES GLOBAIS (NOVO) -->
+    <section class="bg-slate-800 p-5 rounded-xl border border-yellow-500/30 shadow-md">
+      <h2 class="text-lg font-bold text-yellow-500 mb-3 flex items-center gap-2">
+          <span>⚡</span> Ações Globais do Servidor
+      </h2>
+      <div class="flex flex-col sm:flex-row gap-4">
+          <button id="btn-boost-comum" onclick="window.darBoostGlobal('comum')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg shadow-blue-900/30 border border-blue-400 flex items-center justify-center gap-2">
+              <span>📦</span> Enviar +1 Pacote Básico p/ TODOS
+          </button>
+          <button id="btn-boost-premium" onclick="window.darBoostGlobal('premium')" class="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg shadow-purple-900/30 border border-purple-400 flex items-center justify-center gap-2">
+              <span>✨</span> Enviar +1 Pacote Premium p/ TODOS
+          </button>
+      </div>
+    </section>
+
     <!-- DASHBOARD STATS -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-md">
+      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-md transition transform hover:scale-105">
         <div class="text-slate-400 text-xs font-bold uppercase mb-1 flex justify-between">Total de Logs <span class="text-blue-400">📝</span></div>
-        <div id="stat-total" class="text-3xl font-black text-white">0</div>
+        <div id="stat-total" class="text-3xl font-black text-white transition-all">0</div>
       </div>
-      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-md">
+      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-md transition transform hover:scale-105">
         <div class="text-slate-400 text-xs font-bold uppercase mb-1 flex justify-between">Ações de Admin <span class="text-red-400">🛡️</span></div>
-        <div id="stat-admin" class="text-3xl font-black text-white">0</div>
+        <div id="stat-admin" class="text-3xl font-black text-white transition-all">0</div>
       </div>
-      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-md">
+      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-md transition transform hover:scale-105">
         <div class="text-slate-400 text-xs font-bold uppercase mb-1 flex justify-between">Pacotes Mexidos <span class="text-yellow-400">🎁</span></div>
-        <div id="stat-packs" class="text-3xl font-black text-white">0</div>
+        <div id="stat-packs" class="text-3xl font-black text-white transition-all">0</div>
       </div>
-      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-md">
+      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-md transition transform hover:scale-105">
         <div class="text-slate-400 text-xs font-bold uppercase mb-1 flex justify-between">Contas Novas <span class="text-green-400">👤</span></div>
-        <div id="stat-accounts" class="text-3xl font-black text-white">0</div>
+        <div id="stat-accounts" class="text-3xl font-black text-white transition-all">0</div>
       </div>
     </div>
 
@@ -85,7 +106,7 @@
     <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-md flex flex-col md:flex-row gap-4 justify-between items-center">
       <div class="relative w-full md:w-96">
         <span class="absolute left-3 top-2.5 text-slate-400">🔍</span>
-        <input type="text" id="search-logs" oninput="window.applyFilters()" placeholder="Pesquisar por nome, ação ou item..." class="w-full bg-slate-900 border border-slate-600 rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:border-purple-500 transition">
+        <input type="text" id="search-logs" oninput="window.applyFilters()" placeholder="Pesquisar por nome, ação ou item..." class="w-full bg-slate-900 border border-slate-600 rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:border-purple-500 transition shadow-inner">
       </div>
       
       <div class="flex gap-2 overflow-x-auto scrollbar-hide w-full md:w-auto pb-1 md:pb-0">
@@ -99,9 +120,9 @@
 
     <!-- TABELA DE LOGS -->
     <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl overflow-hidden flex flex-col flex-grow min-h-[500px]">
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto flex-grow">
         <table class="w-full text-left text-sm whitespace-nowrap">
-          <thead class="bg-slate-900/80 text-slate-400 uppercase text-xs border-b border-slate-700">
+          <thead class="bg-slate-900/80 text-slate-400 uppercase text-xs border-b border-slate-700 sticky top-0 z-10">
             <tr>
               <th class="px-6 py-4 font-semibold w-48">Data e Hora</th>
               <th class="px-6 py-4 font-semibold w-32">Categoria</th>
@@ -109,17 +130,17 @@
             </tr>
           </thead>
           <tbody id="logs-tbody" class="divide-y divide-slate-700/50">
-            <tr><td colspan="3" class="px-6 py-12 text-center text-slate-500 font-bold">Carregando auditoria do banco de dados...</td></tr>
+            <tr><td colspan="3" class="px-6 py-12 text-center text-slate-500 font-bold">Aguardando sincronização com o banco de dados...</td></tr>
           </tbody>
         </table>
       </div>
       
       <!-- PAGINAÇÃO -->
-      <div class="mt-auto p-4 border-t border-slate-700 bg-slate-800/50 flex justify-between items-center">
+      <div class="mt-auto p-4 border-t border-slate-700 bg-slate-800/80 flex justify-between items-center backdrop-blur-sm">
         <span class="text-sm text-slate-400">Mostrando <span id="page-info" class="font-bold text-white">0 de 0</span> logs</span>
         <div class="flex gap-2">
-          <button onclick="window.changePage(-1)" id="btn-prev" class="bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white px-3 py-1.5 rounded transition font-bold text-sm">Anterior</button>
-          <button onclick="window.changePage(1)" id="btn-next" class="bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white px-3 py-1.5 rounded transition font-bold text-sm">Próxima</button>
+          <button onclick="window.changePage(-1)" id="btn-prev" class="bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white px-3 py-1.5 rounded transition font-bold text-sm shadow">Anterior</button>
+          <button onclick="window.changePage(1)" id="btn-next" class="bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white px-3 py-1.5 rounded transition font-bold text-sm shadow">Próxima</button>
         </div>
       </div>
     </div>
@@ -129,7 +150,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, collection, query, orderBy, limit, onSnapshot, writeBatch, increment, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     // MESMA CONFIGURAÇÃO DO SEU INDEX.HTML
     const firebaseConfig = {
@@ -150,6 +171,38 @@
     window.currentFilter = 'all';
     window.currentPage = 1;
     window.itemsPerPage = 50;
+    
+    let logsUnsubscribe = null;
+
+    // FECHAR JANELA
+    window.fecharJanela = () => {
+        window.close();
+        if (!window.closed) {
+            window.location.href = 'index.html';
+        }
+    };
+
+    // SISTEMA DE TOAST (Sem Alerts)
+    window.mostrarToast = (mensagem, tipo = 'sucesso') => {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        
+        const corBorda = tipo === 'sucesso' ? 'border-green-500' : (tipo === 'erro' ? 'border-red-500' : 'border-blue-500');
+        const corBg = 'bg-slate-800';
+        const icone = tipo === 'sucesso' ? '✅' : (tipo === 'erro' ? '❌' : 'ℹ️');
+
+        toast.className = `${corBg} border-l-4 ${corBorda} text-white px-4 py-3 rounded shadow-xl flex items-center gap-3 transform transition-all duration-300 translate-x-full opacity-0 pointer-events-auto mt-2`;
+        toast.innerHTML = `<span class="text-lg">${icone}</span> <span class="text-sm font-semibold">${mensagem}</span>`;
+        
+        container.appendChild(toast);
+        
+        requestAnimationFrame(() => toast.classList.remove('translate-x-full', 'opacity-0'));
+
+        setTimeout(() => {
+            toast.classList.add('translate-x-full', 'opacity-0');
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    };
 
     // VERIFICAÇÃO DE AUTENTICAÇÃO
     onAuthStateChanged(auth, async (user) => {
@@ -160,7 +213,7 @@
           const userDoc = await getDoc(doc(db, "users", user.uid));
           if (userDoc.exists() && userDoc.data().role === 'admin') {
             document.getElementById('auth-guard').classList.add('hidden');
-            window.fetchLogs();
+            window.iniciarLeituraEmTempoReal();
           } else {
             document.getElementById('auth-guard').classList.add('hidden');
             document.getElementById('access-denied').classList.remove('hidden');
@@ -173,6 +226,7 @@
         document.getElementById('auth-guard').classList.add('hidden');
         document.getElementById('access-denied').classList.remove('hidden');
         document.getElementById('access-denied').classList.add('flex');
+        if(logsUnsubscribe) logsUnsubscribe();
       }
     });
 
@@ -186,7 +240,7 @@
       if (lower.includes('nova conta') || lower.includes('registrou')) {
         return { id: 'account', label: 'Conta', badge: 'bg-green-500/20 text-green-400 border-green-500/50' };
       }
-      if (lower.includes('pacote')) {
+      if (lower.includes('pacote') || lower.includes('boost')) {
         return { id: 'pack', label: 'Pacote', badge: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50' };
       }
       if (lower.includes('troca')) {
@@ -196,21 +250,26 @@
       return { id: 'other', label: 'Sistema', badge: 'bg-slate-500/20 text-slate-400 border-slate-500/50' };
     };
 
-    window.fetchLogs = async () => {
+    // LER LOGS EM TEMPO REAL (NOVO)
+    window.iniciarLeituraEmTempoReal = () => {
       const tbody = document.getElementById('logs-tbody');
-      tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-12 text-center text-purple-400 font-bold animate-pulse">Buscando auditoria completa no servidor...</td></tr>';
+      if (window.allLogs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-12 text-center text-purple-400 font-bold animate-pulse">Sincronizando com o servidor em tempo real...</td></tr>';
+      }
       
-      try {
-        // Busca os últimos 1000 logs do sistema
-        const q = query(collection(db, "system_logs"), orderBy("timestamp", "desc"), limit(1000));
-        const snapshot = await getDocs(q);
-        
+      if(logsUnsubscribe) logsUnsubscribe();
+
+      // Busca os últimos 1000 logs para não travar a memória, mas agora em tempo real
+      const q = query(collection(db, "system_logs"), orderBy("timestamp", "desc"), limit(1000));
+      
+      logsUnsubscribe = onSnapshot(q, (snapshot) => {
         window.allLogs = [];
         let stats = { total: 0, admin: 0, pack: 0, account: 0 };
 
         snapshot.forEach(docSnap => {
           const data = docSnap.data();
-          const category = categorizeLog(data.action);
+          const actionText = data.action || data.mensagem || 'Ação não identificada';
+          const category = categorizeLog(actionText);
           
           stats.total++;
           if(category.id === 'admin') stats.admin++;
@@ -219,22 +278,22 @@
 
           window.allLogs.push({
             id: docSnap.id,
-            action: data.action,
+            action: actionText,
             timestamp: data.timestamp ? data.timestamp.toDate() : new Date(),
             category: category
           });
         });
 
-        // Update Dashboard Stats
+        // Update Dashboard Stats Dinamicamente
         document.getElementById('stat-total').innerText = stats.total;
         document.getElementById('stat-admin').innerText = stats.admin;
         document.getElementById('stat-packs').innerText = stats.pack;
         document.getElementById('stat-accounts').innerText = stats.account;
 
         window.applyFilters();
-      } catch (error) {
-        tbody.innerHTML = `<tr><td colspan="3" class="px-6 py-12 text-center text-red-500 font-bold">Erro ao buscar logs: ${error.message}</td></tr>`;
-      }
+      }, (error) => {
+        tbody.innerHTML = `<tr><td colspan="3" class="px-6 py-12 text-center text-red-500 font-bold">Erro de conexão: ${error.message}</td></tr>`;
+      });
     };
 
     window.setFilter = (filterType) => {
@@ -280,7 +339,7 @@
       const pageInfo = document.getElementById('page-info');
 
       if (window.filteredLogs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-12 text-center text-slate-500 font-bold">Nenhum log encontrado com os filtros atuais.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-12 text-center text-slate-500 font-bold">Nenhum log encontrado.</td></tr>';
         pageInfo.innerText = "0 de 0";
         btnPrev.disabled = true;
         btnNext.disabled = true;
@@ -298,10 +357,20 @@
       paginatedLogs.forEach(log => {
         const dateStr = log.timestamp.toLocaleString('pt-BR');
         
-        // Estilização extra para destacar nomes ou pacotes no meio do texto
+        // --- HIGHLIGHT INTELIGENTE PARA AS RARIDADES E PACOTES ---
         let formattedAction = log.action;
-        formattedAction = formattedAction.replace(/(Pacote Básico|Pacote Premium)/gi, '<strong class="text-yellow-400">$1</strong>');
+        
+        // Destacar pacotes e boosts
+        formattedAction = formattedAction.replace(/(Pacote Básico|Pacote Premium)/gi, '<strong class="text-yellow-400 font-black">$1</strong>');
+        formattedAction = formattedAction.replace(/(Boost Global|Boost Comum|Boost Premium)/gi, '<strong class="text-blue-400 font-black uppercase">$1</strong>');
         formattedAction = formattedAction.replace(/(Admin)/g, '<strong class="text-red-400">$1</strong>');
+        
+        // Destacar Ranks com visualização chamativa parecida com a roleta
+        formattedAction = formattedAction.replace(/Rank SS/g, '<span class="inline-block text-red-500 font-black border border-red-500/50 bg-red-900/40 px-1.5 py-0.5 rounded shadow-[0_0_8px_rgba(239,68,68,0.6)] mx-1">Rank SS</span>');
+        formattedAction = formattedAction.replace(/Rank S([^S]|$)/g, '<span class="inline-block text-yellow-400 font-black border border-yellow-400/50 bg-yellow-900/40 px-1.5 py-0.5 rounded shadow-[0_0_8px_rgba(250,204,21,0.6)] mx-1">Rank S</span>$1');
+        formattedAction = formattedAction.replace(/Rank A/g, '<span class="inline-block text-purple-400 font-bold bg-purple-900/20 px-1 rounded mx-1">Rank A</span>');
+        formattedAction = formattedAction.replace(/Rank B/g, '<span class="inline-block text-blue-400 font-bold bg-blue-900/20 px-1 rounded mx-1">Rank B</span>');
+        formattedAction = formattedAction.replace(/Rank C/g, '<span class="inline-block text-green-400 font-bold bg-green-900/20 px-1 rounded mx-1">Rank C</span>');
 
         tbody.innerHTML += `
           <tr class="hover:bg-slate-700/50 transition">
@@ -323,6 +392,67 @@
       btnPrev.disabled = window.currentPage === 1;
       btnNext.disabled = window.currentPage === totalPages;
     };
+
+    // --- SISTEMA DE BOOST GLOBAL PARA TODOS ---
+    window.darBoostGlobal = async (tipo) => {
+      const btnId = tipo === 'comum' ? 'btn-boost-comum' : 'btn-boost-premium';
+      const btn = document.getElementById(btnId);
+      const textoOriginal = btn.innerHTML;
+      
+      const confirmacao = confirm(`ATENÇÃO: Você está prestes a dar 1 Pacote ${tipo.toUpperCase()} para TODOS os jogadores registrados.\n\nDeseja continuar?`);
+      if (!confirmacao) return;
+
+      btn.disabled = true;
+      btn.innerHTML = `<span class="animate-spin text-xl">⏳</span> Processando ninjas...`;
+
+      try {
+        const usersSnap = await getDocs(collection(db, "users"));
+        if (usersSnap.empty) {
+          throw new Error("Nenhum usuário encontrado no banco de dados.");
+        }
+
+        // Firebase WriteBatch (Máximo 500 por lote)
+        const batches = [];
+        let currentBatch = writeBatch(db);
+        let count = 0;
+
+        usersSnap.forEach(docSnap => {
+          const atualizacao = tipo === 'comum' 
+            ? { pullsAvailable: increment(1) } 
+            : { premiumPullsAvailable: increment(1) };
+          
+          currentBatch.update(docSnap.ref, atualizacao);
+          count++;
+
+          if (count === 490) { 
+            batches.push(currentBatch.commit());
+            currentBatch = writeBatch(db);
+            count = 0;
+          }
+        });
+
+        if (count > 0) batches.push(currentBatch.commit());
+
+        // Aguarda os lotes finalizarem
+        await Promise.all(batches);
+
+        // Adiciona um log de sistema (Isso já vai aparecer em tempo real na tabela!)
+        await addDoc(collection(db, "system_logs"), {
+          action: `Admin ${auth.currentUser.displayName} enviou um Boost Global de +1 Pacote ${tipo.toUpperCase()} para ${usersSnap.docs.length} jogadores!`,
+          timestamp: new Date()
+        });
+
+        window.mostrarToast(`Sucesso! Pacotes distribuídos para ${usersSnap.docs.length} ninjas.`, "sucesso");
+
+      } catch (error) {
+        console.error("Erro no Boost:", error);
+        window.mostrarToast(`Erro ao enviar: ${error.message}`, "erro");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = textoOriginal;
+      }
+    };
+
   </script>
 </body>
 </html>
