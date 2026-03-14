@@ -771,6 +771,31 @@
             <button onclick="window.renumerateCollection()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1 px-3 rounded transition text-sm shadow">Renumerar Coleção</button>
           </div>
         </div>
+
+        <!-- PLACAR DE DISTRIBUIÇÃO IDEAL (RETORNADO) -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+          <div class="bg-gray-900 p-3 rounded-lg border border-gray-700 text-center shadow-inner">
+            <div class="text-xs text-green-400 font-bold mb-1 uppercase tracking-wider">Rank C (50%)</div>
+            <div id="admin-count-c" class="text-xl text-white font-black">0 <span class="text-sm font-normal text-gray-500">/ 0</span></div>
+          </div>
+          <div class="bg-gray-900 p-3 rounded-lg border border-gray-700 text-center shadow-inner">
+            <div class="text-xs text-blue-400 font-bold mb-1 uppercase tracking-wider">Rank B (30%)</div>
+            <div id="admin-count-b" class="text-xl text-white font-black">0 <span class="text-sm font-normal text-gray-500">/ 0</span></div>
+          </div>
+          <div class="bg-gray-900 p-3 rounded-lg border border-gray-700 text-center shadow-inner">
+            <div class="text-xs text-purple-400 font-bold mb-1 uppercase tracking-wider">Rank A (12%)</div>
+            <div id="admin-count-a" class="text-xl text-white font-black">0 <span class="text-sm font-normal text-gray-500">/ 0</span></div>
+          </div>
+          <div class="bg-gray-900 p-3 rounded-lg border border-gray-700 text-center shadow-inner">
+            <div class="text-xs text-yellow-400 font-bold mb-1 uppercase tracking-wider">Rank S (6%)</div>
+            <div id="admin-count-s" class="text-xl text-white font-black">0 <span class="text-sm font-normal text-gray-500">/ 0</span></div>
+          </div>
+          <div class="bg-gray-900 p-3 rounded-lg border border-gray-700 text-center shadow-inner">
+            <div class="text-xs text-red-500 font-bold mb-1 uppercase tracking-wider">Rank SS (2%)</div>
+            <div id="admin-count-ss" class="text-xl text-white font-black">0 <span class="text-sm font-normal text-gray-500">/ 0</span></div>
+          </div>
+        </div>
+
         <div id="admin-card-list-container" class="w-full"></div>
       </div>
     </section>
@@ -3840,19 +3865,28 @@
          const pct = totalPlayers > 0 ? ((ownersCount / totalPlayers) * 100).toFixed(1) : "0.0";
          
          const wrapper = document.createElement('div');
-         wrapper.className = `flex flex-col items-center p-3 rounded-xl border ${hasCard ? 'bg-gray-800 border-purple-500/30' : 'bg-gray-900 border-gray-700 opacity-60 grayscale'} transition hover:opacity-100 cursor-pointer`;
-         wrapper.onclick = () => window.showCardDetail(card.id);
+         wrapper.className = `flex flex-col items-center p-3 rounded-xl border ${hasCard ? 'bg-gray-800 border-purple-500/30 cursor-pointer' : 'bg-gray-900 border-gray-700 opacity-60 grayscale'} transition hover:opacity-100`;
+         
+         if (hasCard) {
+            wrapper.onclick = () => window.showCardDetail(card.id);
+         }
+         
+         // Se não tiver a carta, clona o objeto disfarçando nome e descrição, e mantendo imagem silhuetada
+         const cardDisplayObj = hasCard ? card : { ...card, name: '???', desc: '???' };
          
          wrapper.innerHTML = `
-           <img src="${GITHUB_RAW_URL + card.img}" class="w-full aspect-[2/3] object-cover rounded shadow mb-2 border border-gray-600">
-           <span class="text-xs font-bold text-center w-full truncate mb-1 text-white">${card.name}</span>
-           <span class="text-[10px] bg-gray-900 border border-gray-600 px-2 py-0.5 rounded text-gray-400 mb-1">R.${card.tier}</span>
-           <div class="flex flex-col items-center w-full bg-black/40 p-1.5 rounded">
+           <div class="w-full aspect-[2/3] mb-2 pointer-events-none relative rounded-xl overflow-hidden shadow-lg">
+             <div id="rarity-card-${card.id}" class="w-full h-full"></div>
+           </div>
+           <div class="flex flex-col items-center w-full bg-black/40 p-1.5 rounded mt-auto">
              <span class="text-xs font-black text-purple-400">${ownersCount} <span class="text-[9px] font-normal text-gray-400">ninjas têm</span></span>
              <span class="text-[9px] text-gray-500">${pct}% do servidor</span>
            </div>
          `;
          grid.appendChild(wrapper);
+
+         // Renderiza usando o motor de cartas real (isAlbum = true aplica bordas e tamanho da raridade)
+         window.renderCardHTML(`rarity-card-${card.id}`, cardDisplayObj, false, true, myInv);
       });
     };
   </script>
