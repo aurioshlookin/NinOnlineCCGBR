@@ -213,7 +213,8 @@
           </h2>
           <p class="text-sm text-gray-300 leading-relaxed">
               Este sistema analisa o <strong>tempo de criação da conta</strong> do jogador contra a <strong>matemática de pacotes</strong> permitida. <br>
-              Sabendo que um jogador novato só pode adquirir <span class="text-yellow-400 font-bold">11 pacotes base</span> e precisa aguardar <span class="text-blue-400 font-bold">3 horas</span> para cada novo pacote, o algoritmo cruza essas datas (somando pacotes guardados + abertos) e sinaliza injeções diretas no banco de dados.
+              Sabendo que um jogador novato só pode adquirir <span class="text-yellow-400 font-bold">11 pacotes base</span> e precisa aguardar <span class="text-blue-400 font-bold">3 horas</span> para cada novo pacote, o algoritmo cruza essas datas (somando pacotes guardados + abertos) e sinaliza injeções diretas no banco de dados.<br>
+              <span class="text-yellow-300">Nota: Contas muito antigas (legado) que não possuem data de criação no Firestore têm a verificação de tempo ignorada, focando apenas na duplicação de cartas.</span>
           </p>
           <button onclick="window.escanearHackers()" class="mt-6 bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-6 rounded-lg transition shadow-lg shadow-red-900/30 border border-red-400 flex items-center gap-2">
               <span>🔍</span> Escanear Todo o Servidor Agora
@@ -740,6 +741,7 @@
 
                 // 2. MATEMÁTICA DE TEMPO E INJEÇÃO DE BANCO DE DADOS
                 let createdAtMs = null;
+                let isLegacy = false; // Define se é uma conta velha sem registro de data
                 
                 if (u.createdAt) {
                     // Tenta extrair a data real da conta
@@ -748,14 +750,13 @@
                     else if (typeof u.createdAt === 'string') createdAtMs = new Date(u.createdAt).getTime();
                 } else {
                     // SE NÃO HOUVER DATA DE CRIAÇÃO:
-                    // Isso significa que a conta foi injetada no banco manualmente.
-                    // Nós forçamos a idade da conta para zero, o que restringe brutalmente a margem.
-                    createdAtMs = Date.now();
-                    scoreRisco += 30;
-                    motivos.push(`⚠️ REGISTRO FANTASMA:\nA conta não possui data de criação oficial (campo "createdAt" ausente no Firestore). Isso indica que ela foi inserida manualmente ou por um script externo que não passou pelo fluxo natural de cadastro.`);
+                    // Isso significa que é uma conta criada antes da atualização de segurança.
+                    // Nós tratamos como conta "Legado". Ignoramos o relógio para evitar banir os antigos.
+                    isLegacy = true;
+                    motivos.push(`🕰️ CONTA VETERANA (Legado):\nEsta conta foi criada antes da atualização do servidor (sem data no banco). A análise de "Viagem no Tempo" foi desativada para este jogador. Apenas a matemática de duplicação será aplicada.`);
                 }
 
-                if (createdAtMs) {
+                if (!isLegacy && createdAtMs) {
                     const horasDesdeCriacao = Math.max(0, (Date.now() - createdAtMs) / (1000 * 60 * 60));
                     
                     // Um jogador gera 1 pacote a cada 3 horas.
