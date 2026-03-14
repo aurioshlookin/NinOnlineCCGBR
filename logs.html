@@ -213,7 +213,7 @@
           </h2>
           <p class="text-sm text-gray-300 leading-relaxed">
               Este sistema analisa o <strong>tempo de criação da conta</strong> do jogador contra a <strong>matemática de pacotes</strong> permitida. <br>
-              Sabendo que um jogador novato só pode abrir <span class="text-yellow-400 font-bold">11 pacotes base</span> (5 iniciais + 5 bônus + 1 premium) e precisa aguardar <span class="text-blue-400 font-bold">3 horas</span> para o próximo, o algoritmo cruza essas datas e sinaliza qualquer conta que esteja multiplicando itens ou usando métodos para burlar o cronômetro.
+              Sabendo que um jogador novato só pode adquirir <span class="text-yellow-400 font-bold">11 pacotes base</span> e precisa aguardar <span class="text-blue-400 font-bold">3 horas</span> para cada novo pacote, o algoritmo cruza essas datas (somando pacotes guardados + abertos) e sinaliza injeções diretas no banco de dados.
           </p>
           <button onclick="window.escanearHackers()" class="mt-6 bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-6 rounded-lg transition shadow-lg shadow-red-900/30 border border-red-400 flex items-center gap-2">
               <span>🔍</span> Escanear Todo o Servidor Agora
@@ -728,44 +728,57 @@
                     Object.values(u.inventory).forEach(qtd => totalCartas += qtd);
                 }
 
-                // Dados básicos
+                // Dados básicos do jogador
                 const packsAbertos = u.totalPacksOpened || 0;
                 const trocasFeitas = u.totalTradesCompleted || 0;
                 const pacotesB = u.pullsAvailable || 0;
                 const pacotesP = u.premiumPullsAvailable || 0;
+                
+                // === NOVO: CÁLCULO DE PACOTES TOTAIS ADQUIRIDOS ===
+                // Um hacker pode injetar pacotes guardados sem abrir para burlar a matemática antiga.
+                const pacotesTotaisAdquiridos = packsAbertos + pacotesB + pacotesP;
 
-                // 2. MATEMÁTICA DE TEMPO (TIME EXPLOIT)
+                // 2. MATEMÁTICA DE TEMPO E INJEÇÃO DE BANCO DE DADOS
                 let createdAtMs = null;
+                
                 if (u.createdAt) {
-                    // Trata diferentes formatos (Firestore Timestamp, Epoch Number ou Date String)
+                    // Tenta extrair a data real da conta
                     if (u.createdAt.toDate) createdAtMs = u.createdAt.toDate().getTime();
                     else if (typeof u.createdAt === 'number') createdAtMs = u.createdAt;
                     else if (typeof u.createdAt === 'string') createdAtMs = new Date(u.createdAt).getTime();
+                } else {
+                    // SE NÃO HOUVER DATA DE CRIAÇÃO:
+                    // Isso significa que a conta foi injetada no banco manualmente.
+                    // Nós forçamos a idade da conta para zero, o que restringe brutalmente a margem.
+                    createdAtMs = Date.now();
+                    scoreRisco += 30;
+                    motivos.push(`⚠️ REGISTRO FANTASMA:\nA conta não possui data de criação oficial (campo "createdAt" ausente no Firestore). Isso indica que ela foi inserida manualmente ou por um script externo que não passou pelo fluxo natural de cadastro.`);
                 }
 
                 if (createdAtMs) {
-                    const horasDesdeCriacao = (Date.now() - createdAtMs) / (1000 * 60 * 60);
-                    // 11 base = 5 Iniciais + 5 Bônus Primeira Vez + 1 Premium
+                    const horasDesdeCriacao = Math.max(0, (Date.now() - createdAtMs) / (1000 * 60 * 60));
+                    
+                    // Um jogador gera 1 pacote a cada 3 horas.
                     const pacotesGeradosPorTempo = Math.floor(horasDesdeCriacao / 3);
                     
-                    // O máximo matemático que a pessoa poderia ter aberto PELA IDADE da conta
-                    // Adicionamos +10 de margem de segurança para acomodar Boosts Globais dados por Admins
-                    const limitePorTempo = 11 + pacotesGeradosPorTempo + 10; 
+                    // 11 base = 5 Iniciais + 5 Bônus Primeira Vez + 1 Premium
+                    // + 10 de margem de segurança para acomodar os Boosts Globais que os admins dão.
+                    const limitePorTempoGeral = 11 + pacotesGeradosPorTempo + 10; 
 
-                    if (packsAbertos > limitePorTempo) {
-                        scoreRisco += 90;
-                        motivos.push(`⏳ TIME EXPLOIT (Viagem no Tempo):\nA conta foi criada há apenas ${horasDesdeCriacao.toFixed(1)} horas. \nMatematicamente, ela poderia ter aberto no MÁXIMO ~${11 + pacotesGeradosPorTempo} pacotes (mesmo com bônus iniciais), mas os logs registram impressionantes ${packsAbertos} pacotes abertos!`);
+                    if (pacotesTotaisAdquiridos > limitePorTempoGeral) {
+                        scoreRisco += 100;
+                        motivos.push(`⏳ INJEÇÃO MASSIVA DE PACOTES:\nA conta possui uma vida útil de apenas ${horasDesdeCriacao.toFixed(1)} horas. \nO sistema estipula que o teto absoluto de pacotes gerados nesse tempo seria ~${limitePorTempoGeral}. \nPorém, a conta detém impressionantes ${pacotesTotaisAdquiridos} pacotes (Abertos + Fechados), comprovando injeção direta via banco ou exploit de relógio.`);
                     }
                 }
 
-                // 3. MATEMÁTICA DE DUPLICAÇÃO DE ITENS
+                // 3. MATEMÁTICA DE DUPLICAÇÃO DE ITENS (CARTAS GERADAS)
                 // Cada pacote = 2 cartas. Troca pode dar até 3 cartas. 
-                // + 20 de margem de segurança
-                const cartasMaximasPermitidas = (packsAbertos * 2) + (trocasFeitas * 3) + 20;
+                // + 30 de margem de segurança para cartas de conquistas.
+                const cartasMaximasPermitidas = (packsAbertos * 2) + (trocasFeitas * 3) + 30;
 
                 if (totalCartas > cartasMaximasPermitidas) {
                     scoreRisco += 80;
-                    motivos.push(`🃏 DUPLICAÇÃO DE CARTAS (Exploit/Bug):\nO jogador possui ${totalCartas} cartas na conta, mas só abriu ${packsAbertos} pacotes em todo o histórico. O limite natural seguro seria de ${cartasMaximasPermitidas} cartas.`);
+                    motivos.push(`🃏 DUPLICAÇÃO DE CARTAS (Inventário):\nO jogador possui ${totalCartas} cartas no inventário, mas só abriu ${packsAbertos} pacotes na história da conta. Pela lógica do drop, o limite máximo e mais otimista seria de ${cartasMaximasPermitidas} cartas. Isso confirma adição direta de cartas no banco de dados.`);
                 }
 
                 // 4. Acúmulo de Pacotes (Risco Leve)
