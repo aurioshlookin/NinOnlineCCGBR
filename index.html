@@ -214,6 +214,7 @@
     <button onclick="window.switchTab('rarity')" id="tab-rarity" class="hidden px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition text-purple-400 border-b-2 border-transparent">Raridade 📊</button>
     <button onclick="window.switchTab('achievements')" id="tab-achievements" class="hidden px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition text-blue-400 border-b-2 border-transparent">Conquistas 🏆</button>
     <button onclick="window.switchTab('trade')" id="tab-trade" class="hidden px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition text-green-500 border-b-2 border-transparent">Trocas 🤝</button>
+    <button onclick="window.switchTab('fusion')" id="tab-fusion" class="hidden px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition text-fuchsia-400 border-b-2 border-transparent">Fusão 🔮</button>
     <button onclick="window.switchTab('admin')" id="tab-admin" class="hidden px-6 py-3 font-semibold tab-inactive hover:bg-gray-700 transition text-red-500 border-b-2 border-transparent">⚙️ Painel Admin</button>
   </nav>
 
@@ -273,6 +274,25 @@
         <button id="btn-confirm-accept" class="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-lg font-bold disabled:opacity-50 transition" disabled>Confirmar Envio</button>
       </div>
     </div>
+  </div>
+
+  <!-- Modal de Resultado da Fusão -->
+  <div id="fusion-result-modal" class="fixed inset-0 bg-black/95 flex flex-col items-center justify-center z-[200] hidden backdrop-blur-md p-4">
+    <h2 class="text-3xl font-bold text-white mb-8 drop-shadow-md animate-pulse">Fusão Concluída!</h2>
+    <div id="fusion-result-flash" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full bg-white z-[250] pointer-events-none opacity-0 hidden transition-opacity duration-300 rounded-full blur-[80px] mix-blend-overlay"></div>
+    
+    <div id="fusion-result-card-container" class="card-container w-48 h-72 sm:w-64 sm:h-96 transform transition hover:scale-105 rounded-xl z-50">
+      <div class="card-inner shadow-[0_0_50px_rgba(255,255,255,0.5)] rounded-xl" id="fusion-result-card-inner">
+        <div class="card-back border-fuchsia-500 bg-gradient-to-br from-fuchsia-900 to-black flex flex-col items-center justify-center rounded-xl border-[4px]">
+           <img src="https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/img/icon.png" class="w-16 h-16 opacity-60 drop-shadow-[0_0_5px_rgba(217,70,239,0.4)]" alt="Card Logo">
+        </div>
+        <div class="card-front p-1 flex flex-col justify-between rounded-xl" id="fusion-result-card-front"></div>
+      </div>
+    </div>
+    
+    <button onclick="document.getElementById('fusion-result-modal').classList.add('hidden');" class="mt-10 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold py-4 px-10 rounded-full text-xl shadow-lg shadow-fuchsia-900/30 transition transform hover:scale-105 border border-fuchsia-400 z-50">
+      INCORPORAR AO ÁLBUM
+    </button>
   </div>
 
   <!-- Modal de Mudar Senha -->
@@ -640,6 +660,55 @@
       </div>
     </section>
 
+    <section id="section-fusion" class="w-full max-w-5xl hidden flex-col gap-8">
+      <div class="text-center space-y-2 mb-4">
+        <h2 class="text-4xl font-bold text-fuchsia-400 drop-shadow-md">Altar de Fusão 🔮</h2>
+        <p class="text-gray-400">Sacrifique cópias repetidas de um rank para invocar uma <strong class="text-white">carta aleatória do rank acima</strong>.</p>
+      </div>
+
+      <div class="bg-gray-800 p-8 rounded-xl border border-fuchsia-900/50 shadow-2xl flex flex-col md:flex-row items-center gap-8 justify-center">
+        
+        <!-- Lado da Oferta -->
+        <div class="flex flex-col items-center w-full md:w-1/3 gap-4">
+          <h3 class="text-lg font-bold text-gray-300">Cartas para Sacrificar</h3>
+          <select id="fusion-offer" onchange="window.updateFusionPreview()" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-2 py-3 text-white text-sm focus:outline-none focus:border-fuchsia-500 shadow-inner">
+            <option value="">Analisando o seu inventário...</option>
+          </select>
+          
+          <div class="w-40 h-60 bg-gray-900 rounded-xl border-2 border-dashed border-gray-600 flex items-center justify-center relative shadow-inner">
+            <div id="fusion-preview-container" class="w-full h-full pointer-events-none hidden"></div>
+            <span id="fusion-preview-placeholder" class="text-4xl opacity-20">🎴</span>
+            <div id="fusion-cost-badge" class="absolute -bottom-3 bg-red-600 text-white text-xs font-black px-3 py-1 rounded-full shadow-lg border border-red-400 hidden">
+              -0 Cópias
+            </div>
+          </div>
+        </div>
+
+        <!-- Meio: Animação / Botão -->
+        <div class="flex flex-col items-center justify-center w-full md:w-1/3 gap-6">
+          <div class="text-6xl animate-pulse drop-shadow-[0_0_15px_rgba(217,70,239,0.5)]">➡️</div>
+          <button id="btn-perform-fusion" onclick="window.performFusion()" class="w-full bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-black py-4 px-6 rounded-xl transition shadow-[0_0_20px_rgba(217,70,239,0.4)] border border-fuchsia-400 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+            REALIZAR RITUAL
+          </button>
+          <p id="fusion-error-msg" class="text-red-400 text-sm font-bold hidden text-center"></p>
+        </div>
+
+        <!-- Lado do Resultado -->
+        <div class="flex flex-col items-center w-full md:w-1/3 gap-4">
+          <h3 class="text-lg font-bold text-gray-300">Nova Carta Gerada</h3>
+          <div class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-center text-gray-400 font-bold shadow-inner" id="fusion-result-tier-text">
+            Raridade ???
+          </div>
+          
+          <div id="fusion-result-box" class="w-40 h-60 bg-gray-900 rounded-xl border-2 border-fuchsia-500/50 flex flex-col items-center justify-center relative shadow-[0_0_30px_rgba(217,70,239,0.15)] overflow-hidden">
+             <div class="absolute inset-0 bg-gradient-to-t from-fuchsia-900/40 to-transparent"></div>
+             <span class="text-6xl text-fuchsia-500/50 font-black z-10 drop-shadow-md">?</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
     <section id="section-admin" class="w-full max-w-5xl hidden flex-col gap-8">
       <h2 class="text-3xl font-bold text-red-500 border-b border-red-900 pb-2 drop-shadow-md">Painel do Administrador</h2>
       
@@ -819,6 +888,14 @@
     window.currentViewedPlayerInventory = null;
     window.lastSyncDataStr = "";
 
+    // Regras de Fusão
+    const FUSION_RULES = {
+      'C': { cost: 5, next: 'B', color: 'border-blue-400', textColor: 'text-blue-400' },
+      'B': { cost: 5, next: 'A', color: 'border-purple-400', textColor: 'text-purple-400' },
+      'A': { cost: 4, next: 'S', color: 'border-yellow-400', textColor: 'text-yellow-400' },
+      'S': { cost: 3, next: 'SS', color: 'border-red-500', textColor: 'text-red-500' }
+    };
+
     // Stubs para serem sobrescritos
     window.syncLeaderboard = () => {};
     window.loadAllPlayers = async () => {};
@@ -883,20 +960,21 @@
     };
 
     window.switchTab = async (tabName) => {
-      ['gacha', 'album', 'explore', 'trade', 'admin', 'achievements', 'rarity'].forEach(t => {
+      ['gacha', 'album', 'explore', 'trade', 'admin', 'achievements', 'rarity', 'fusion'].forEach(t => {
         const sec = document.getElementById(`section-${t}`);
         const btn = document.getElementById(`tab-${t}`);
         if(!btn || !sec) return;
 
         if (t === tabName) {
           sec.classList.remove('hidden'); sec.classList.add('flex');
-          btn.classList.remove('tab-inactive', 'text-yellow-600', 'text-green-500', 'text-red-600', 'text-blue-400', 'text-purple-400', 'border-transparent');
+          btn.classList.remove('tab-inactive', 'text-yellow-600', 'text-green-500', 'text-red-600', 'text-blue-400', 'text-purple-400', 'text-fuchsia-400', 'border-transparent');
           btn.classList.add('tab-active');
           if(t === 'explore') btn.classList.add('text-yellow-500', 'border-yellow-500');
           if(t === 'trade') btn.classList.add('text-green-500', 'border-green-500');
           if(t === 'admin') btn.classList.add('text-red-500', 'border-red-500');
           if(t === 'achievements') btn.classList.add('text-blue-400', 'border-blue-400');
           if(t === 'rarity') btn.classList.add('text-purple-400', 'border-purple-400');
+          if(t === 'fusion') btn.classList.add('text-fuchsia-400', 'border-fuchsia-400');
 
           if (t === 'explore') {
             if (window.loadGlobalStats) window.loadGlobalStats(); 
@@ -905,6 +983,9 @@
           if (t === 'trade') {
             if (window.loadTradesBoard) window.loadTradesBoard();
           }
+          if (t === 'fusion') {
+            if (window.updateFusionOptions) window.updateFusionOptions();
+          }
           if (t === 'admin') {
             if (window.loadGitHubImages) { window.loadGitHubImages(); window.updateAdminPreview(); }
             if (window.loadAdminPlayersLog) window.loadAdminPlayersLog();
@@ -912,13 +993,14 @@
           if (t === 'achievements' && window.renderAchievements) window.renderAchievements();
         } else {
           sec.classList.add('hidden'); sec.classList.remove('flex');
-          btn.classList.remove('tab-active', 'text-yellow-500', 'border-yellow-500', 'text-green-500', 'border-green-500', 'text-red-500', 'border-red-500', 'text-blue-400', 'border-blue-400', 'text-purple-400', 'border-purple-400');
+          btn.classList.remove('tab-active', 'text-yellow-500', 'border-yellow-500', 'text-green-500', 'border-green-500', 'text-red-500', 'border-red-500', 'text-blue-400', 'border-blue-400', 'text-purple-400', 'border-purple-400', 'text-fuchsia-400', 'border-fuchsia-400');
           btn.classList.add('tab-inactive', 'border-transparent');
           if(t === 'explore') btn.classList.add('text-yellow-600');
           if(t === 'trade') btn.classList.add('text-green-500');
           if(t === 'admin') btn.classList.add('text-red-600');
           if(t === 'achievements') btn.classList.add('text-blue-400');
           if(t === 'rarity') btn.classList.add('text-purple-400');
+          if(t === 'fusion') btn.classList.add('text-fuchsia-400');
         }
       });
 
@@ -1635,12 +1717,14 @@
         const tabRarity = document.getElementById('tab-rarity');
         const tabTrade = document.getElementById('tab-trade');
         const tabAchievements = document.getElementById('tab-achievements');
+        const tabFusion = document.getElementById('tab-fusion');
 
         if (tabGacha) tabGacha.classList.remove('hidden');
         if (tabAlbum) tabAlbum.classList.remove('hidden');
         if (tabRarity) tabRarity.classList.remove('hidden');
         if (tabTrade) tabTrade.classList.remove('hidden');
         if (tabAchievements) tabAchievements.classList.remove('hidden');
+        if (tabFusion) tabFusion.classList.remove('hidden');
 
         if(document.getElementById('section-explore').classList.contains('flex')) {
             window.switchTab('gacha');
@@ -1714,6 +1798,7 @@
             window.updateTradeLimitsUI(); 
             window.renderAchievements();
             window.renderNotifications(userData.notifications);
+            if(window.updateFusionOptions) window.updateFusionOptions();
             if(!document.getElementById('section-rarity').classList.contains('hidden')){
                window.renderRarityBoard();
             }
@@ -1746,6 +1831,7 @@
         const tabGacha = document.getElementById('tab-gacha');
         const tabAlbum = document.getElementById('tab-album');
         const tabRarity = document.getElementById('tab-rarity');
+        const tabFusion = document.getElementById('tab-fusion');
 
         if (loggedOutView) loggedOutView.classList.remove('hidden');
         if (loggedInView) { loggedInView.classList.add('hidden'); loggedInView.classList.remove('flex'); }
@@ -1755,6 +1841,7 @@
         if (tabGacha) tabGacha.classList.add('hidden');
         if (tabAlbum) tabAlbum.classList.add('hidden');
         if (tabRarity) tabRarity.classList.add('hidden');
+        if (tabFusion) tabFusion.classList.add('hidden');
         
         if(unsubUser) { unsubUser(); unsubUser = null; }
         window.applyGlobalSettingsUI(); 
@@ -3370,6 +3457,209 @@
         window.showMessage("Falha na transação. Alguém já pode ter aceitado ou as cartas não estão mais disponíveis.");
       } finally {
         if(btn) { btn.disabled = false; btn.innerText = "Confirmar Envio"; }
+      }
+    };
+
+    // ==========================================
+    // SISTEMA DE FUSÃO DE CARTAS
+    // ==========================================
+
+    window.updateFusionOptions = () => {
+      const select = document.getElementById('fusion-offer');
+      if (!select) return;
+      const currentVal = select.value;
+      select.innerHTML = '<option value="">Selecione o Rank para sacrificar...</option>';
+
+      const inv = userData.inventory || {};
+      let hasOptions = false;
+
+      // Percorre os Ranks e conta quantas "repetidas" o jogador tem no total para aquele Rank
+      Object.keys(FUSION_RULES).forEach(tier => {
+        const rule = FUSION_RULES[tier];
+        let duplicateCount = 0;
+
+        window.cardDatabase.forEach(card => {
+          if (card.tier === tier && inv[card.id] > 1) {
+             // Se ele tem 3 cópias, 2 são repetidas (podem ser sacrificadas)
+             duplicateCount += (inv[card.id] - 1);
+          }
+        });
+
+        if (duplicateCount >= rule.cost) {
+          select.innerHTML += `<option value="${tier}">Cartas Rank ${tier} - Custo: ${rule.cost}. Você tem: ${duplicateCount} repetidas</option>`;
+          hasOptions = true;
+        }
+      });
+
+      if (!hasOptions) {
+         select.innerHTML = '<option value="">Você não tem cartas repetidas suficientes.</option>';
+      }
+
+      select.value = currentVal || '';
+      window.updateFusionPreview();
+    };
+
+    window.updateFusionPreview = () => {
+      const select = document.getElementById('fusion-offer');
+      const previewContainer = document.getElementById('fusion-preview-container');
+      const placeholder = document.getElementById('fusion-preview-placeholder');
+      const costBadge = document.getElementById('fusion-cost-badge');
+      const btn = document.getElementById('btn-perform-fusion');
+      const resultTierText = document.getElementById('fusion-result-tier-text');
+      const resultBox = document.getElementById('fusion-result-box');
+      const errorMsg = document.getElementById('fusion-error-msg');
+
+      if (!select || !previewContainer) return;
+
+      const tier = select.value;
+      errorMsg.classList.add('hidden');
+
+      if (tier) {
+        const rule = FUSION_RULES[tier];
+
+        previewContainer.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+        
+        // Renderiza um visual genérico de "Múltiplas Cartas" daquele rank
+        previewContainer.innerHTML = `
+          <div class="w-full h-full flex flex-col items-center justify-center bg-gray-800 rounded-xl border-4 ${rule.color} shadow-inner">
+             <span class="text-6xl font-black ${rule.textColor} drop-shadow-md">${tier}</span>
+             <span class="text-xs text-gray-400 mt-3 font-bold uppercase tracking-widest text-center px-2">Cartas<br>Repetidas</span>
+          </div>
+        `;
+        
+        costBadge.innerText = `-${rule.cost} Cópias`;
+        costBadge.classList.remove('hidden');
+        costBadge.classList.add('flex');
+
+        resultTierText.innerText = `Nova Carta: Rank ${rule.next}`;
+        resultTierText.className = `w-full border rounded-lg px-4 py-3 text-center font-bold shadow-inner ${rule.textColor} ${rule.color.replace('border-', 'bg-').replace('400', '900/30')} ${rule.color}`;
+        
+        resultBox.className = `w-40 h-60 bg-gray-900 rounded-xl border-4 border-dashed flex flex-col items-center justify-center relative shadow-[0_0_30px_rgba(255,255,255,0.1)] overflow-hidden ${rule.color}`;
+        resultBox.innerHTML = `<div class="absolute inset-0 bg-gradient-to-t from-gray-900/40 to-transparent"></div><span class="text-6xl font-black z-10 drop-shadow-md ${rule.textColor}">?</span>`;
+
+        btn.disabled = false;
+      } else {
+        previewContainer.innerHTML = '';
+        previewContainer.classList.add('hidden');
+        placeholder.classList.remove('hidden');
+        costBadge.classList.add('hidden');
+        resultTierText.innerText = "Raridade ???";
+        resultTierText.className = "w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-center text-gray-400 font-bold shadow-inner";
+        resultBox.className = "w-40 h-60 bg-gray-900 rounded-xl border-2 border-fuchsia-500/50 flex flex-col items-center justify-center relative shadow-[0_0_30px_rgba(217,70,239,0.15)] overflow-hidden";
+        resultBox.innerHTML = `<div class="absolute inset-0 bg-gradient-to-t from-fuchsia-900/40 to-transparent"></div><span class="text-6xl text-fuchsia-500/50 font-black z-10 drop-shadow-md">?</span>`;
+        btn.disabled = true;
+      }
+    };
+
+    window.performFusion = async () => {
+      if (typeof isProcessingPackTransaction !== 'undefined' && isProcessingPackTransaction) return;
+      const select = document.getElementById('fusion-offer');
+      const btn = document.getElementById('btn-perform-fusion');
+      const errorMsg = document.getElementById('fusion-error-msg');
+      
+      const tier = select.value;
+      if (!tier) return;
+
+      const rule = FUSION_RULES[tier];
+      if (!rule) return;
+
+      const possibleNextCards = window.cardDatabase.filter(c => c.tier === rule.next);
+      if (possibleNextCards.length === 0) {
+         errorMsg.innerText = `O sistema não encontrou nenhuma carta Rank ${rule.next} no banco de dados. Fale com os admins!`;
+         errorMsg.classList.remove('hidden');
+         return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = `<span class="animate-spin text-xl">⏳</span> FUNDINDO...`;
+      isProcessingPackTransaction = true;
+
+      try {
+        const newCard = possibleNextCards[Math.floor(Math.random() * possibleNextCards.length)];
+
+        await runTransaction(db, async (transaction) => {
+          const userRef = doc(db, "users", currentUser.uid);
+          const userSnap = await transaction.get(userRef);
+          let transInv = userSnap.data().inventory || {};
+
+          // Recalcula as repetidas dentro da transação por segurança
+          let dupsAvailable = 0;
+          let dupCards = [];
+          window.cardDatabase.forEach(c => {
+              if (c.tier === tier && transInv[c.id] > 1) {
+                  let availableToBurn = transInv[c.id] - 1;
+                  dupsAvailable += availableToBurn;
+                  dupCards.push({ id: c.id, available: availableToBurn });
+              }
+          });
+
+          if (dupsAvailable < rule.cost) {
+            throw new Error(`Você precisa de ${rule.cost} cartas repetidas Rank ${tier} para realizar a fusão.`);
+          }
+
+          // Deduz o custo consumindo as repetidas (de forma justa, iterando sobre as cartas)
+          let remainingCost = rule.cost;
+          for (let i = 0; i < dupCards.length; i++) {
+              if (remainingCost <= 0) break;
+              
+              let toDeduct = Math.min(dupCards[i].available, remainingCost);
+              transInv[dupCards[i].id] -= toDeduct;
+              remainingCost -= toDeduct;
+          }
+
+          // Adiciona a nova carta
+          transInv[newCard.id] = (transInv[newCard.id] || 0) + 1;
+
+          transaction.update(userRef, { inventory: transInv });
+        });
+
+        // Sucesso! Animar e mostrar o resultado.
+        const modal = document.getElementById('fusion-result-modal');
+        const flash = document.getElementById('fusion-result-flash');
+        const cardContainer = document.getElementById('fusion-result-card-container');
+        const cardContainerInner = document.getElementById('fusion-result-card-inner');
+        
+        if (window.playGachaSound) window.playGachaSound(newCard.tier);
+        if (window.fireConfetti) window.fireConfetti(newCard.tier);
+
+        // Reseta o estado 3D da carta para o verso antes de mostrar
+        if (cardContainer) cardContainer.className = 'card-container w-48 h-72 sm:w-64 sm:h-96 transform transition hover:scale-105 rounded-xl z-50';
+        if (cardContainerInner) cardContainerInner.classList.remove('flipped');
+        
+        // Usa o motor original do jogo para montar a frente da carta perfeitamente
+        window.renderCardHTML('fusion-result-card-front', newCard, false, false, userData.inventory);
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        if (flash) {
+          flash.classList.remove('hidden'); void flash.offsetWidth; 
+          flash.classList.remove('opacity-0'); flash.classList.add('opacity-100');
+          setTimeout(() => {
+            flash.classList.remove('opacity-100'); flash.classList.add('opacity-0');
+            setTimeout(() => flash.classList.add('hidden'), 300);
+          }, 250);
+        }
+
+        // Aciona o FLIP 3D e as luzes logo em seguida, igual aos pacotes!
+        setTimeout(() => {
+            const ringColors = { 'C': 'ring-green-400', 'B': 'ring-blue-400', 'A': 'ring-purple-400', 'S': 'ring-yellow-400', 'SS': 'ring-red-500' };
+            if (cardContainer) cardContainer.classList.add(`reveal-${newCard.tier}`, 'ring-4', ringColors[newCard.tier]);
+            if (cardContainerInner) cardContainerInner.classList.add('flipped');
+        }, 100);
+
+        await window.logSystemAction(`${currentUser.displayName} queimou ${rule.cost}x repetidas [${tier}] e gerou a carta: #${newCard.cardNumber || '000'} ${newCard.name} (Rank ${newCard.tier}) na Fusão.`);
+
+        select.value = '';
+        window.updateFusionPreview();
+
+      } catch (err) {
+        errorMsg.innerText = err.message;
+        errorMsg.classList.remove('hidden');
+      } finally {
+        isProcessingPackTransaction = false;
+        btn.innerHTML = 'REALIZAR RITUAL';
       }
     };
 
