@@ -2040,12 +2040,35 @@
         newClaimed[achievId] = true;
       }
 
+      let wonCards = [];
+      let missedCards = [];
+
+      if (achievId !== 'first5') {
+        let generatedCards = [];
+        for(let i=0; i<8; i++) {
+          generatedCards.push(getRandomCard(type === 'premium'));
+        }
+        const shuffled = [...generatedCards].sort(() => 0.5 - Math.random());
+        wonCards = [shuffled[0], shuffled[1]];
+        missedCards = shuffled.slice(2);
+        
+        window.currentAchievWonCards = wonCards;
+        window.currentAchievMissedCards = missedCards;
+        window.achievRevealedCount = 0;
+        achievSelectedIndices = [];
+      }
+
       try {
         const updateObj = { claimedAchievements: newClaimed };
         
         if (achievId === 'first5') {
-          // Usa incremento atômico para evitar sobrescrever dados velhos
           updateObj.pullsAvailable = increment(5); 
+        } else {
+          // Já injeta as cartas no banco ANTES da animação acontecer!
+          const newInv = { ...userData.inventory };
+          newInv[wonCards[0].id] = (newInv[wonCards[0].id] || 0) + 1;
+          newInv[wonCards[1].id] = (newInv[wonCards[1].id] || 0) + 1;
+          updateObj.inventory = newInv;
         }
         
         await updateDoc(doc(db, "users", currentUser.uid), updateObj);
@@ -2059,12 +2082,14 @@
           return;
         }
         
-        currentAchievType = type;
-        achievPackCards = [];
-        for(let i=0; i<8; i++) {
-          achievPackCards.push(getRandomCard(type === 'premium'));
+        if (achievId !== 'first5') {
+          const c1 = wonCards[0];
+          const c2 = wonCards[1];
+          const pType = type === 'premium' ? 'Premium' : 'Básico';
+          window.logSystemAction(`${currentUser.displayName} abriu um Pacote ${pType} de Conquista e obteve as cartas #${c1.cardNumber || '000'} ${c1.name} (R.${c1.tier}) e #${c2.cardNumber || '000'} ${c2.name} (R.${c2.tier}).`);
         }
-        achievSelectedIndices = [];
+        
+        currentAchievType = type;
 
         const overlay = document.getElementById('achiev-pack-overlay');
         const pack = document.getElementById('achiev-booster-pack');
@@ -2134,6 +2159,17 @@
       
       try {
         const userRef = doc(db, "users", currentUser.uid);
+
+        let generatedCards = [];
+        for(let i=0; i<8; i++) {
+          generatedCards.push(getRandomCard(true));
+        }
+        const shuffled = [...generatedCards].sort(() => 0.5 - Math.random());
+        window.currentAchievWonCards = [shuffled[0], shuffled[1]];
+        window.currentAchievMissedCards = shuffled.slice(2);
+        window.achievRevealedCount = 0;
+        achievSelectedIndices = [];
+
         await runTransaction(db, async (transaction) => {
           const userSnap = await transaction.get(userRef);
           if(!userSnap.exists()) throw new Error("Usuário não encontrado.");
@@ -2141,20 +2177,20 @@
           const currentData = userSnap.data();
           if((currentData.premiumPullsAvailable || 0) <= 0) throw new Error("Sem pacotes premium suficientes.");
           
+          let currentInv = { ...(currentData.inventory || {}) };
+          currentInv[window.currentAchievWonCards[0].id] = (currentInv[window.currentAchievWonCards[0].id] || 0) + 1;
+          currentInv[window.currentAchievWonCards[1].id] = (currentInv[window.currentAchievWonCards[1].id] || 0) + 1;
+
           transaction.update(userRef, { 
-            premiumPullsAvailable: increment(-1),
-            totalPacksOpened: increment(1)
+            premiumPullsAvailable: currentData.premiumPullsAvailable - 1,
+            totalPacksOpened: (currentData.totalPacksOpened || 0) + 1,
+            inventory: currentInv
           });
         });
 
         isOpeningAchiev = true;
 
         currentAchievType = 'premium';
-        achievPackCards = [];
-        for(let i=0; i<8; i++) {
-          achievPackCards.push(getRandomCard(true));
-        }
-        achievSelectedIndices = [];
 
         const overlay = document.getElementById('achiev-pack-overlay');
         const pack = document.getElementById('achiev-booster-pack');
@@ -2185,7 +2221,9 @@
         overlay.classList.add('flex');
         
         logGlobalStat('pack');
-        await window.logSystemAction(`${currentUser.displayName} abriu um Pacote Premium do inventário.`);
+        const c1 = window.currentAchievWonCards[0];
+        const c2 = window.currentAchievWonCards[1];
+        await window.logSystemAction(`${currentUser.displayName} abriu um Pacote Premium do inventário e obteve as cartas #${c1.cardNumber || '000'} ${c1.name} (R.${c1.tier}) e #${c2.cardNumber || '000'} ${c2.name} (R.${c2.tier}).`);
 
       } catch(e) {
         window.showMessage("Erro: " + e.message);
@@ -2247,23 +2285,22 @@
     window.revealAchievCard = async (index) => {
       const innerContainer = document.getElementById(`achiev-card-inner-${index}`);
       if (innerContainer && innerContainer.classList.contains('flipped')) {
-        const cardData = achievPackCards[index];
-        if (cardData) window.showCardDetail(cardData.id);
+        const cardId = innerContainer.getAttribute('data-card-id');
+        if (cardId) window.showCardDetail(cardId);
         return;
       }
 
       if (!innerContainer || achievSelectedIndices.length >= 2) return;
 
-      const cardData = achievPackCards[index];
+      const cardData = window.currentAchievWonCards[window.achievRevealedCount];
+      window.achievRevealedCount++;
       achievSelectedIndices.push(index);
+
+      innerContainer.setAttribute('data-card-id', cardData.id);
 
       window.playCardClickSound(cardData.tier);
 
-      const newInventory = { ...userData.inventory };
-      newInventory[cardData.id] = (newInventory[cardData.id] || 0) + 1;
-      await updateDoc(doc(db, "users", currentUser.uid), { inventory: newInventory }).catch(e => {});
-
-      window.renderCardHTML(`achiev-card-front-${index}`, cardData, false, false, newInventory);
+      window.renderCardHTML(`achiev-card-front-${index}`, cardData, false, false, userData.inventory);
       innerContainer.classList.add('flipped');
       
       const cardContainer = document.getElementById(`achiev-card-${index}`);
@@ -2274,16 +2311,15 @@
       }
       
       if (achievSelectedIndices.length === 2) {
-        const c1 = achievPackCards[achievSelectedIndices[0]];
-        const c2 = achievPackCards[achievSelectedIndices[1]];
-        const pType = currentAchievType === 'premium' ? 'Premium' : 'Básico';
-        window.logSystemAction(`${currentUser.displayName} escolheu e guardou as cartas #${c1.cardNumber || '000'} ${c1.name} (R.${c1.tier}) e #${c2.cardNumber || '000'} ${c2.name} (R.${c2.tier}) do Pacote ${pType} de Conquista.`);
-
         setTimeout(() => {
+          let missedIndex = 0;
           for(let idx=0; idx<8; idx++) {
             if (!achievSelectedIndices.includes(idx)) {
-              const fakeCard = achievPackCards[idx];
+              const fakeCard = window.currentAchievMissedCards[missedIndex++];
               const innerCard = document.getElementById(`achiev-card-inner-${idx}`);
+              
+              if (innerCard) innerCard.setAttribute('data-card-id', fakeCard.id);
+
               window.renderCardHTML(`achiev-card-front-${idx}`, fakeCard, false, false, userData.inventory);
               if (innerCard) innerCard.classList.add('flipped');
               
@@ -2342,6 +2378,24 @@
       
       try {
         const userRef = doc(db, "users", currentUser.uid);
+
+        let generatedCards = [];
+        let highestTierVal = 0; let highestTierStr = 'C';
+        
+        for(let i=0; i<8; i++) {
+          const card = getRandomCard(false);
+          generatedCards.push(card);
+          if (TIER_VALUES[card.tier] > highestTierVal) {
+            highestTierVal = TIER_VALUES[card.tier];
+            highestTierStr = card.tier;
+          }
+        }
+
+        const shuffled = [...generatedCards].sort(() => 0.5 - Math.random());
+        window.currentPackWonCards = [shuffled[0], shuffled[1]];
+        window.currentPackMissedCards = shuffled.slice(2);
+        window.packRevealedCount = 0;
+        selectedCardsIndices = [];
         
         await runTransaction(db, async (transaction) => {
           const userSnap = await transaction.get(userRef);
@@ -2356,27 +2410,19 @@
           let newTimestamp = currentData.lastPullTimestamp;
           if (currentData.pullsAvailable === 5) newTimestamp = Date.now();
 
+          let currentInv = { ...(currentData.inventory || {}) };
+          currentInv[window.currentPackWonCards[0].id] = (currentInv[window.currentPackWonCards[0].id] || 0) + 1;
+          currentInv[window.currentPackWonCards[1].id] = (currentInv[window.currentPackWonCards[1].id] || 0) + 1;
+
           transaction.update(userRef, {
             pullsAvailable: newPulls,
             lastPullTimestamp: newTimestamp,
-            totalPacksOpened: increment(1)
+            totalPacksOpened: (currentData.totalPacksOpened || 0) + 1,
+            inventory: currentInv
           });
         });
 
         isOpeningPack = true;
-        
-        currentPackCards = [];
-        let highestTierVal = 0; let highestTierStr = 'C';
-        
-        for(let i=0; i<8; i++) {
-          const card = getRandomCard(false);
-          currentPackCards.push(card);
-          if (TIER_VALUES[card.tier] > highestTierVal) {
-            highestTierVal = TIER_VALUES[card.tier];
-            highestTierStr = card.tier;
-          }
-        }
-        selectedCardsIndices = [];
 
         const pack = document.getElementById('booster-pack');
         if (pack) {
@@ -2428,7 +2474,9 @@
         }, suspenseTime);
         
         logGlobalStat('pack');
-        await window.logSystemAction(`${currentUser.displayName} abriu um Pacote Básico e a melhor raridade revelada foi Rank ${highestTierStr}.`);
+        const c1 = window.currentPackWonCards[0];
+        const c2 = window.currentPackWonCards[1];
+        await window.logSystemAction(`${currentUser.displayName} abriu um Pacote Básico e obteve as cartas #${c1.cardNumber || '000'} ${c1.name} (R.${c1.tier}) e #${c2.cardNumber || '000'} ${c2.name} (R.${c2.tier}). A melhor raridade do pacote era Rank ${highestTierStr}.`);
       } catch (error) {
         window.showMessage("Erro: " + error.message);
       } finally {
@@ -2439,23 +2487,22 @@
     window.revealSingleCard = async (index) => {
       const innerContainer = document.getElementById(`gacha-card-inner-${index}`);
       if (innerContainer && innerContainer.classList.contains('flipped')) {
-        const cardData = currentPackCards[index];
-        if (cardData) window.showCardDetail(cardData.id);
+        const cardId = innerContainer.getAttribute('data-card-id');
+        if (cardId) window.showCardDetail(cardId);
         return;
       }
 
       if (!innerContainer || selectedCardsIndices.length >= 2) return;
 
-      const cardData = currentPackCards[index];
+      const cardData = window.currentPackWonCards[window.packRevealedCount];
+      window.packRevealedCount++;
       selectedCardsIndices.push(index);
+
+      innerContainer.setAttribute('data-card-id', cardData.id);
 
       window.playCardClickSound(cardData.tier);
 
-      const newInventory = { ...userData.inventory };
-      newInventory[cardData.id] = (newInventory[cardData.id] || 0) + 1;
-      await updateDoc(doc(db, "users", currentUser.uid), { inventory: newInventory }).catch(e => {});
-
-      window.renderCardHTML(`gacha-card-front-${index}`, cardData, false, false, newInventory);
+      window.renderCardHTML(`gacha-card-front-${index}`, cardData, false, false, userData.inventory);
       innerContainer.classList.add('flipped');
       
       const cardContainer = document.getElementById(`gacha-card-${index}`);
@@ -2466,15 +2513,15 @@
       }
       
       if (selectedCardsIndices.length === 2) {
-        const c1 = currentPackCards[selectedCardsIndices[0]];
-        const c2 = currentPackCards[selectedCardsIndices[1]];
-        window.logSystemAction(`${currentUser.displayName} escolheu e guardou as cartas #${c1.cardNumber || '000'} ${c1.name} (R.${c1.tier}) e #${c2.cardNumber || '000'} ${c2.name} (R.${c2.tier}) do Pacote Básico.`);
-
         setTimeout(() => {
+          let missedIndex = 0;
           for(let idx=0; idx<8; idx++) {
             if (!selectedCardsIndices.includes(idx)) {
-              const fakeCard = currentPackCards[idx];
+              const fakeCard = window.currentPackMissedCards[missedIndex++];
               const innerCard = document.getElementById(`gacha-card-inner-${idx}`);
+              
+              if (innerCard) innerCard.setAttribute('data-card-id', fakeCard.id);
+
               window.renderCardHTML(`gacha-card-front-${idx}`, fakeCard, false, false, userData.inventory);
               if (innerCard) innerCard.classList.add('flipped');
               
