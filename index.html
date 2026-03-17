@@ -2161,7 +2161,8 @@
       
       try {
         const openPremiumPackFn = httpsCallable(functions, 'openPremiumPack');
-        const result = await openPremiumPackFn();
+        const token = await currentUser.getIdToken();
+        const result = await openPremiumPackFn({ token: token });
         const data = result.data;
 
         if (!data.success) throw new Error("Falha ao abrir pacote premium via Servidor.");
@@ -2361,7 +2362,8 @@
       
       try {
         const openBasicPackFn = httpsCallable(functions, 'openBasicPack');
-        const result = await openBasicPackFn();
+        const token = await currentUser.getIdToken();
+        const result = await openBasicPackFn({ token: token });
         const data = result.data;
 
         if (!data.success) throw new Error("O Servidor falhou ao gerar as cartas.");
