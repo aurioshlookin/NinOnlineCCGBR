@@ -4,9 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nin Online CCG BR</title>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/aurioshlookin/NinCardMemeCollectionBR/main/assets/img/icon.png">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -1236,6 +1233,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, onSnapshot, collection, query, where, getDocs, serverTimestamp, runTransaction, deleteDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAWcdJV6INuUeo6-STW5J_VYZ7aUzO51KI",
@@ -1249,6 +1247,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app, "default2");
+    const functions = getFunctions(app);
 
     const LOCAL_SESSION_ID = crypto.randomUUID(); // ID Único desta aba/sessão
 
@@ -2161,35 +2160,16 @@
       isProcessingPackTransaction = true;
       
       try {
-        const userRef = doc(db, "users", currentUser.uid);
+        const openPremiumPackFn = httpsCallable(functions, 'openPremiumPack');
+        const result = await openPremiumPackFn();
+        const data = result.data;
 
-        let generatedCards = [];
-        for(let i=0; i<8; i++) {
-          generatedCards.push(getRandomCard(true));
-        }
-        const shuffled = [...generatedCards].sort(() => 0.5 - Math.random());
-        window.currentAchievWonCards = [shuffled[0], shuffled[1]];
-        window.currentAchievMissedCards = shuffled.slice(2);
+        if (!data.success) throw new Error("Falha ao abrir pacote premium via Servidor.");
+
+        window.currentAchievWonCards = data.wonCards;
+        window.currentAchievMissedCards = data.missedCards;
         window.achievRevealedCount = 0;
         achievSelectedIndices = [];
-
-        await runTransaction(db, async (transaction) => {
-          const userSnap = await transaction.get(userRef);
-          if(!userSnap.exists()) throw new Error("Usuário não encontrado.");
-          
-          const currentData = userSnap.data();
-          if((currentData.premiumPullsAvailable || 0) <= 0) throw new Error("Sem pacotes premium suficientes.");
-          
-          let currentInv = { ...(currentData.inventory || {}) };
-          currentInv[window.currentAchievWonCards[0].id] = (currentInv[window.currentAchievWonCards[0].id] || 0) + 1;
-          currentInv[window.currentAchievWonCards[1].id] = (currentInv[window.currentAchievWonCards[1].id] || 0) + 1;
-
-          transaction.update(userRef, { 
-            premiumPullsAvailable: currentData.premiumPullsAvailable - 1,
-            totalPacksOpened: (currentData.totalPacksOpened || 0) + 1,
-            inventory: currentInv
-          });
-        });
 
         isOpeningAchiev = true;
 
@@ -2226,10 +2206,10 @@
         logGlobalStat('pack');
         const c1 = window.currentAchievWonCards[0];
         const c2 = window.currentAchievWonCards[1];
-        await window.logSystemAction(`${currentUser.displayName} abriu um Pacote Premium do inventário e obteve as cartas #${c1.cardNumber || '000'} ${c1.name} (R.${c1.tier}) e #${c2.cardNumber || '000'} ${c2.name} (R.${c2.tier}).`);
+        await window.logSystemAction(`${currentUser.displayName} abriu um Pacote Premium (Protegido pelo Servidor) e obteve as cartas #${c1.cardNumber || '000'} ${c1.name} (R.${c1.tier}) e #${c2.cardNumber || '000'} ${c2.name} (R.${c2.tier}).`);
 
       } catch(e) {
-        window.showMessage("Erro: " + e.message);
+        window.showMessage("Erro do Servidor: " + e.message);
       } finally {
         isProcessingPackTransaction = false;
       }
@@ -2380,49 +2360,25 @@
       isProcessingPackTransaction = true;
       
       try {
-        const userRef = doc(db, "users", currentUser.uid);
+        const openBasicPackFn = httpsCallable(functions, 'openBasicPack');
+        const result = await openBasicPackFn();
+        const data = result.data;
 
-        let generatedCards = [];
-        let highestTierVal = 0; let highestTierStr = 'C';
+        if (!data.success) throw new Error("O Servidor falhou ao gerar as cartas.");
+
+        window.currentPackWonCards = data.wonCards;
+        window.currentPackMissedCards = data.missedCards;
+        window.packRevealedCount = 0;
+        selectedCardsIndices = [];
         
-        for(let i=0; i<8; i++) {
-          const card = getRandomCard(false);
-          generatedCards.push(card);
+        let highestTierVal = 0; 
+        let highestTierStr = 'C';
+        const allCards = [...data.wonCards, ...data.missedCards];
+        allCards.forEach(card => {
           if (TIER_VALUES[card.tier] > highestTierVal) {
             highestTierVal = TIER_VALUES[card.tier];
             highestTierStr = card.tier;
           }
-        }
-
-        const shuffled = [...generatedCards].sort(() => 0.5 - Math.random());
-        window.currentPackWonCards = [shuffled[0], shuffled[1]];
-        window.currentPackMissedCards = shuffled.slice(2);
-        window.packRevealedCount = 0;
-        selectedCardsIndices = [];
-        
-        await runTransaction(db, async (transaction) => {
-          const userSnap = await transaction.get(userRef);
-          if (!userSnap.exists()) throw new Error("Usuário não encontrado.");
-          
-          const currentData = userSnap.data();
-          if ((currentData.pullsAvailable || 0) <= 0) {
-            throw new Error("Você não tem pacotes básicos suficientes.");
-          }
-
-          let newPulls = currentData.pullsAvailable - 1;
-          let newTimestamp = currentData.lastPullTimestamp;
-          if (currentData.pullsAvailable === 5) newTimestamp = Date.now();
-
-          let currentInv = { ...(currentData.inventory || {}) };
-          currentInv[window.currentPackWonCards[0].id] = (currentInv[window.currentPackWonCards[0].id] || 0) + 1;
-          currentInv[window.currentPackWonCards[1].id] = (currentInv[window.currentPackWonCards[1].id] || 0) + 1;
-
-          transaction.update(userRef, {
-            pullsAvailable: newPulls,
-            lastPullTimestamp: newTimestamp,
-            totalPacksOpened: (currentData.totalPacksOpened || 0) + 1,
-            inventory: currentInv
-          });
         });
 
         isOpeningPack = true;
@@ -2479,9 +2435,9 @@
         logGlobalStat('pack');
         const c1 = window.currentPackWonCards[0];
         const c2 = window.currentPackWonCards[1];
-        await window.logSystemAction(`${currentUser.displayName} abriu um Pacote Básico e obteve as cartas #${c1.cardNumber || '000'} ${c1.name} (R.${c1.tier}) e #${c2.cardNumber || '000'} ${c2.name} (R.${c2.tier}). A melhor raridade do pacote era Rank ${highestTierStr}.`);
+        await window.logSystemAction(`${currentUser.displayName} abriu um Pacote Básico (Protegido pelo Servidor) e obteve as cartas #${c1.cardNumber || '000'} ${c1.name} (R.${c1.tier}) e #${c2.cardNumber || '000'} ${c2.name} (R.${c2.tier}). A melhor raridade do pacote era Rank ${highestTierStr}.`);
       } catch (error) {
-        window.showMessage("Erro: " + error.message);
+        window.showMessage("Erro do Servidor: " + error.message);
       } finally {
         isProcessingPackTransaction = false;
       }
